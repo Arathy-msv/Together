@@ -16,7 +16,9 @@ const COPY: FlowCopy = {
 export function WeightGame({ view, preview = false }: { view: CampaignView; preview?: boolean }) {
   const [progress, setProgress] = useState(0)
   const drag = useDragProgress({
-    axis: 'x',
+    mode: 'right',
+    distance: 190,
+    progress,
     onProgress: setProgress,
   })
 
@@ -33,22 +35,19 @@ export function WeightGame({ view, preview = false }: { view: CampaignView; prev
         onActivate: () => setProgress(1),
       }}
       scene={
-        <div className="weight-stage" aria-label="Seedling under a stone">
-          <img className="weight-seedling" src="/games/weight-seedling.jpg" alt="" draggable={false} />
-          <button
-            type="button"
+        <div className="weight-stage" aria-label="Seedling under a stone" {...drag.handlers}>
+          <img className="weight-mound" src="/games/weight-seedling.jpg" alt="" draggable={false} />
+          <div
             className="weight-stone"
-            style={{ transform: `translateX(${progress * 140}px) rotate(${progress * 8}deg)` }}
+            style={{ transform: `translateX(${progress * 168}px)` }}
+            role="slider"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round(progress * 100)}
             aria-label="Drag the stone aside"
-            {...drag.handlers}
           >
             <img src="/games/weight-stone.jpg" alt="" draggable={false} />
-          </button>
-          {progress > 0.05 && progress < 0.92 ? (
-            <span className="weight-ghost" aria-hidden="true">
-              <img src="/games/weight-stone.jpg" alt="" />
-            </span>
-          ) : null}
+          </div>
         </div>
       }
     />

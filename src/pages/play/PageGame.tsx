@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { CampaignView } from '../../lib/types.ts'
-import { FlowShell, useDragProgress, type FlowCopy } from './FlowGame.tsx'
+import { FlowShell, pagePeel, useDragProgress, type FlowCopy } from './FlowGame.tsx'
 
 const COPY: FlowCopy = {
   discoverTitle: 'Turn the Page',
@@ -16,9 +16,12 @@ const COPY: FlowCopy = {
 export function PageGame({ view, preview = false }: { view: CampaignView; preview?: boolean }) {
   const [progress, setProgress] = useState(0)
   const drag = useDragProgress({
-    axis: 'y',
+    mode: 'unfold',
+    distance: 240,
+    progress,
     onProgress: setProgress,
   })
+  const peel = pagePeel(progress)
 
   return (
     <FlowShell
@@ -33,35 +36,18 @@ export function PageGame({ view, preview = false }: { view: CampaignView; previe
         onActivate: () => setProgress(1),
       }}
       scene={
-        <div className="page-stage" aria-label="Folded paper">
+        <div className="page-stage" aria-label="Folded paper" {...drag.handlers}>
           <div className="page-sheet">
-            <img
-              className="page-drawing"
-              src="/games/page-drawing.jpg"
-              alt="A child’s drawing"
-              style={{ opacity: 0.25 + progress * 0.75 }}
-              draggable={false}
-            />
-            <button
-              type="button"
-              className="page-fold"
-              style={{
-                clipPath: `polygon(0 0, ${100 - progress * 50}% 0, 100% ${progress * 100}%, 100% 100%, 0 100%)`,
-                opacity: progress >= 0.92 ? 0 : 1,
-              }}
-              aria-label="Drag a corner to unfold"
-              {...drag.handlers}
-            >
+            <img className="page-drawing" src="/games/page-drawing.jpg" alt="A child’s drawing of a house and friends" draggable={false} />
+            <div className="page-cover" style={{ clipPath: peel.cover, opacity: progress >= 0.98 ? 0 : 1 }}>
               <img src="/games/page-folded.jpg" alt="" draggable={false} />
-            </button>
-            <span
-              className="page-corner"
-              style={{
-                transform: `translate(${progress * 36}px, ${progress * 36}px) rotate(${progress * 18}deg)`,
-                opacity: progress >= 0.92 ? 0 : 1,
-              }}
-              aria-hidden="true"
-            />
+            </div>
+            {peel.showFlap ? (
+              <svg className="page-flap" viewBox="0 0 100 100" aria-hidden="true">
+                <polygon points={peel.flap.replace('polygon(', '').replace(')', '')} />
+              </svg>
+            ) : null}
+            {progress < 0.98 ? <span className="page-corner-hint" style={{ opacity: 1 - progress }} /> : null}
           </div>
         </div>
       }

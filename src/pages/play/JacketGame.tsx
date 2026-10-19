@@ -18,6 +18,8 @@ export function JacketGame({ view, preview = false }: { view: CampaignView; prev
   const drag = useDragProgress({
     axis: 'y',
     invert: true,
+    distance: 180,
+    progress,
     onProgress: setProgress,
   })
 

@@ -16,9 +16,14 @@ const COPY: FlowCopy = {
 export function PencilGame({ view, preview = false }: { view: CampaignView; preview?: boolean }) {
   const [progress, setProgress] = useState(0)
   const drag = useDragProgress({
-    axis: 'x',
+    mode: 'right',
+    distance: 260,
+    progress,
     onProgress: setProgress,
   })
+  const settled = progress >= 0.92
+  const tilt = settled ? -2 : -18 * Math.min(1, progress / 0.35)
+  const lift = settled ? -36 : 0
 
   return (
     <FlowShell
@@ -33,26 +38,28 @@ export function PencilGame({ view, preview = false }: { view: CampaignView; prev
         onActivate: () => setProgress(1),
       }}
       scene={
-        <div className="pencil-stage" aria-label="Pencil writing">
-          <button
-            type="button"
-            className="pencil-handle"
-            style={{ transform: `translateX(${progress * 160}px) rotate(${-8 + progress * 4}deg)` }}
-            aria-label="Drag to write"
-            {...drag.handlers}
-          >
-            <img src="/games/pencil.jpg" alt="" draggable={false} />
-          </button>
-          <svg className="pencil-ink" viewBox="0 0 320 80" aria-hidden="true">
+        <div className="pencil-stage" aria-label="Pencil writing" {...drag.handlers}>
+          <svg className="pencil-ink" viewBox="0 0 320 180" aria-hidden="true">
             <path
-              d="M12 48 C 60 20, 110 70, 160 40 S 260 20, 308 44"
+              d="M28 108 C 80 96, 130 118, 180 104 S 260 92, 300 108"
               pathLength={1}
-              style={{ strokeDasharray: 1, strokeDashoffset: 1 - progress }}
+              style={{ strokeDasharray: 1, strokeDashoffset: 1 - Math.min(1, progress / 0.92), opacity: settled ? 0.25 : 0.9 }}
             />
           </svg>
-          <p className="pencil-phrase" style={{ opacity: progress >= 0.92 ? 1 : progress * 0.4 }}>
+          <p className="pencil-phrase" style={{ opacity: settled ? 1 : 0 }}>
             A brighter future.
           </p>
+          <div
+            className="pencil-rig"
+            style={{ transform: `translate(${progress * 78}px, ${lift}px) rotate(${tilt}deg)` }}
+            role="slider"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round(progress * 100)}
+            aria-label="Drag to write"
+          >
+            <img src="/games/pencil.jpg" alt="" draggable={false} />
+          </div>
         </div>
       }
     />

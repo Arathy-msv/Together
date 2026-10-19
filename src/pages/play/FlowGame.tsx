@@ -272,33 +272,45 @@ export function FlowShell({
   )
 }
 
-/** Shared pointer-drag helper: returns progress 0–1 based on drag along an axis. */
+/**
+ * Pointer drag mapped to a 0–1 progress.
+ * `right` / `up` move along one axis. `unfold` treats a down-left pull as opening a corner.
+ * Progress continues from wherever the gesture starts, so you can drag, release, and drag again.
+ */
 export function useDragProgress(options: {
-  axis: 'x' | 'y'
+  axis?: 'x' | 'y'
   invert?: boolean
-  threshold?: number
+  mode?: 'right' | 'up' | 'unfold'
+  /** Pixels of travel that take progress from 0 to 1. */
+  distance?: number
+  progress: number
   onProgress: (value: number) => void
 }) {
   const dragging = useRef(false)
-  const start = useRef(0)
-  const size = useRef(1)
+  const origin = useRef({ x: 0, y: 0, progress: 0 })
   const id = useId()
 
+  function remember(value: number) {
+    options.onProgress(value)
+  }
+
   function pointerDown(event: ReactPointerEvent<HTMLElement>) {
-    const target = event.currentTarget
-    target.setPointerCapture(event.pointerId)
+    event.currentTarget.setPointerCapture(event.pointerId)
     dragging.current = true
-    const rect = target.getBoundingClientRect()
-    size.current = Math.max(1, options.axis === 'x' ? rect.width : rect.height)
-    start.current = options.axis === 'x' ? event.clientX : event.clientY
+    origin.current = { x: event.clientX, y: event.clientY, progress: options.progress }
   }
 
   function pointerMove(event: ReactPointerEvent<HTMLElement>) {
     if (!dragging.current) return
-    const delta = (options.axis === 'x' ? event.clientX : event.clientY) - start.current
-    let ratio = delta / (size.current * 0.55)
-    if (options.invert) ratio = -ratio
-    options.onProgress(Math.max(0, Math.min(1, ratio)))
+    const dx = event.clientX - origin.current.x
+    const dy = event.clientY - origin.current.y
+    const distance = options.distance ?? 220
+    let delta = dx
+    if (options.mode === 'unfold') delta = -dx * 0.85 + dy
+    else if (options.mode === 'up' || (options.axis === 'y' && options.invert)) delta = -dy
+    else if (options.axis === 'y') delta = dy
+    else if (options.invert) delta = -dx
+    remember(Math.max(0, Math.min(1, origin.current.progress + delta / distance)))
   }
 
   function pointerUp(event: ReactPointerEvent<HTMLElement>) {
@@ -307,7 +319,7 @@ export function useDragProgress(options: {
     try {
       event.currentTarget.releasePointerCapture(event.pointerId)
     } catch {
-      // ignore
+      // The pointer may already have been released.
     }
   }
 
@@ -320,4 +332,55 @@ export function useDragProgress(options: {
       onPointerCancel: pointerUp,
     },
   }
+}
+
+/** Covered region of a square page as the top-right corner is peeled toward the bottom-left. */
+export function pagePeel(progress: number): { cover: string; flap: string; showFlap: boolean } {
+  const C = 100 - 200 * progress
+  const inside = (x: number, y: number) => x - y <= C + 0.001
+  const corners: [number, number][] = [
+    [0, 0],
+    [100, 0],
+    [100, 100],
+    [0, 100],
+  ]
+  const pts: [number, number][] = []
+  for (let index = 0; index < 4; index += 1) {
+    const start = corners[index]
+    const end = corners[(index + 1) % 4]
+    const startIn = inside(start[0], start[1])
+    const endIn = inside(end[0], end[1])
+    if (startIn && endIn) pts.push(end)
+    else if (startIn && !endIn) pts.push(crossEdge(start, end, C))
+    else if (!startIn && endIn) {
+      pts.push(crossEdge(start, end, C))
+      pts.push(end)
+    }
+  }
+  const cover = pts.length >= 3 ? `polygon(${pts.map(([x, y]) => `${x}% ${y}%`).join(',')})` : 'polygon(0 0, 0 0, 0 0)'
+  const hits = foldHits(C)
+  const tip: [number, number] = [100 - 200 * progress, 200 * progress]
+  const flap = hits.length >= 2 ? `polygon(${[hits[0], hits[1], tip].map(([x, y]) => `${x},${y}`).join(' ')})` : ''
+  return { cover, flap, showFlap: progress > 0.015 && progress < 0.58 && flap.length > 0 }
+}
+
+function crossEdge(start: [number, number], end: [number, number], limit: number): [number, number] {
+  const dx = end[0] - start[0]
+  const dy = end[1] - start[1]
+  const denom = dx - dy
+  const t = denom === 0 ? 0 : (limit - (start[0] - start[1])) / denom
+  const clamped = Math.min(1, Math.max(0, t))
+  return [start[0] + clamped * dx, start[1] + clamped * dy]
+}
+
+function foldHits(limit: number): [number, number][] {
+  const hits: [number, number][] = []
+  if (limit >= 0 && limit <= 100) hits.push([limit, 0])
+  const right = 100 - limit
+  if (right >= 0 && right <= 100) hits.push([100, right])
+  const bottom = limit + 100
+  if (bottom >= 0 && bottom <= 100) hits.push([bottom, 100])
+  const left = -limit
+  if (left >= 0 && left <= 100) hits.push([0, left])
+  return hits
 }
