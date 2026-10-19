@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { CoverArt, Icon } from '../components/illustrations.tsx'
+import { CampaignCover } from '../components/CampaignImage.tsx'
+import { Icon } from '../components/illustrations.tsx'
 import { ProgressBar } from '../components/ProgressBar.tsx'
 import { StatusBadge } from '../components/StatusBadge.tsx'
 import { useCampaignViews } from '../hooks/useDemoStore.ts'
@@ -16,15 +17,16 @@ export function DashboardPage() {
   const [params] = useSearchParams()
   const createdId = params.get('created')
   const [copiedId, setCopiedId] = useState<string | null>(null)
-  const [closingId, setClosingId] = useState<string | null>(null)
+  const [menuId, setMenuId] = useState<string | null>(null)
   const [confirmReset, setConfirmReset] = useState(false)
 
   useEffect(() => {
-    document.title = 'My demo campaigns — Together'
+    document.title = 'My campaigns — Together'
   }, [])
 
   const published = views.filter((view) => !view.campaign.isDraft)
   const raised = published.reduce((sum, view) => sum + view.raised, 0)
+  const contributions = published.reduce((sum, view) => sum + view.supporters, 0)
 
   async function copyLink(id: string) {
     const url = `${window.location.origin}/campaigns/${id}`
@@ -39,218 +41,241 @@ export function DashboardPage() {
       area.remove()
     }
     setCopiedId(id)
-    window.setTimeout(() => setCopiedId((current) => (current === id ? null : current)), 4000)
+    window.setTimeout(() => setCopiedId((current) => (current === id ? null : current)), 3000)
   }
 
   return (
-    <div className="page dashboard-page">
-      <section className="dash-hero">
+    <div className="container page-pad">
+      <div className="page-head">
         <div>
-          <h1>Your community, growing together.</h1>
-          <p>Campaigns saved in this browser only.</p>
-        </div>
-        <div className="stat-pills">
-          <div>
-            <strong>{published.length}</strong>
-            <span>demo campaigns</span>
-          </div>
-          <div>
-            <strong>{formatINR(raised)}</strong>
-            <span>simulated contributions</span>
-          </div>
+          <h1>My campaigns</h1>
+          <p className="muted">Saved in this browser.</p>
         </div>
         <Link to="/create?new=1" className="btn btn-primary">
-          + Create a Campaign
+          Create campaign
         </Link>
-      </section>
+      </div>
 
       {createdId ? (
-        <div className="banner success" role="status">
-          Campaign saved in this browser.
+        <div className="notice success" role="status">
+          <Icon name="check" size={18} />
+          Campaign created and saved in this browser.
           <Link to={`/campaigns/${createdId}`}>View campaign</Link>
         </div>
       ) : null}
-      {copiedId ? (
-        <div className="banner success" role="status">
-          Demo link copied. Paste it into this browser to open the campaign.
-        </div>
-      ) : null}
 
-      <section className="section">
-        <h2>Your campaigns</h2>
-        {views.length === 0 ? (
-          <div className="empty-state">
-            <h3>No campaigns in this browser yet</h3>
-            <p>Create one, or reset the demo data to bring the sample campaigns back.</p>
-            <Link to="/create?new=1" className="btn btn-primary">
-              Create a Campaign
-            </Link>
+      <div className="stat-cards">
+        <StatCard icon="chart" tone="green" value={String(published.length)} label="campaigns" />
+        <StatCard icon="gift" tone="gold" value={formatINR(raised)} label="simulated contributions" />
+        <StatCard icon="users" tone="coral" value={String(contributions)} label="contributions" />
+      </div>
+
+      {views.length === 0 ? (
+        <div className="panel empty">
+          <h2>No campaigns yet</h2>
+          <p className="muted">Create one, or reset demo data to restore the sample campaigns.</p>
+          <Link to="/create?new=1" className="btn btn-primary">
+            Create campaign
+          </Link>
+        </div>
+      ) : (
+        <div className="panel table-panel">
+          <table className="campaign-table">
+            <thead>
+              <tr>
+                <th>Campaign</th>
+                <th>Progress</th>
+                <th>Contributions</th>
+                <th>Status</th>
+                <th>Dates</th>
+                <th aria-label="Actions">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {views.map((view) => (
+                <Row
+                  key={view.campaign.id}
+                  view={view}
+                  copied={copiedId === view.campaign.id}
+                  menuOpen={menuId === view.campaign.id}
+                  onCopy={() => void copyLink(view.campaign.id)}
+                  onMenu={() => setMenuId((current) => (current === view.campaign.id ? null : view.campaign.id))}
+                  onClose={() => {
+                    closeCampaign(view.campaign.id)
+                    setMenuId(null)
+                  }}
+                  onDiscard={() => {
+                    removeCampaign(view.campaign.id)
+                    setMenuId(null)
+                  }}
+                />
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <div className="soon-row">
+        <div className="soon-tile">
+          <span className="tile-icon">
+            <Icon name="chart" size={20} />
+          </span>
+          <div>
+            <strong>Advanced analytics</strong>
+            <p className="muted small">Detailed insights about your campaign performance.</p>
+          </div>
+          <span className="soon-pill grey">Coming soon</span>
+        </div>
+        <div className="soon-tile">
+          <span className="tile-icon">
+            <Icon name="bell" size={20} />
+          </span>
+          <div>
+            <strong>Reminders</strong>
+            <p className="muted small">Set reminders to keep your campaign active.</p>
+          </div>
+          <span className="soon-pill grey">Coming soon</span>
+        </div>
+      </div>
+
+      <div className="notice warn">
+        <Icon name="info" size={20} />
+        <div>
+          <strong>Demo sharing limitation</strong>
+          <p className="small">Campaign links in this demo work only on this browser and device. They are not public links.</p>
+        </div>
+        {confirmReset ? (
+          <div className="inline-actions">
+            <span className="small">Restore sample campaigns and clear your changes?</span>
+            <button
+              type="button"
+              className="btn btn-danger btn-sm"
+              onClick={() => {
+                resetStore()
+                setConfirmReset(false)
+              }}
+            >
+              Reset
+            </button>
+            <button type="button" className="btn btn-outline btn-sm" onClick={() => setConfirmReset(false)}>
+              Cancel
+            </button>
           </div>
         ) : (
-          <div className="campaign-rows">
-            {views.map((view) => (
-              <DashboardRow
-                key={view.campaign.id}
-                view={view}
-                copied={copiedId === view.campaign.id}
-                confirming={closingId === view.campaign.id}
-                onCopy={() => void copyLink(view.campaign.id)}
-                onAskClose={() => setClosingId(view.campaign.id)}
-                onCancelClose={() => setClosingId(null)}
-                onClose={() => {
-                  closeCampaign(view.campaign.id)
-                  setClosingId(null)
-                }}
-                onDiscard={() => removeCampaign(view.campaign.id)}
-              />
-            ))}
-          </div>
+          <button type="button" className="btn btn-outline btn-sm" onClick={() => setConfirmReset(true)}>
+            ↻ Reset demo data
+          </button>
         )}
-        <div className="inline-note">
-          <Icon name="info" size={16} />
-          <span>Links work with this browser’s local data. Campaign data is not shared across devices.</span>
-          {confirmReset ? (
-            <span className="reset-confirm">
-              Reset sample campaigns and clear simulated contributions?
-              <button
-                type="button"
-                className="text-danger"
-                onClick={() => {
-                  resetStore()
-                  setConfirmReset(false)
-                }}
-              >
-                Reset demo data
-              </button>
-              <button type="button" className="text-button" onClick={() => setConfirmReset(false)}>
-                Cancel
-              </button>
-            </span>
-          ) : (
-            <button type="button" className="text-danger" onClick={() => setConfirmReset(true)}>
-              Reset demo data
-            </button>
-          )}
-        </div>
-      </section>
-
-      <section className="section">
-        <div className="section-head">
-          <h2>Coming soon</h2>
-          <p>More features are on the way to make Together even more helpful.</p>
-        </div>
-        <div className="soon-grid">
-          <article className="soon-card">
-            <Icon name="chart" />
-            <h3>Campaign analytics</h3>
-            <p>Track views, contributions and supporter activity.</p>
-            <span className="coming-badge">Coming soon</span>
-          </article>
-          <article className="soon-card">
-            <Icon name="bell" />
-            <h3>Reminders</h3>
-            <p>Get notified about important dates and activity.</p>
-            <span className="coming-badge">Coming soon</span>
-          </article>
-          <article className="soon-card">
-            <Icon name="users" />
-            <h3>Accounts</h3>
-            <p>Create an account to access your campaigns on any device.</p>
-            <span className="coming-badge">Coming soon</span>
-          </article>
-        </div>
-      </section>
+      </div>
     </div>
   )
 }
 
-function DashboardRow({
+function StatCard({ icon, tone, value, label }: { icon: string; tone: string; value: string; label: string }) {
+  return (
+    <div className="stat-card">
+      <span className={`tile-icon ${tone}`}>
+        <Icon name={icon} size={22} />
+      </span>
+      <div>
+        <strong>{value}</strong>
+        <span>{label}</span>
+      </div>
+    </div>
+  )
+}
+
+function Row({
   view,
   copied,
-  confirming,
+  menuOpen,
   onCopy,
-  onAskClose,
-  onCancelClose,
+  onMenu,
   onClose,
   onDiscard,
 }: {
   view: CampaignView
   copied: boolean
-  confirming: boolean
+  menuOpen: boolean
   onCopy: () => void
-  onAskClose: () => void
-  onCancelClose: () => void
+  onMenu: () => void
   onClose: () => void
   onDiscard: () => void
 }) {
   const { campaign, raised, percent, supporters, status } = view
-  const sharePath = `/campaigns/${campaign.id}`
   const canClose = !campaign.isDraft && status !== 'closed' && status !== 'completed'
   return (
-    <article className="campaign-row">
-      <CoverArt id={campaign.coverImageId} />
-      <div className="row-main">
-        <h3>{campaign.title}</h3>
-        <p>
-          <strong>{formatINR(raised)}</strong> of {formatINR(campaign.goalAmount)} (simulated)
-        </p>
+    <tr>
+      <td data-label="Campaign">
+        <div className="table-campaign">
+          <CampaignCover campaign={campaign} />
+          <div>
+            <strong>{campaign.title}</strong>
+            {campaign.access === 'closed' && campaign.accessCode ? (
+              <span className="muted small">Access code {campaign.accessCode}</span>
+            ) : (
+              <span className="muted small">{campaign.organizerName}</span>
+            )}
+          </div>
+        </div>
+      </td>
+      <td data-label="Progress">
+        <div className="money-row">
+          <span>
+            <strong>{formatINR(raised)}</strong> / {formatINR(campaign.goalAmount)}
+          </span>
+          <span>{percent}%</span>
+        </div>
         <ProgressBar value={percent} muted={status === 'scheduled' || status === 'draft'} />
-        <span className="percent">{percent}%</span>
-        {campaign.access === 'closed' && campaign.accessCode ? (
-          <p className="code-line">Demo access code: {campaign.accessCode}</p>
-        ) : null}
-      </div>
-      <div className="row-meta">
-        <strong>{supporters}</strong>
-        <span>contributions (simulated)</span>
-      </div>
-      <StatusBadge status={status} />
-      <div className="row-dates">
-        <span>Opens {formatDate(campaign.opensAt)}</span>
-        <span>Closes {formatDate(campaign.closesAt)}</span>
-      </div>
-      <div className="row-actions">
-        {campaign.isDraft ? (
-          <>
-            <Link to={`/create?draft=${campaign.id}`} className="btn btn-primary">
-              Continue editing
+      </td>
+      <td data-label="Contributions">{supporters === 1 ? '1 contribution' : `${supporters} contributions`}</td>
+      <td data-label="Status">
+        <StatusBadge status={status} />
+      </td>
+      <td data-label="Dates" className="small muted">
+        {formatDate(campaign.opensAt)}
+        <br />
+        {formatDate(campaign.closesAt)}
+      </td>
+      <td data-label="Actions">
+        <div className="row-buttons">
+          {campaign.isDraft ? (
+            <Link to={`/create?draft=${campaign.id}`} className="btn btn-outline btn-sm">
+              Edit
             </Link>
-            <button type="button" className="text-button" onClick={onDiscard}>
-              Discard draft
+          ) : (
+            <Link to={`/campaigns/${campaign.id}`} className="btn btn-outline btn-sm">
+              View
+            </Link>
+          )}
+          {campaign.isDraft ? null : (
+            <button type="button" className="btn btn-outline btn-sm" onClick={onCopy}>
+              <Icon name="copy" size={15} />
+              {copied ? 'Copied' : 'Copy demo link'}
             </button>
-          </>
-        ) : (
-          <>
-            <Link to={sharePath} className="btn btn-primary">
-              View campaign
-            </Link>
-            <p className="share-url">{sharePath}</p>
-            <div className="row-links">
-              <button type="button" className="text-button" onClick={onCopy}>
-                <Icon name="copy" size={15} />
-                {copied ? 'Link copied' : 'Copy demo link'}
-              </button>
-              {canClose ? (
-                confirming ? (
-                  <span className="reset-confirm">
-                    Close this campaign?
-                    <button type="button" className="text-danger" onClick={onClose}>
-                      Close campaign
-                    </button>
-                    <button type="button" className="text-button" onClick={onCancelClose}>
-                      Cancel
-                    </button>
-                  </span>
-                ) : (
-                  <button type="button" className="text-button" onClick={onAskClose}>
+          )}
+          <div className="menu-wrap">
+            <button type="button" className="btn btn-outline btn-sm icon-only" aria-label="More actions" aria-expanded={menuOpen} onClick={onMenu}>
+              ···
+            </button>
+            {menuOpen ? (
+              <div className="menu" role="menu">
+                {canClose ? (
+                  <button type="button" role="menuitem" onClick={onClose}>
                     Close campaign
                   </button>
-                )
-              ) : null}
-            </div>
-          </>
-        )}
-      </div>
-    </article>
+                ) : null}
+                {campaign.isDraft ? (
+                  <button type="button" role="menuitem" className="danger" onClick={onDiscard}>
+                    Discard draft
+                  </button>
+                ) : null}
+                {!canClose && !campaign.isDraft ? <span className="menu-note">No actions available</span> : null}
+              </div>
+            ) : null}
+          </div>
+        </div>
+      </td>
+    </tr>
   )
 }

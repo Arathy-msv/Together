@@ -1,34 +1,57 @@
-import { daysLeft, formatINR, truncate } from '../lib/format.ts'
+import { formatINR, truncate } from '../lib/format.ts'
+import { gameMeta } from '../lib/games.ts'
 import type { CampaignForm } from '../lib/types.ts'
-import { CoverArt } from './illustrations.tsx'
+import { CampaignCover, OrgLogo } from './CampaignImage.tsx'
+import { Icon } from './illustrations.tsx'
 import { ProgressBar } from './ProgressBar.tsx'
 
 export function LivePreview({ form }: { form: CampaignForm }) {
   const goal = Number(form.goalAmount)
   const title = form.title.trim() || 'Your campaign title'
   const story = form.description.trim()
-  const closeDate = new Date(form.closesAt)
-  const remaining = form.closesAt && !Number.isNaN(closeDate.getTime()) ? daysLeft(closeDate.toISOString()) : 0
   return (
-    <aside className="live-preview">
-      <h2>Live preview</h2>
-      <p className="hint">This is how your campaign will appear to supporters.</p>
-      <div className="preview-card">
-        <CoverArt id={form.coverImageId} />
-        <div className="preview-body">
-          <h3>{title}</h3>
-          <p>{story ? truncate(story, 140) : 'Your story will show up here as you write it.'}</p>
-          <div className="raised-line">
-            <span>
-              <strong>{formatINR(0)}</strong> raised
-            </span>
-            <span>{Number.isFinite(goal) && goal > 0 ? `${formatINR(goal)} target` : 'Set a target'}</span>
-          </div>
-          <ProgressBar value={0} />
-          <div className="card-foot">
-            <span>0 supporters</span>
-            <span>{remaining > 0 ? `${remaining} days left` : 'Set a closing date'}</span>
-          </div>
+    <aside className="panel preview">
+      <div className="preview-top">
+        <span className="eyebrow-label">Preview</span>
+        <span className="draft-pill">Draft</span>
+      </div>
+      <div className="preview-media">
+        <CampaignCover campaign={{ ...form, title }} />
+        <span className="preview-overlay">{title}</span>
+      </div>
+      <div className="org-line">
+        <OrgLogo name={form.organizerName || 'Organiser'} logoData={form.logoData} size={30} />
+        <span className="muted small">{form.organizerName || 'Organiser'}</span>
+      </div>
+      <h3>{title}</h3>
+      <p className="muted small">{story ? truncate(story, 160) : 'Your description will appear here.'}</p>
+      <div className="money-row big">
+        <span className="muted">Target</span>
+        <strong>{Number.isFinite(goal) && goal > 0 ? formatINR(goal) : '—'}</strong>
+      </div>
+      <ProgressBar value={0} />
+      <div className="money-row small muted">
+        <span>{formatINR(0)} raised</span>
+        <span>0%</span>
+      </div>
+      <div className="preview-facts">
+        <div>
+          <span className="fact-icon green">
+            <Icon name="users" size={16} />
+          </span>
+          <span>
+            <strong>{form.access === 'open' ? 'Open group' : 'Private group'}</strong>
+            <em>{form.access === 'open' ? 'Anyone can find and support this campaign' : 'Demo access code required'}</em>
+          </span>
+        </div>
+        <div>
+          <span className="fact-icon coral">
+            <Icon name="game" size={16} />
+          </span>
+          <span>
+            <strong>Game</strong>
+            <em>{form.game ? gameMeta(form.gameType).name : 'Direct giving only'}</em>
+          </span>
         </div>
       </div>
     </aside>

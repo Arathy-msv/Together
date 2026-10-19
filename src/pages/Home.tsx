@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { CampaignCard } from '../components/CampaignCard.tsx'
-import { Icon, HeroScene } from '../components/illustrations.tsx'
+import { Icon } from '../components/illustrations.tsx'
 import { useCampaignViews } from '../hooks/useDemoStore.ts'
 
 const FEATURED_IDS = ['cmp_library', 'cmp_garden', 'cmp_winter']
@@ -14,87 +14,81 @@ export function HomePage() {
   ].slice(0, 3)
 
   useEffect(() => {
-    document.title = 'Together — Make giving a little more joyful'
+    document.title = 'Together — Good causes, shared experiences'
   }, [])
 
   return (
-    <div className="page home-page">
-      <section className="hero">
-        <div className="hero-copy">
-          <p className="eyebrow">People · Places · Brighter days</p>
+    <div className="container home">
+      <section className="home-hero">
+        <div>
           <h1>
-            Make giving a little more <em>joyful.</em>
+            Good causes.
+            <br />
+            Shared experiences.
           </h1>
-          <p className="lede">
-            Create a cause. Invite your community. Give directly or play your part. Together is a
-            demonstration of fundraising that feels like showing up, not just being asked.
-          </p>
-          <div className="hero-actions">
-            <Link to="/create?new=1" className="btn btn-primary">
-              <Icon name="spark" size={16} />
-              Create a Campaign
+          <p className="lead">Bring your community together through simple, interactive fundraising.</p>
+          <div className="actions">
+            <Link to="/create?new=1" className="btn btn-primary btn-lg">
+              Create a campaign
             </Link>
-            <Link to="/explore" className="btn btn-secondary">
-              Explore Campaigns
-              <Icon name="arrow" size={16} />
+            <Link to="/explore" className="btn btn-outline btn-lg">
+              Explore campaigns
             </Link>
           </div>
         </div>
-        <HeroScene />
+        <img className="home-hero-image" src="/covers/hero-library.jpg" alt="A bright school library with bookshelves and reading cushions" />
       </section>
 
-      <section className="how-strip">
-        <article>
-          <span>1</span>
-          <h2>Start a cause</h2>
-          <p>Tell the story, set a goal, and choose how people can take part.</p>
-        </article>
-        <article>
-          <span>2</span>
-          <h2>Share the link</h2>
-          <p>Send a campaign page. Closed groups can use a simple demo code.</p>
-        </article>
-        <article>
-          <span>3</span>
-          <h2>Give or play</h2>
-          <p>Supporters donate directly or plant a little encouragement in the garden game.</p>
-        </article>
+      <section className="home-section">
+        <div className="section-title">
+          <h2>Featured campaigns</h2>
+          <Link to="/explore" className="link-accent">
+            Explore all campaigns →
+          </Link>
+        </div>
+        {featured.length === 0 ? (
+          <div className="panel empty">
+            <p>No campaigns yet. Create the first one.</p>
+          </div>
+        ) : (
+          <div className="feature-campaigns">
+            {featured.map((view) => (
+              <CampaignCard key={view.campaign.id} view={view} compact />
+            ))}
+          </div>
+        )}
       </section>
 
-      <section className="section">
-        <div className="section-head">
-          <h2>Featured demo campaigns</h2>
-          <p>Real ideas. Simulated results. All for demo purposes.</p>
-        </div>
-        <div className="card-grid">
-          {featured.map((view) => (
-            <CampaignCard key={view.campaign.id} view={view} />
-          ))}
-        </div>
-      </section>
-
-      <section className="section">
-        <h2>Ways to take part</h2>
-        <div className="feature-grid">
-          <article className="feature-card sage">
-            <Icon name="heart" />
-            <h3>Direct donations</h3>
-            <p>Support causes you care about, directly and transparently. Amounts are confirmed as a simulation.</p>
-          </article>
-          <article className="feature-card sun">
-            <Icon name="game" />
-            <h3>Playful giving</h3>
-            <p>Take part in a short planting moment, then choose whether to add a simulated contribution.</p>
-          </article>
-          <article className="feature-card coral coming">
-            <div className="coming-row">
-              <Icon name="gift" />
-              <span className="coming-badge">Coming soon</span>
-            </div>
-            <h3>Voucher rewards</h3>
-            <p>Thank-you rewards from local partners will live here. They are not available in this demo.</p>
-          </article>
-        </div>
+      <section id="how-it-works" className="value-row">
+        <article>
+          <span className="value-icon green">
+            <Icon name="heart" size={26} />
+          </span>
+          <div>
+            <h3>Direct giving</h3>
+            <p>Support causes you care about in a simple, transparent way.</p>
+          </div>
+        </article>
+        <article>
+          <span className="value-icon coral">
+            <Icon name="users" size={26} />
+          </span>
+          <div>
+            <h3>Interactive experiences</h3>
+            <p>Plant a garden, match cards or finish a puzzle — then choose to contribute.</p>
+          </div>
+        </article>
+        <article>
+          <span className="value-icon gold">
+            <Icon name="gift" size={26} />
+          </span>
+          <div>
+            <h3>
+              Rewards <span className="soon-pill">Coming soon</span>
+            </h3>
+            <p>Unlock special thank-yous and experiences for your support.</p>
+          </div>
+        </article>
       </section>
     </div>
   )

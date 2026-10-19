@@ -34,7 +34,7 @@ export function createSeed(): DemoStore {
       description:
         'Help us fill our school library with more books and create a welcoming reading corner where every child can discover new worlds, build confidence and fall in love with reading.',
       coverImageId: 'library',
-      organizerName: 'Riverside PTA',
+      organizerName: 'Riverside School PTA',
       access: 'open',
       goalAmount: 50000,
       donationMode: 'fixed',
@@ -52,7 +52,7 @@ export function createSeed(): DemoStore {
       description:
         'A community garden for greener neighbourhoods and happier tomorrows. We are raising funds for beds, tools, seeds and a shady reading bench anyone can use.',
       coverImageId: 'garden',
-      organizerName: 'Riverside PTA',
+      organizerName: 'Riverside School PTA',
       access: 'open',
       goalAmount: 30000,
       donationMode: 'custom',
@@ -61,7 +61,7 @@ export function createSeed(): DemoStore {
       closesAt: shiftLocal(32, 18),
       autoCloseOnGoal: true,
       participation: { direct: true, game: true },
-      gameType: 'garden',
+      gameType: 'puzzle',
       createdAt: shiftLocal(-14, 11),
     },
     {
@@ -70,7 +70,7 @@ export function createSeed(): DemoStore {
       description:
         'Warm kits for children heading into the colder months — coats, blankets, socks and a note that someone nearby is looking out for them.',
       coverImageId: 'winter',
-      organizerName: 'Riverside PTA',
+      organizerName: 'Riverside School PTA',
       access: 'open',
       goalAmount: 20000,
       donationMode: 'custom',
@@ -78,8 +78,8 @@ export function createSeed(): DemoStore {
       opensAt: shiftLocal(43, 9),
       closesAt: shiftLocal(73, 18),
       autoCloseOnGoal: true,
-      participation: { direct: true, game: false },
-      gameType: 'garden',
+      participation: { direct: true, game: true },
+      gameType: 'memory',
       createdAt: shiftLocal(-2, 15),
     },
   ]

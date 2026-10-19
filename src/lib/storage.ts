@@ -1,4 +1,5 @@
 import { createSeed } from '../data/seed.ts'
+import { isGameType } from './games.ts'
 import type { Campaign, Contribution, DemoStore } from './types.ts'
 
 export const STORAGE_KEY = 'together.demo.v1'
@@ -41,6 +42,15 @@ function isCampaign(value: unknown): value is Campaign {
   )
 }
 
+function normalizeCampaign(campaign: Campaign): Campaign {
+  return {
+    ...campaign,
+    gameType: isGameType(campaign.gameType) ? campaign.gameType : 'garden',
+    coverImageData: typeof campaign.coverImageData === 'string' && campaign.coverImageData.startsWith('data:image/') ? campaign.coverImageData : undefined,
+    logoData: typeof campaign.logoData === 'string' && campaign.logoData.startsWith('data:image/') ? campaign.logoData : undefined,
+  }
+}
+
 function isContribution(value: unknown): value is Contribution {
   if (!value || typeof value !== 'object') return false
   const contribution = value as Contribution
@@ -57,8 +67,18 @@ function isContribution(value: unknown): value is Contribution {
   )
 }
 
+export class StorageFullError extends Error {
+  constructor() {
+    super('This browser’s demo storage is full. Try a smaller image, or reset demo data.')
+  }
+}
+
 function write(store: DemoStore): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(store))
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(store))
+  } catch {
+    throw new StorageFullError()
+  }
   emit()
 }
 
@@ -76,7 +96,7 @@ export function loadStore(): DemoStore {
     if (!Array.isArray(record.campaigns) || !Array.isArray(record.contributions)) return recover()
     return {
       version: 1,
-      campaigns: record.campaigns.filter(isCampaign),
+      campaigns: record.campaigns.filter(isCampaign).map(normalizeCampaign),
       contributions: record.contributions.filter(isContribution),
     }
   } catch {

@@ -1,8 +1,16 @@
-export const COVERS: { id: string; label: string; alt: string }[] = [
-  { id: 'library', label: 'School library', alt: 'A sunny school library surrounded by flowers' },
-  { id: 'books', label: 'Stack of books', alt: 'A stack of books that reads Read, Learn, Grow, Belong' },
-  { id: 'readers', label: 'Reading together', alt: 'Children reading together under a tree' },
-  { id: 'garden', label: 'Community garden', alt: 'A gardener planting flowers beside a wooden sign' },
-  { id: 'winter', label: 'Winter care kits', alt: 'Warm coats and care kits in a winter scene' },
-  { id: 'nook', label: 'Reading corner', alt: 'A bright reading corner with books and plants' },
+export const UPLOADED_COVER_ID = 'upload'
+
+export const COVERS: { id: string; label: string; alt: string; src: string }[] = [
+  { id: 'library', label: 'School library', alt: 'A stack of books on a library table', src: '/covers/cover-library.jpg' },
+  { id: 'garden', label: 'Community garden', alt: 'Seedlings growing in a raised garden bed', src: '/covers/cover-garden.jpg' },
+  { id: 'winter', label: 'Winter care', alt: 'Folded knitted sweaters and scarves', src: '/covers/cover-winter.jpg' },
+  { id: 'sports', label: 'Sports & play', alt: 'A football on a school sports field', src: '/covers/cover-sports.jpg' },
+  { id: 'reading', label: 'Reading room', alt: 'A bright school reading room with bookshelves', src: '/covers/cover-reading.jpg' },
 ]
+
+const LEGACY: Record<string, string> = { books: 'library', readers: 'reading', nook: 'reading' }
+
+export function coverTemplate(id: string) {
+  const resolved = LEGACY[id] ?? id
+  return COVERS.find((cover) => cover.id === resolved) ?? COVERS[0]
+}

@@ -1,11 +1,15 @@
-import { useEffect, useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { CoverArt, Icon } from '../components/illustrations.tsx'
-import { COVERS } from '../data/covers.ts'
+import { useEffect, useRef, useState, type ChangeEvent, type ReactNode } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { CampaignCover, OrgLogo } from '../components/CampaignImage.tsx'
+import { Icon } from '../components/illustrations.tsx'
 import { LivePreview } from '../components/LivePreview.tsx'
+import { COVERS, UPLOADED_COVER_ID } from '../data/covers.ts'
 import { getCampaign, upsertCampaign } from '../lib/campaigns.ts'
 import { formatDateTime, formatINR } from '../lib/format.ts'
-import type { CampaignForm } from '../lib/types.ts'
+import { GAMES, gameMeta } from '../lib/games.ts'
+import { IMAGE_ACCEPT, readImageFile } from '../lib/image.ts'
+import { StorageFullError } from '../lib/storage.ts'
+import type { CampaignForm, GameType } from '../lib/types.ts'
 import {
   blankForm,
   campaignToForm,
@@ -18,6 +22,12 @@ import {
   writeWizard,
   type FormErrors,
 } from '../lib/wizard.ts'
+
+const STEP_COPY: Record<number, { title: string; sub: string }> = {
+  1: { title: 'Create a campaign', sub: 'Start with your story.' },
+  2: { title: 'Campaign settings', sub: 'Choose when it runs and how people take part.' },
+  3: { title: 'Review your campaign', sub: 'Check the details, then publish it in this browser.' },
+}
 
 export function CreateCampaignPage() {
   const [params] = useSearchParams()
@@ -34,7 +44,7 @@ function CreateCampaignEditor() {
   const [form, setForm] = useState<CampaignForm>(snapshot.form)
   const [step, setStep] = useState(snapshot.step)
   const [errors, setErrors] = useState<FormErrors>({})
-  const [notice, setNotice] = useState('')
+  const [notice, setNotice] = useState<{ tone: 'success' | 'error'; text: string } | null>(null)
 
   useEffect(() => {
     document.title = 'Create a campaign — Together'
@@ -53,7 +63,22 @@ function CreateCampaignEditor() {
 
   function update(patch: Partial<CampaignForm>) {
     setForm((current) => ({ ...current, ...patch }))
-    setNotice('')
+    setNotice(null)
+  }
+
+  function persist(isDraft: boolean): string | null {
+    const existing = form.id ? getCampaign(form.id) : undefined
+    const campaign = formToCampaign(form, { isDraft, existing })
+    try {
+      upsertCampaign(campaign)
+      return campaign.id
+    } catch (error) {
+      setNotice({
+        tone: 'error',
+        text: error instanceof StorageFullError ? error.message : 'The campaign could not be saved in this browser.',
+      })
+      return null
+    }
   }
 
   function saveDraft() {
@@ -62,11 +87,10 @@ function CreateCampaignEditor() {
       setStep(1)
       return
     }
-    const existing = form.id ? getCampaign(form.id) : undefined
-    const campaign = formToCampaign(form, { isDraft: true, existing })
-    upsertCampaign(campaign)
-    setForm((current) => ({ ...current, id: campaign.id }))
-    setNotice('Draft saved in this browser.')
+    const id = persist(true)
+    if (!id) return
+    setForm((current) => ({ ...current, id }))
+    setNotice({ tone: 'success', text: 'Draft saved in this browser.' })
   }
 
   function continueNext() {
@@ -80,80 +104,69 @@ function CreateCampaignEditor() {
     const nextErrors = validateAll(form)
     setErrors(nextErrors)
     if (Object.keys(nextErrors).length > 0) {
-      if (nextErrors.title || nextErrors.description || nextErrors.coverImageId || nextErrors.organizerName) setStep(1)
-      else setStep(2)
+      setStep(Object.keys(validateStory(form)).length > 0 ? 1 : 2)
       return
     }
-    const existing = form.id ? getCampaign(form.id) : undefined
-    const campaign = formToCampaign(form, { isDraft: false, existing })
-    upsertCampaign(campaign)
+    const id = persist(false)
+    if (!id) return
     clearWizard()
-    navigate(`/dashboard?created=${campaign.id}`)
+    navigate(`/dashboard?created=${id}`)
   }
 
+  const copy = STEP_COPY[step]
+
   return (
-    <div className="page create-page">
-      <div className="create-intro">
-        <h1>{step === 2 ? 'Make the campaign yours' : step === 3 ? 'Review and publish' : 'Bring your cause to life'}</h1>
-        <p>
-          {step === 2
-            ? 'Set your campaign details and how people can participate.'
-            : step === 3
-              ? 'Check the details, then save the campaign in this browser.'
-              : 'Create a campaign to rally support, make an impact and show what’s possible together.'}
-        </p>
+    <div className="container page-pad create">
+      <div className="create-head">
+        <div>
+          <h1>{copy.title}</h1>
+          <p className="lead-sm">{copy.sub}</p>
+        </div>
         <Stepper step={step} onStep={setStep} />
       </div>
-      {notice ? <div className="banner success">{notice}</div> : null}
-      {errors.form ? <div className="banner error">{errors.form}</div> : null}
-      <div className={step === 3 ? 'create-layout single' : 'create-layout'}>
-        <div className="create-main">
+      {notice ? (
+        <div className={`notice ${notice.tone}`} role="status">
+          {notice.text}
+        </div>
+      ) : null}
+      {errors.form ? <div className="notice error">{errors.form}</div> : null}
+      <div className={step === 3 ? 'create-grid single' : 'create-grid'}>
+        <div>
           {step === 1 ? <StoryStep form={form} errors={errors} onChange={update} /> : null}
           {step === 2 ? <SettingsStep form={form} errors={errors} onChange={update} /> : null}
           {step === 3 ? <ReviewStep form={form} onEdit={setStep} /> : null}
-          <div className="wizard-actions">
-            {step === 1 ? (
-              <button type="button" className="btn btn-secondary" onClick={saveDraft}>
+        </div>
+        {step < 3 ? (
+          <div className="create-aside">
+            <LivePreview form={form} />
+            <div className="aside-actions">
+              {step > 1 ? (
+                <button type="button" className="btn btn-outline" onClick={() => setStep((current) => current - 1)}>
+                  Back
+                </button>
+              ) : null}
+              <button type="button" className="btn btn-outline" onClick={saveDraft}>
                 Save draft
               </button>
-            ) : (
-              <button type="button" className="btn btn-secondary" onClick={() => setStep((current) => current - 1)}>
-                <Icon name="back" size={16} />
-                Back
+              <button type="button" className="btn btn-primary" onClick={continueNext}>
+                Continue
               </button>
-            )}
-            <div className="wizard-actions-right">
-              {step < 3 ? (
-                <>
-                  <button type="button" className="btn btn-primary" onClick={continueNext}>
-                    {step === 1 ? 'Continue to settings' : 'Review campaign'}
-                    <Icon name="arrow" size={16} />
-                  </button>
-                  {step === 1 ? (
-                    <span className="soon-inline">
-                      Invite co-organisers
-                      <span className="coming-badge">Coming soon</span>
-                    </span>
-                  ) : (
-                    <button type="button" className="btn btn-secondary" onClick={saveDraft}>
-                      Save draft
-                    </button>
-                  )}
-                </>
-              ) : (
-                <button type="button" className="btn btn-primary" onClick={publish}>
-                  Create campaign
-                  <Icon name="arrow" size={16} />
-                </button>
-              )}
             </div>
           </div>
-        </div>
-        {step < 3 ? <LivePreview form={form} /> : null}
+        ) : (
+          <div className="review-actions">
+            <button type="button" className="btn btn-outline" onClick={() => setStep(2)}>
+              Back
+            </button>
+            <button type="button" className="btn btn-outline" onClick={saveDraft}>
+              Save draft
+            </button>
+            <button type="button" className="btn btn-primary" onClick={publish}>
+              Create campaign
+            </button>
+          </div>
+        )}
       </div>
-      <p className="fine-print">
-        Publishing stores this campaign locally in your browser. <Link to="/dashboard">My demo campaigns</Link>
-      </p>
     </div>
   )
 }
@@ -174,15 +187,15 @@ function initialSnapshot(params: URLSearchParams): { form: CampaignForm; step: n
 function Stepper({ step, onStep }: { step: number; onStep: (step: number) => void }) {
   const labels = ['Story', 'Settings', 'Review']
   return (
-    <ol className="stepper">
+    <ol className="steps">
       {labels.map((label, index) => {
         const number = index + 1
         const state = number === step ? 'current' : number < step ? 'done' : 'todo'
         return (
-          <li key={label} className={`step ${state}`}>
+          <li key={label} className={state}>
             {number < step ? (
-              <button type="button" onClick={() => onStep(number)}>
-                {number}
+              <button type="button" onClick={() => onStep(number)} aria-label={`Back to ${label}`}>
+                <Icon name="check" size={14} />
               </button>
             ) : (
               <span>{number}</span>
@@ -195,6 +208,32 @@ function Stepper({ step, onStep }: { step: number; onStep: (step: number) => voi
   )
 }
 
+function useImagePicker(onPicked: (dataUrl: string) => void, options: Parameters<typeof readImageFile>[1]) {
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+
+  async function onChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+    setBusy(true)
+    setError('')
+    try {
+      onPicked(await readImageFile(file, options))
+    } catch (problem) {
+      setError(problem instanceof Error ? problem.message : 'That image could not be used.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const input = (
+    <input ref={inputRef} type="file" accept={IMAGE_ACCEPT} hidden onChange={(event) => void onChange(event)} />
+  )
+  return { input, open: () => inputRef.current?.click(), busy, error }
+}
+
 function StoryStep({
   form,
   errors,
@@ -204,10 +243,42 @@ function StoryStep({
   errors: FormErrors
   onChange: (patch: Partial<CampaignForm>) => void
 }) {
+  const cover = useImagePicker((data) => onChange({ coverImageId: UPLOADED_COVER_ID, coverImageData: data }), {
+    maxWidth: 1400,
+    maxHeight: 900,
+    type: 'image/jpeg',
+    quality: 0.8,
+  })
+  const logo = useImagePicker((data) => onChange({ logoData: data }), {
+    maxWidth: 256,
+    maxHeight: 256,
+    type: 'image/png',
+  })
+  const [draftAmount, setDraftAmount] = useState('')
+  const [amountError, setAmountError] = useState('')
+
+  function addAmount() {
+    const amount = Number(draftAmount)
+    if (!/^\d+$/.test(draftAmount) || amount <= 0) {
+      setAmountError('Enter a whole amount greater than zero.')
+      return
+    }
+    if (form.fixedAmounts.includes(amount)) {
+      setAmountError('That amount is already listed.')
+      return
+    }
+    if (form.fixedAmounts.length >= 5) {
+      setAmountError('You can suggest up to 5 amounts.')
+      return
+    }
+    onChange({ fixedAmounts: [...form.fixedAmounts, amount].sort((a, b) => a - b), donationMode: 'fixed' })
+    setDraftAmount('')
+    setAmountError('')
+  }
+
   return (
-    <div className="form-card">
-      <label htmlFor="title">
-        Campaign title
+    <div className="panel form-panel">
+      <Field label="Campaign title" htmlFor="title" error={errors.title} counter={`${form.title.trim().length}/80`}>
         <input
           id="title"
           maxLength={80}
@@ -216,65 +287,289 @@ function StoryStep({
           onChange={(event) => onChange({ title: event.target.value })}
           placeholder="Grow Our School Library"
         />
-      </label>
-      <div className="field-meta">
-        <span>{errors.title ? <em className="field-error">{errors.title}</em> : 'Keep it clear and inspiring. This will be the headline for your campaign.'}</span>
-        <span>{form.title.trim().length}/80</span>
-      </div>
-      <label htmlFor="organizer">
-        Organiser
-        <input
-          id="organizer"
-          maxLength={60}
-          value={form.organizerName}
-          aria-invalid={Boolean(errors.organizerName)}
-          onChange={(event) => onChange({ organizerName: event.target.value })}
-        />
-      </label>
-      {errors.organizerName ? <p className="field-error">{errors.organizerName}</p> : <p className="hint">Shown on the campaign page. A sample name is fine.</p>}
-      <label htmlFor="purpose">
-        Purpose
+      </Field>
+
+      <Field label="Description" htmlFor="purpose" error={errors.description} counter={`${form.description.trim().length}/1,000`}>
         <textarea
           id="purpose"
           maxLength={1000}
-          rows={6}
+          rows={4}
           value={form.description}
           aria-invalid={Boolean(errors.description)}
           onChange={(event) => onChange({ description: event.target.value })}
-          placeholder="Tell the story. Why does this matter? Who will it help?"
+          placeholder="Explain what you are raising money for and who it helps."
         />
-      </label>
-      <div className="field-meta">
-        <span>
-          {errors.description ? (
-            <em className="field-error">{errors.description}</em>
-          ) : (
-            'A genuine, personal story helps people connect with your cause.'
-          )}
-        </span>
-        <span>{form.description.trim().length}/1,000</span>
-      </div>
-      <fieldset>
-        <legend>Cover image</legend>
-        <p className="hint">Choose an image that represents your campaign. You can change it later.</p>
-        <div className="cover-picker">
-          {COVERS.map((cover) => (
-            <button
-              key={cover.id}
-              type="button"
-              className={form.coverImageId === cover.id ? 'cover-option selected' : 'cover-option'}
-              onClick={() => onChange({ coverImageId: cover.id })}
-              aria-pressed={form.coverImageId === cover.id}
-            >
-              <CoverArt id={cover.id} label={cover.alt} />
-              <span>{cover.label}</span>
-              {form.coverImageId === cover.id ? <i className="cover-check">✓</i> : null}
-            </button>
-          ))}
+      </Field>
+
+      <div className="field">
+        <span className="field-label">Campaign cover</span>
+        <p className="help">Pick a template or upload your own image (JPG, PNG or WebP, up to 8 MB).</p>
+        <div className="cover-grid">
+          {COVERS.map((template) => {
+            const selected = form.coverImageId === template.id
+            return (
+              <button
+                key={template.id}
+                type="button"
+                className={selected ? 'cover-choice selected' : 'cover-choice'}
+                aria-pressed={selected}
+                onClick={() => onChange({ coverImageId: template.id })}
+              >
+                <img src={template.src} alt={template.alt} />
+                <span>{template.label}</span>
+                {selected ? (
+                  <i className="cover-tick">
+                    <Icon name="check" size={13} />
+                  </i>
+                ) : null}
+              </button>
+            )
+          })}
+          <button
+            type="button"
+            className={form.coverImageId === UPLOADED_COVER_ID ? 'cover-choice upload selected' : 'cover-choice upload'}
+            aria-pressed={form.coverImageId === UPLOADED_COVER_ID}
+            onClick={() => (form.coverImageData ? onChange({ coverImageId: UPLOADED_COVER_ID }) : cover.open())}
+          >
+            {form.coverImageData ? (
+              <img src={form.coverImageData} alt="Your uploaded cover" />
+            ) : (
+              <span className="upload-copy">
+                <b>+</b>
+                {cover.busy ? 'Processing…' : 'Upload image'}
+              </span>
+            )}
+            {form.coverImageData ? <span>Your upload</span> : null}
+            {form.coverImageId === UPLOADED_COVER_ID ? (
+              <i className="cover-tick">
+                <Icon name="check" size={13} />
+              </i>
+            ) : null}
+          </button>
         </div>
-        {errors.coverImageId ? <p className="field-error">{errors.coverImageId}</p> : null}
-      </fieldset>
+        {form.coverImageData ? (
+          <div className="inline-actions small">
+            <button type="button" className="link-button" onClick={cover.open}>
+              Replace upload
+            </button>
+            <button
+              type="button"
+              className="link-button danger"
+              onClick={() =>
+                onChange({
+                  coverImageData: '',
+                  coverImageId: form.coverImageId === UPLOADED_COVER_ID ? 'library' : form.coverImageId,
+                })
+              }
+            >
+              Remove upload
+            </button>
+          </div>
+        ) : null}
+        {cover.input}
+        {cover.error || errors.coverImageId ? <p className="error-text">{cover.error || errors.coverImageId}</p> : null}
+      </div>
+
+      <div className="two-col">
+        <Field label="Organiser name" htmlFor="organizer" error={errors.organizerName}>
+          <input
+            id="organizer"
+            maxLength={60}
+            value={form.organizerName}
+            aria-invalid={Boolean(errors.organizerName)}
+            onChange={(event) => onChange({ organizerName: event.target.value })}
+          />
+        </Field>
+        <div className="field">
+          <span className="field-label">Organisation logo</span>
+          <div className="logo-row">
+            <OrgLogo name={form.organizerName || 'Together'} logoData={form.logoData} size={48} />
+            <button type="button" className="btn btn-outline btn-sm" onClick={logo.open}>
+              {logo.busy ? 'Processing…' : form.logoData ? 'Replace logo' : 'Upload logo'}
+            </button>
+            {form.logoData ? (
+              <button type="button" className="link-button danger" onClick={() => onChange({ logoData: '' })}>
+                Remove
+              </button>
+            ) : (
+              <span className="help">Optional. Square images work best.</span>
+            )}
+          </div>
+          {logo.input}
+          {logo.error ? <p className="error-text">{logo.error}</p> : null}
+        </div>
+      </div>
+
+      <div className="divider" />
+
+      <div className="two-col">
+        <Field label="Fundraising goal" htmlFor="goal" error={errors.goalAmount}>
+          <div className="input-prefix">
+            <span>₹</span>
+            <input
+              id="goal"
+              inputMode="numeric"
+              value={form.goalAmount}
+              aria-invalid={Boolean(errors.goalAmount)}
+              onChange={(event) => onChange({ goalAmount: event.target.value.replace(/[^\d]/g, '') })}
+            />
+          </div>
+        </Field>
+        <div className="field">
+          <span className="field-label">Suggested donation amounts</span>
+          {form.donationMode === 'fixed' ? (
+            <>
+              <div className="amount-chips">
+                {form.fixedAmounts.map((amount) => (
+                  <span key={amount} className="amount-chip-pro">
+                    {formatINR(amount)}
+                    {form.fixedAmounts.length > 1 ? (
+                      <button
+                        type="button"
+                        aria-label={`Remove ${formatINR(amount)}`}
+                        onClick={() => onChange({ fixedAmounts: form.fixedAmounts.filter((item) => item !== amount) })}
+                      >
+                        ×
+                      </button>
+                    ) : null}
+                  </span>
+                ))}
+                <span className="amount-add">
+                  <input
+                    inputMode="numeric"
+                    value={draftAmount}
+                    placeholder="₹ Add"
+                    aria-label="New suggested amount"
+                    onChange={(event) => setDraftAmount(event.target.value.replace(/[^\d]/g, ''))}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') {
+                        event.preventDefault()
+                        addAmount()
+                      }
+                    }}
+                  />
+                  <button type="button" onClick={addAmount}>
+                    Add
+                  </button>
+                </span>
+              </div>
+              {amountError || errors.fixedAmounts ? <p className="error-text">{amountError || errors.fixedAmounts}</p> : null}
+            </>
+          ) : (
+            <p className="help">Supporters enter their own amount. Change this in Settings.</p>
+          )}
+        </div>
+      </div>
+
+      <div className="two-col">
+        <div className="field">
+          <span className="field-label">Group type</span>
+          <div className="radio-stack">
+            <RadioCard
+              checked={form.access === 'open'}
+              title="Open group"
+              text="Anyone can find and support this campaign."
+              onSelect={() => onChange({ access: 'open' })}
+            />
+            <RadioCard
+              checked={form.access === 'closed'}
+              title="Private group"
+              text="Only people with the demo access code can open it."
+              onSelect={() => onChange({ access: 'closed' })}
+            />
+          </div>
+          {form.access === 'closed' ? (
+            <div className="code-field">
+              <label htmlFor="access-code">Demo access code</label>
+              <input
+                id="access-code"
+                value={form.accessCode}
+                maxLength={12}
+                aria-invalid={Boolean(errors.accessCode)}
+                onChange={(event) => onChange({ accessCode: event.target.value.toUpperCase() })}
+              />
+              <p className="help">A demo code only — not secure access control.</p>
+              {errors.accessCode ? <p className="error-text">{errors.accessCode}</p> : null}
+            </div>
+          ) : null}
+        </div>
+        <div className="field">
+          <label className="field-label" htmlFor="game">
+            Choose a game
+          </label>
+          <select
+            id="game"
+            value={form.game ? form.gameType : 'none'}
+            onChange={(event) => {
+              const value = event.target.value
+              if (value === 'none') onChange({ game: false })
+              else onChange({ game: true, gameType: value as GameType })
+            }}
+          >
+            {GAMES.map((game) => (
+              <option key={game.id} value={game.id}>
+                {game.name}
+              </option>
+            ))}
+            <option value="none">No game — direct giving only</option>
+          </select>
+          <p className="help">
+            {form.game ? `${gameMeta(form.gameType).blurb} Free to play; supporters can contribute afterwards.` : 'Supporters will only see direct giving.'}
+          </p>
+        </div>
+      </div>
     </div>
+  )
+}
+
+function Field({
+  label,
+  htmlFor,
+  error,
+  counter,
+  children,
+}: {
+  label: string
+  htmlFor: string
+  error?: string
+  counter?: string
+  children: ReactNode
+}) {
+  return (
+    <div className="field">
+      <label className="field-label" htmlFor={htmlFor}>
+        {label}
+      </label>
+      {children}
+      {error || counter ? (
+        <div className="field-foot">
+          <span className="error-text">{error}</span>
+          {counter ? <span className="help">{counter}</span> : null}
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+function RadioCard({
+  checked,
+  title,
+  text,
+  onSelect,
+}: {
+  checked: boolean
+  title: string
+  text: string
+  onSelect: () => void
+}) {
+  return (
+    <button type="button" role="radio" aria-checked={checked} className={checked ? 'radio-card checked' : 'radio-card'} onClick={onSelect}>
+      <i />
+      <span>
+        <strong>{title}</strong>
+        <em>{text}</em>
+      </span>
+    </button>
   )
 }
 
@@ -287,148 +582,30 @@ function SettingsStep({
   errors: FormErrors
   onChange: (patch: Partial<CampaignForm>) => void
 }) {
-  const [draftAmount, setDraftAmount] = useState('')
-  const [amountError, setAmountError] = useState('')
-
-  function addAmount() {
-    const amount = Number(draftAmount)
-    if (!/^\d+$/.test(draftAmount) || !Number.isInteger(amount) || amount <= 0) {
-      setAmountError('Enter a whole amount greater than zero.')
-      return
-    }
-    if (form.fixedAmounts.includes(amount)) {
-      setAmountError('That amount is already listed.')
-      return
-    }
-    if (form.fixedAmounts.length >= 6) {
-      setAmountError('You can suggest up to 6 amounts.')
-      return
-    }
-    onChange({ fixedAmounts: [...form.fixedAmounts, amount].sort((a, b) => a - b) })
-    setDraftAmount('')
-    setAmountError('')
-  }
-
   return (
-    <div className="settings-grid">
-      <section className="form-card">
-        <h2>Access</h2>
-        <p className="hint">Who can view and support this campaign.</p>
-        <div className="choice-grid">
-          <button
-            type="button"
-            className={form.access === 'open' ? 'choice-card selected' : 'choice-card'}
-            onClick={() => onChange({ access: 'open' })}
-          >
-            <strong>Open</strong>
-            <span>Anyone can find and support this campaign.</span>
-          </button>
-          <button
-            type="button"
-            className={form.access === 'closed' ? 'choice-card selected' : 'choice-card'}
-            onClick={() => onChange({ access: 'closed' })}
-          >
-            <strong>Closed</strong>
-            <span>Only people with a demo code can access.</span>
-          </button>
-        </div>
-        {form.access === 'closed' ? (
-          <label htmlFor="access-code">
-            Demo access code
-            <input
-              id="access-code"
-              value={form.accessCode}
-              maxLength={12}
-              aria-invalid={Boolean(errors.accessCode)}
-              onChange={(event) => onChange({ accessCode: event.target.value.toUpperCase() })}
-            />
-          </label>
-        ) : null}
-        <p className="hint">Closed uses a demo code, not secure access control.</p>
-        {errors.accessCode ? <p className="field-error">{errors.accessCode}</p> : null}
-      </section>
-
-      <section className="form-card">
-        <h2>Goal amount</h2>
-        <p className="hint">Set a fundraising goal for your campaign.</p>
-        <label htmlFor="goal" className="rupee-field">
-          <span>₹</span>
-          <input
-            id="goal"
-            inputMode="numeric"
-            value={form.goalAmount}
-            aria-invalid={Boolean(errors.goalAmount)}
-            onChange={(event) => onChange({ goalAmount: event.target.value.replace(/[^\d]/g, '') })}
-          />
-        </label>
-        {errors.goalAmount ? <p className="field-error">{errors.goalAmount}</p> : <p className="hint">This helps supporters understand your target.</p>}
-      </section>
-
-      <section className="form-card">
+    <div className="settings-stack">
+      <section className="panel form-panel">
         <h2>Donation amounts</h2>
-        <p className="hint">Choose how supporters can give.</p>
-        <div className="choice-grid">
-          <button
-            type="button"
-            className={form.donationMode === 'fixed' ? 'choice-card selected' : 'choice-card'}
-            onClick={() => onChange({ donationMode: 'fixed' })}
-          >
-            <strong>Fixed amounts</strong>
-            <span>Suggest a few amounts for quick giving.</span>
-          </button>
-          <button
-            type="button"
-            className={form.donationMode === 'custom' ? 'choice-card selected' : 'choice-card'}
-            onClick={() => onChange({ donationMode: 'custom' })}
-          >
-            <strong>Custom amount</strong>
-            <span>Let supporters choose any amount.</span>
-          </button>
+        <div className="two-col">
+          <RadioCard
+            checked={form.donationMode === 'fixed'}
+            title="Suggested amounts"
+            text="Supporters choose from the amounts you set."
+            onSelect={() => onChange({ donationMode: 'fixed' })}
+          />
+          <RadioCard
+            checked={form.donationMode === 'custom'}
+            title="Custom amount"
+            text="Supporters enter any whole-rupee amount."
+            onSelect={() => onChange({ donationMode: 'custom' })}
+          />
         </div>
-        {form.donationMode === 'fixed' ? (
-          <>
-            <div className="amount-editor">
-              {form.fixedAmounts.map((amount) => (
-                <span key={amount} className="amount-chip">
-                  {formatINR(amount)}
-                  {form.fixedAmounts.length > 1 ? (
-                    <button
-                      type="button"
-                      aria-label={`Remove ${formatINR(amount)}`}
-                      onClick={() => onChange({ fixedAmounts: form.fixedAmounts.filter((item) => item !== amount) })}
-                    >
-                      ×
-                    </button>
-                  ) : null}
-                </span>
-              ))}
-              <span className="add-amount">
-                <input
-                  inputMode="numeric"
-                  value={draftAmount}
-                  placeholder="Add"
-                  aria-label="New suggested amount"
-                  onChange={(event) => setDraftAmount(event.target.value.replace(/[^\d]/g, ''))}
-                />
-                <button type="button" onClick={addAmount}>
-                  Add amount
-                </button>
-              </span>
-            </div>
-            {amountError || errors.fixedAmounts ? <p className="field-error">{amountError || errors.fixedAmounts}</p> : null}
-            <p className="hint">Optional suggestion only — the supporter confirms the amount.</p>
-          </>
-        ) : (
-          <p className="hint">Supporters enter their own whole-rupee amount on the campaign page.</p>
-        )}
       </section>
 
-      <section className="form-card">
+      <section className="panel form-panel">
         <h2>Campaign dates</h2>
-        <p className="hint">Set when your campaign will be live.</p>
-        <div className="date-grid">
-          <label htmlFor="opens">
-            Open date and time
+        <div className="two-col">
+          <Field label="Opens" htmlFor="opens" error={errors.opensAt}>
             <input
               id="opens"
               type="datetime-local"
@@ -436,9 +613,8 @@ function SettingsStep({
               aria-invalid={Boolean(errors.opensAt)}
               onChange={(event) => onChange({ opensAt: event.target.value })}
             />
-          </label>
-          <label htmlFor="closes">
-            Close date and time
+          </Field>
+          <Field label="Closes" htmlFor="closes" error={errors.closesAt}>
             <input
               id="closes"
               type="datetime-local"
@@ -446,11 +622,9 @@ function SettingsStep({
               aria-invalid={Boolean(errors.closesAt)}
               onChange={(event) => onChange({ closesAt: event.target.value })}
             />
-          </label>
+          </Field>
         </div>
-        {errors.opensAt ? <p className="field-error">{errors.opensAt}</p> : null}
-        {errors.closesAt ? <p className="field-error">{errors.closesAt}</p> : null}
-        <label className="switch-row">
+        <label className="toggle-row">
           <button
             type="button"
             role="switch"
@@ -461,46 +635,76 @@ function SettingsStep({
             <span />
           </button>
           <span>
-            <strong>Close automatically when goal reached</strong>
-            <em>The campaign ends early if the goal is achieved.</em>
+            <strong>Close automatically when the goal is reached</strong>
+            <em>The campaign stops accepting contributions once it hits the target.</em>
           </span>
         </label>
       </section>
 
-      <section className="form-card span-2">
-        <h2>Participation options</h2>
-        <p className="hint">Choose how people can take part in your campaign.</p>
-        <div className="participate-grid">
-          <button
-            type="button"
-            className={form.direct ? 'choice-card selected' : 'choice-card'}
-            onClick={() => onChange({ direct: !form.direct })}
-            aria-pressed={form.direct}
-          >
-            <strong>Direct donation</strong>
-            <span>People can support with a simple simulated donation.</span>
-          </button>
-          <button
-            type="button"
-            className={form.game ? 'choice-card selected' : 'choice-card'}
-            onClick={() => onChange({ game: !form.game })}
-            aria-pressed={form.game}
-          >
-            <strong>Game-based giving</strong>
-            <span>Turn giving into a short planting moment.</span>
-            <em className="game-name">Grow Our Garden</em>
-          </button>
-          <div className="choice-card disabled">
-            <div className="coming-row">
+      <section className="panel form-panel">
+        <h2>Participation</h2>
+        <div className="option-grid">
+          <OptionCard
+            checked={form.direct}
+            title="Direct donation"
+            text="A simple simulated contribution."
+            onToggle={() => onChange({ direct: !form.direct })}
+          />
+          <OptionCard
+            checked={form.game}
+            title="Game-based giving"
+            text={form.game ? gameMeta(form.gameType).name : 'Turn giving into a short game.'}
+            onToggle={() => onChange({ game: !form.game })}
+          />
+          <div className="option-card disabled">
+            <div className="option-top">
               <strong>Voucher rewards</strong>
-              <span className="coming-badge">Coming soon</span>
+              <span className="soon-pill">Coming soon</span>
             </div>
-            <span>Reward supporters with special vouchers from partners.</span>
-            <p className="hint">Voucher rewards will be available in a future update.</p>
+            <span className="muted small">Thank-you vouchers from local partners.</span>
           </div>
         </div>
+        {form.game ? (
+          <div className="game-chooser" role="radiogroup" aria-label="Game">
+            {GAMES.map((game) => (
+              <button
+                key={game.id}
+                type="button"
+                role="radio"
+                aria-checked={form.gameType === game.id}
+                className={form.gameType === game.id ? 'game-choice selected' : 'game-choice'}
+                onClick={() => onChange({ gameType: game.id })}
+              >
+                <strong>{game.name}</strong>
+                <span>{game.blurb}</span>
+              </button>
+            ))}
+          </div>
+        ) : null}
       </section>
     </div>
+  )
+}
+
+function OptionCard({
+  checked,
+  title,
+  text,
+  onToggle,
+}: {
+  checked: boolean
+  title: string
+  text: string
+  onToggle: () => void
+}) {
+  return (
+    <button type="button" className={checked ? 'option-card checked' : 'option-card'} aria-pressed={checked} onClick={onToggle}>
+      <div className="option-top">
+        <strong>{title}</strong>
+        <i className="checkbox">{checked ? <Icon name="check" size={13} /> : null}</i>
+      </div>
+      <span className="muted small">{text}</span>
+    </button>
   )
 }
 
@@ -512,60 +716,50 @@ function safeStamp(value: string): string {
 
 function ReviewStep({ form, onEdit }: { form: CampaignForm; onEdit: (step: number) => void }) {
   const goal = Number(form.goalAmount)
+  const rows: Array<[string, string]> = [
+    ['Organiser', form.organizerName],
+    ['Goal', Number.isFinite(goal) ? formatINR(goal) : '—'],
+    ['Group type', form.access === 'open' ? 'Open group' : `Private · code ${form.accessCode}`],
+    [
+      'Amounts',
+      form.donationMode === 'custom' ? 'Supporter chooses' : form.fixedAmounts.map((amount) => formatINR(amount)).join(', '),
+    ],
+    ['Opens', safeStamp(form.opensAt)],
+    ['Closes', safeStamp(form.closesAt)],
+    ['Auto-close', form.autoCloseOnGoal ? 'When the goal is reached' : 'Off'],
+    [
+      'Participation',
+      [form.direct ? 'Direct donation' : null, form.game ? gameMeta(form.gameType).name : null].filter(Boolean).join(' · ') ||
+        'None selected',
+    ],
+  ]
   return (
-    <div className="review-layout">
-      <article className="form-card review-story">
-        <CoverArt id={form.coverImageId} />
-        <h2>{form.title.trim() || 'Untitled campaign'}</h2>
-        <p className="organizer">{form.organizerName}</p>
-        <p>{form.description.trim()}</p>
-        <button type="button" className="text-button" onClick={() => onEdit(1)}>
-          Edit story
-        </button>
+    <div className="review-grid">
+      <article className="panel review-card">
+        <CampaignCover campaign={form} />
+        <div className="review-body">
+          <div className="org-line">
+            <OrgLogo name={form.organizerName} logoData={form.logoData} size={36} />
+            <span className="muted">{form.organizerName}</span>
+          </div>
+          <h2>{form.title.trim() || 'Untitled campaign'}</h2>
+          <p className="muted">{form.description.trim()}</p>
+          <button type="button" className="link-button" onClick={() => onEdit(1)}>
+            Edit story
+          </button>
+        </div>
       </article>
-      <article className="form-card">
-        <h2>Settings</h2>
-        <dl className="review-list">
-          <div>
-            <dt>Access</dt>
-            <dd>{form.access === 'open' ? 'Open' : `Closed · demo code ${form.accessCode}`}</dd>
-          </div>
-          <div>
-            <dt>Goal</dt>
-            <dd>{Number.isFinite(goal) ? formatINR(goal) : '—'}</dd>
-          </div>
-          <div>
-            <dt>Amounts</dt>
-            <dd>
-              {form.donationMode === 'custom'
-                ? 'Supporter chooses an amount'
-                : form.fixedAmounts.map((amount) => formatINR(amount)).join(', ')}
-            </dd>
-          </div>
-          <div>
-            <dt>Opens</dt>
-            <dd>{safeStamp(form.opensAt)}</dd>
-          </div>
-          <div>
-            <dt>Closes</dt>
-            <dd>{safeStamp(form.closesAt)}</dd>
-          </div>
-          <div>
-            <dt>Auto-close</dt>
-            <dd>{form.autoCloseOnGoal ? 'Yes, when the goal is reached' : 'No'}</dd>
-          </div>
-          <div>
-            <dt>Participation</dt>
-            <dd>
-              {[form.direct ? 'Direct donation' : null, form.game ? 'Grow Our Garden' : null].filter(Boolean).join(' · ') ||
-                'None selected'}
-            </dd>
-          </div>
+      <article className="panel form-panel">
+        <h2>Details</h2>
+        <dl className="detail-list">
+          {rows.map(([label, value]) => (
+            <div key={label}>
+              <dt>{label}</dt>
+              <dd>{value}</dd>
+            </div>
+          ))}
         </dl>
-        {form.access === 'closed' ? (
-          <p className="hint">Share the demo code with supporters. It is not production-grade access control.</p>
-        ) : null}
-        <button type="button" className="text-button" onClick={() => onEdit(2)}>
+        <button type="button" className="link-button" onClick={() => onEdit(2)}>
           Edit settings
         </button>
       </article>

@@ -1,36 +1,52 @@
 import { Link } from 'react-router-dom'
 import { formatINR } from '../lib/format.ts'
 import type { CampaignView } from '../lib/types.ts'
-import { CoverArt } from './illustrations.tsx'
+import { CampaignCover } from './CampaignImage.tsx'
 import { ProgressBar } from './ProgressBar.tsx'
 import { StatusBadge } from './StatusBadge.tsx'
 
-export function CampaignCard({ view }: { view: CampaignView }) {
+export function CampaignCard({ view, compact = false }: { view: CampaignView; compact?: boolean }) {
   const { campaign, raised, percent, supporters, status } = view
+  if (compact) {
+    return (
+      <Link to={`/campaigns/${campaign.id}`} className="feature-campaign">
+        <CampaignCover campaign={campaign} />
+        <div>
+          <h3>{campaign.title}</h3>
+          {status === 'scheduled' ? (
+            <StatusBadge status={status} />
+          ) : (
+            <>
+              <div className="money-row">
+                <span>
+                  <strong>{formatINR(raised)}</strong> of {formatINR(campaign.goalAmount)}
+                </span>
+                <span>{percent}%</span>
+              </div>
+              <ProgressBar value={percent} />
+            </>
+          )}
+        </div>
+      </Link>
+    )
+  }
   return (
-    <Link to={`/campaigns/${campaign.id}`} className="campaign-card">
-      <div className="campaign-card-media">
-        <CoverArt id={campaign.coverImageId} />
+    <Link to={`/campaigns/${campaign.id}`} className="campaign-tile">
+      <div className="campaign-tile-media">
+        <CampaignCover campaign={campaign} />
         <StatusBadge status={status} />
       </div>
-      <div className="campaign-card-body">
+      <div className="campaign-tile-body">
+        <p className="muted small">{campaign.organizerName}</p>
         <h3>{campaign.title}</h3>
-        <p className="organizer">{campaign.organizerName}</p>
-        {status === 'scheduled' ? (
-          <p className="scheduled-note">Opens {new Date(campaign.opensAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</p>
-        ) : (
-          <div className="raised-line">
-            <span>
-              <strong>{formatINR(raised)}</strong> raised of {formatINR(campaign.goalAmount)}
-            </span>
-            <b>{percent}%</b>
-          </div>
-        )}
-        <ProgressBar value={percent} muted={status === 'scheduled' || status === 'closed'} />
-        <div className="card-foot">
-          <span>{supporters} demo contributions</span>
-          <span>Demo data</span>
+        <div className="money-row">
+          <span>
+            <strong>{formatINR(raised)}</strong> of {formatINR(campaign.goalAmount)}
+          </span>
+          <span>{percent}%</span>
         </div>
+        <ProgressBar value={percent} muted={status === 'scheduled' || status === 'closed'} />
+        <p className="muted small">{supporters === 1 ? '1 contribution' : `${supporters} contributions`}</p>
       </div>
     </Link>
   )

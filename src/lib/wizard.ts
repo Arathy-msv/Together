@@ -1,5 +1,6 @@
 import { makeAccessCode } from './campaigns.ts'
 import { fromDatetimeLocal, toDatetimeLocal } from './format.ts'
+import { isGameType } from './games.ts'
 import type { Campaign, CampaignForm } from './types.ts'
 
 export const WIZARD_KEY = 'together.wizard.v1'
@@ -13,6 +14,8 @@ export function blankForm(): CampaignForm {
     title: '',
     description: '',
     coverImageId: 'library',
+    coverImageData: '',
+    logoData: '',
     organizerName: 'Community Organizer',
     access: 'open',
     accessCode: makeAccessCode(),
@@ -24,6 +27,7 @@ export function blankForm(): CampaignForm {
     autoCloseOnGoal: true,
     direct: true,
     game: true,
+    gameType: 'garden',
   }
 }
 
@@ -33,6 +37,8 @@ export function campaignToForm(campaign: Campaign): CampaignForm {
     title: campaign.title,
     description: campaign.description,
     coverImageId: campaign.coverImageId,
+    coverImageData: campaign.coverImageData ?? '',
+    logoData: campaign.logoData ?? '',
     organizerName: campaign.organizerName,
     access: campaign.access,
     accessCode: campaign.accessCode ?? makeAccessCode(),
@@ -44,6 +50,7 @@ export function campaignToForm(campaign: Campaign): CampaignForm {
     autoCloseOnGoal: campaign.autoCloseOnGoal,
     direct: campaign.participation.direct,
     game: campaign.participation.game,
+    gameType: isGameType(campaign.gameType) ? campaign.gameType : 'garden',
   }
 }
 
@@ -56,6 +63,8 @@ export function formToCampaign(form: CampaignForm, options: { isDraft: boolean; 
     title: form.title.trim(),
     description: form.description.trim(),
     coverImageId: form.coverImageId || 'library',
+    coverImageData: form.coverImageId === 'upload' && form.coverImageData ? form.coverImageData : undefined,
+    logoData: form.logoData || undefined,
     organizerName: form.organizerName.trim() || 'Community Organizer',
     access: form.access,
     accessCode: form.access === 'closed' ? form.accessCode.trim().toUpperCase() : undefined,
@@ -66,7 +75,7 @@ export function formToCampaign(form: CampaignForm, options: { isDraft: boolean; 
     closesAt: closesAt || new Date(Date.now() + 30 * 86_400_000).toISOString(),
     autoCloseOnGoal: form.autoCloseOnGoal,
     participation: { direct: form.direct, game: form.game },
-    gameType: 'garden',
+    gameType: isGameType(form.gameType) ? form.gameType : 'garden',
     createdAt: options.existing?.createdAt ?? new Date().toISOString(),
     manualClosedAt: options.isDraft ? undefined : options.existing?.manualClosedAt,
     isDraft: options.isDraft,
@@ -87,6 +96,9 @@ export function readWizard(): WizardSnapshot | null {
     const snapshot = parsed as WizardSnapshot
     if (!snapshot.form || typeof snapshot.form !== 'object') return null
     if (snapshot.step !== 1 && snapshot.step !== 2 && snapshot.step !== 3) return null
+    if (!isGameType(snapshot.form.gameType)) snapshot.form.gameType = 'garden'
+    if (typeof snapshot.form.coverImageData !== 'string') snapshot.form.coverImageData = ''
+    if (typeof snapshot.form.logoData !== 'string') snapshot.form.logoData = ''
     return snapshot
   } catch {
     return null
@@ -94,7 +106,14 @@ export function readWizard(): WizardSnapshot | null {
 }
 
 export function writeWizard(snapshot: WizardSnapshot): void {
-  sessionStorage.setItem(WIZARD_KEY, JSON.stringify(snapshot))
+  try {
+    sessionStorage.setItem(WIZARD_KEY, JSON.stringify(snapshot))
+  } catch {
+    sessionStorage.setItem(
+      WIZARD_KEY,
+      JSON.stringify({ ...snapshot, form: { ...snapshot.form, coverImageData: '', logoData: '' } }),
+    )
+  }
 }
 
 export function clearWizard(): void {
@@ -112,25 +131,13 @@ export function validateStory(form: CampaignForm): FormErrors {
   if (description.length < 20) errors.description = 'Tell a little more of the story (at least 20 characters).'
   else if (description.length > 1000) errors.description = 'Keep the story to 1,000 characters or fewer.'
   if (!form.coverImageId) errors.coverImageId = 'Choose a cover image.'
+  else if (form.coverImageId === 'upload' && !form.coverImageData) errors.coverImageId = 'Upload a cover image, or pick a template.'
   if (form.organizerName.trim().length < 2) errors.organizerName = 'Add an organiser name.'
-  return errors
-}
-
-export function validateSettings(form: CampaignForm): FormErrors {
-  const errors: FormErrors = {}
   const goal = Number(form.goalAmount)
   if (!/^\d+$/.test(form.goalAmount.trim()) || !Number.isFinite(goal) || goal <= 0) {
-    errors.goalAmount = 'Enter a target amount greater than zero.'
+    errors.goalAmount = 'Enter a fundraising goal greater than zero.'
   } else if (goal > 100_000_000) {
-    errors.goalAmount = 'Choose a smaller demonstration target.'
-  }
-  if (!form.opensAt) errors.opensAt = 'Choose an opening date and time.'
-  if (!form.closesAt) errors.closesAt = 'Choose a closing date and time.'
-  if (form.opensAt && form.closesAt) {
-    const open = new Date(form.opensAt).getTime()
-    const close = new Date(form.closesAt).getTime()
-    if (Number.isNaN(open) || Number.isNaN(close)) errors.closesAt = 'Use a valid date and time.'
-    else if (close <= open) errors.closesAt = 'Closing time needs to be after opening time.'
+    errors.goalAmount = 'Choose a smaller demonstration goal.'
   }
   if (form.donationMode === 'fixed') {
     if (form.fixedAmounts.length === 0) errors.fixedAmounts = 'Add at least one suggested amount.'
@@ -139,10 +146,23 @@ export function validateSettings(form: CampaignForm): FormErrors {
     }
   }
   if (form.access === 'closed' && form.accessCode.trim().length < 4) {
-    errors.accessCode = 'Closed demo campaigns need a code of at least 4 characters.'
+    errors.accessCode = 'Private campaigns need a demo access code of at least 4 characters.'
+  }
+  return errors
+}
+
+export function validateSettings(form: CampaignForm): FormErrors {
+  const errors: FormErrors = {}
+  if (!form.opensAt) errors.opensAt = 'Choose an opening date and time.'
+  if (!form.closesAt) errors.closesAt = 'Choose a closing date and time.'
+  if (form.opensAt && form.closesAt) {
+    const open = new Date(form.opensAt).getTime()
+    const close = new Date(form.closesAt).getTime()
+    if (Number.isNaN(open) || Number.isNaN(close)) errors.closesAt = 'Use a valid date and time.'
+    else if (close <= open) errors.closesAt = 'Closing time needs to be after opening time.'
   }
   if (!form.direct && !form.game) {
-    errors.form = 'Choose direct giving, the garden game, or both.'
+    errors.form = 'Choose direct giving, a game, or both.'
   }
   return errors
 }

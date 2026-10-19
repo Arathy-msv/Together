@@ -32,12 +32,10 @@ export function ExplorePage() {
   }, [views, query, filter])
 
   return (
-    <div className="page">
-      <div className="section-head">
-        <div>
-          <h1>Explore campaigns</h1>
-          <p>Open a campaign, try a simulated contribution, or plant something in the garden game.</p>
-        </div>
+    <div className="container page-pad">
+      <div className="page-title">
+        <h1>Explore campaigns</h1>
+        <p className="muted">Give directly or play a short game to support a cause.</p>
       </div>
       <div className="toolbar">
         <label className="search-field">
@@ -63,12 +61,12 @@ export function ExplorePage() {
         </div>
       </div>
       {visible.length === 0 ? (
-        <div className="empty-state">
+        <div className="panel empty">
           <h2>No campaigns match that search</h2>
-          <p>Try another word, or reset the filter to see the full demo set.</p>
+          <p className="muted">Try another word, or reset the filter to see every campaign.</p>
           <button
             type="button"
-            className="btn btn-secondary"
+            className="btn btn-outline"
             onClick={() => {
               setQuery('')
               setFilter('all')
@@ -78,7 +76,7 @@ export function ExplorePage() {
           </button>
         </div>
       ) : (
-        <div className="card-grid">
+        <div className="tile-grid">
           {visible.map((view) => (
             <CampaignCard key={view.campaign.id} view={view} />
           ))}

@@ -379,3 +379,234 @@ legend { font-weight: 800; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+.play-shell { min-height: 100vh; background: #f7f4ec; display: flex; flex-direction: column; }
+.play-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 22px;
+  background: rgba(255, 252, 247, 0.92);
+  border-bottom: 1px solid rgba(228, 221, 208, 0.7);
+}
+.play-nav { display: flex; gap: 22px; }
+.play-nav a { text-decoration: none; font-weight: 800; color: #5d6f66; padding-bottom: 6px; }
+.play-nav a.active { color: #16352c; box-shadow: inset 0 -2px 0 #1b4a3c; }
+.play-header-actions { display: flex; align-items: center; gap: 14px; }
+.play-header-actions a { color: #3e564c; font-weight: 800; text-decoration: none; }
+.demo-pill.sun { background: #f6c445; color: #16352c; }
+.play-stage { position: relative; flex: 1; min-height: 640px; }
+.scene { position: absolute; inset: 0; background-position: center; background-size: cover; }
+.scene-garden { background-image: url('/games/garden-bg.jpg'); }
+.scene-memory { background-image: url('/games/memory-bg.jpg'); }
+.scene-puzzle { background-image: linear-gradient(rgba(255, 248, 236, 0.28), rgba(255, 248, 236, 0.28)), url('/games/puzzle-art.jpg'); }
+.play-copy { position: absolute; z-index: 2; color: #14352c; }
+.scene-garden .play-copy { left: 4%; top: 6%; max-width: 420px; }
+.scene-memory .play-copy, .scene-puzzle .play-copy { left: 50%; top: 4%; transform: translateX(-50%); text-align: center; width: min(560px, 70%); }
+.play-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 252, 247, 0.88);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-weight: 800;
+  font-size: 0.82rem;
+  margin-bottom: 8px;
+}
+.play-copy h1 {
+  font-family: var(--font);
+  font-weight: 800;
+  font-size: clamp(2rem, 4vw, 3.1rem);
+  letter-spacing: -0.03em;
+  text-shadow: 0 1px 0 rgba(255,255,255,.65);
+}
+.play-copy p { font-weight: 700; color: #24483d; }
+.play-side { position: absolute; z-index: 3; top: 18px; right: 18px; width: min(250px, 28vw); }
+.hud-card {
+  background: rgba(255, 252, 247, 0.96);
+  border-radius: 22px;
+  padding: 16px;
+  box-shadow: 0 16px 40px rgba(22, 53, 44, 0.12);
+}
+.hud-card h2 { font-size: 1.15rem; margin-bottom: 8px; }
+.hud-count { display: flex; align-items: center; gap: 8px; font-weight: 800; color: #1b4a3c; }
+.hud-count i { width: 16px; height: 16px; border-radius: 50%; background: radial-gradient(circle at 40% 40%, #d6e86a, #1b4a3c); }
+.hud-flowers { display: flex; gap: 8px; margin: 10px 0; }
+.hud-flowers span { width: 36px; height: 36px; border-radius: 50%; background: #f3f0e6; display: grid; place-items: center; }
+.hud-card p { color: #4d6258; font-weight: 700; font-size: 0.92rem; }
+.hud-label { color: #6d7f76; font-size: 0.85rem; margin-top: 8px; }
+.hud-big { font-size: 1.8rem; font-weight: 800; color: #16352c; line-height: 1; }
+.hud-big span { font-size: 1rem; color: #6d7f76; }
+.replay {
+  margin-top: 12px;
+  width: 100%;
+  border: 0;
+  background: #f4f0e6;
+  border-radius: 999px;
+  padding: 10px 12px;
+  font-weight: 800;
+}
+.preview-toggle { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; font-weight: 800; }
+.soil-plots {
+  position: absolute;
+  left: 21.5%;
+  width: 57%;
+  top: 57.5%;
+  height: 15%;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4%;
+  z-index: 2;
+}
+.soil-plot { border: 0; background: transparent; border-radius: 12px; display: grid; place-items: center; }
+.soil-plot.active { box-shadow: inset 0 0 0 3px rgba(246, 196, 69, 0.95), 0 0 0 6px rgba(246, 196, 69, 0.28); background: rgba(246, 196, 69, 0.12); }
+.flower-dock {
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  bottom: 4%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 252, 247, 0.96);
+  border-radius: 26px;
+  padding: 10px;
+  box-shadow: 0 12px 30px rgba(22, 53, 44, 0.16);
+}
+.dock-flower {
+  width: 84px;
+  border: 1.5px solid transparent;
+  background: #fff;
+  border-radius: 16px;
+  padding: 6px 6px 8px;
+  display: grid;
+  justify-items: center;
+  font-weight: 800;
+  font-size: 0.78rem;
+}
+.dock-flower.selected { border-color: #e7a317; box-shadow: 0 0 0 3px rgba(246, 196, 69, 0.45); }
+.plant-btn {
+  margin-left: 8px;
+  border: 0;
+  background: #f6c445;
+  color: #16352c;
+  font-weight: 800;
+  border-radius: 999px;
+  padding: 14px 18px;
+}
+.memory-grid {
+  position: absolute;
+  left: 50%;
+  top: 54%;
+  transform: translate(-50%, -50%);
+  width: min(560px, 62%);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  background: rgba(255, 252, 247, 0.78);
+  padding: 16px;
+  border-radius: 28px;
+  z-index: 2;
+}
+.mem-card { border: 0; background: transparent; padding: 0; perspective: 800px; }
+.mem-inner { display: block; position: relative; aspect-ratio: 1; transition: transform 0.45s ease; transform-style: preserve-3d; }
+.mem-card.up .mem-inner { transform: rotateY(180deg); }
+.mem-back, .mem-face {
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  backface-visibility: hidden;
+}
+.mem-back {
+  background:
+    radial-gradient(circle at 20% 30%, #8fcb6a 0 7px, transparent 8px),
+    radial-gradient(circle at 70% 60%, #f6c445 0 5px, transparent 6px),
+    radial-gradient(circle at 40% 75%, #fff 0 4px, transparent 5px),
+    #1b4a3c;
+}
+.mem-face { transform: rotateY(180deg); background: #fffaf2 center/cover no-repeat; }
+.puzzle-panel {
+  position: absolute;
+  left: 50%;
+  top: 54%;
+  transform: translate(-50%, -46%);
+  width: min(640px, 68%);
+  z-index: 2;
+}
+.puzzle-board {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  background: rgba(255, 252, 247, 0.92);
+  padding: 14px;
+  border-radius: 28px;
+  position: relative;
+}
+.puzzle-board.preview { background-image: url('/games/puzzle-art.jpg'); background-size: cover; background-position: center; }
+.puzzle-board.preview .puzzle-slot { background: rgba(255, 252, 247, 0.28); }
+.puzzle-slot {
+  border: 0;
+  background: rgba(243, 239, 230, 0.9);
+  border-radius: 16px;
+  aspect-ratio: 4 / 3;
+  padding: 0;
+  overflow: hidden;
+}
+.puzzle-slot.wrong { animation: shake 0.35s linear; }
+.puzzle-bit { display: block; width: 100%; height: 100%; border-radius: 14px; }
+.puzzle-bit.tray {
+  width: 112px;
+  height: 84px;
+  border: 3px solid transparent;
+  box-shadow: 0 8px 18px rgba(22, 53, 44, 0.16);
+}
+.puzzle-bit.tray.selected { border-color: #f6c445; }
+.puzzle-tray {
+  margin-top: 12px;
+  min-height: 108px;
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  background: rgba(255, 252, 247, 0.9);
+  border-radius: 24px;
+  padding: 12px;
+}
+.play-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  padding: 14px 28px 4px;
+  color: #1b4a3c;
+  font-weight: 800;
+}
+.play-foot p { display: flex; align-items: center; gap: 8px; }
+.play-foot span { color: #6d7f76; font-size: 0.88rem; font-weight: 700; }
+.play-give {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 16px;
+  padding: 8px 20px 20px;
+  flex-wrap: wrap;
+}
+.play-give .amount-picker { margin: 0; }
+.play-give .label, .play-give label { margin: 0 0 6px; }
+@keyframes shake {
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+@media (max-width: 900px) {
+  .play-header { flex-wrap: wrap; }
+  .play-nav { order: 3; width: 100%; }
+  .play-side { position: static; width: auto; margin: 12px; }
+  .play-stage { min-height: 0; display: flex; flex-direction: column; }
+  .scene { position: relative; min-height: 560px; }
+  .play-copy, .scene-memory .play-copy, .scene-puzzle .play-copy { position: relative; left: auto; top: auto; transform: none; padding: 16px; width: auto; text-align: left; }
+  .memory-grid, .puzzle-panel { position: relative; left: auto; top: auto; transform: none; width: auto; margin: 12px; }
+  .flower-dock { position: relative; left: auto; bottom: auto; transform: none; margin: 12px; flex-wrap: wrap; }
+  .soil-plots { top: auto; bottom: 18%; }
+}

@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { CoverArt, Icon, ScenicBand } from '../components/illustrations.tsx'
+import { CampaignCover } from '../components/CampaignImage.tsx'
+import { Icon } from '../components/illustrations.tsx'
 import { useCampaignView } from '../hooks/useDemoStore.ts'
 import { addContribution, toView } from '../lib/campaigns.ts'
+import { gameMeta } from '../lib/games.ts'
 import { formatINR } from '../lib/format.ts'
 import { clearPending, getPending } from '../lib/pending.ts'
 import { loadStore } from '../lib/storage.ts'
@@ -41,7 +43,7 @@ export function ConfirmPage() {
       return
     }
     if (current.method === 'game' && !campaign.participation.game) {
-      setError('The garden game is not open on this campaign.')
+      setError('Game-based giving is not open on this campaign.')
       return
     }
     if (campaign.donationMode === 'fixed' && !campaign.fixedAmounts.includes(current.amount)) {
@@ -54,83 +56,108 @@ export function ConfirmPage() {
     }
     lock.current = true
     setSubmitting(true)
-    const saved = addContribution({
-      id: current.token,
-      campaignId: campaign.id,
-      amount: current.amount,
-      method: current.method,
-      detail: current.detail,
-    })
-    clearPending()
-    navigate(`/campaigns/${campaign.id}/success/${saved.id}`)
+    try {
+      const saved = addContribution({
+        id: current.token,
+        campaignId: campaign.id,
+        amount: current.amount,
+        method: current.method,
+        detail: current.detail,
+      })
+      clearPending()
+      navigate(`/campaigns/${campaign.id}/success/${saved.id}`)
+    } catch (problem) {
+      lock.current = false
+      setSubmitting(false)
+      setError(problem instanceof Error ? problem.message : 'The contribution could not be saved.')
+    }
   }
 
+  const backPath =
+    pending?.method === 'game' ? `/campaigns/${campaign.id}/play/${campaign.gameType}` : `/campaigns/${campaign.id}`
+
   return (
-    <div className="page confirm-page">
-      <header className="confirm-head">
-        <h1>Confirm your demo contribution</h1>
-        <p>No payment details needed. No money will be collected.</p>
-      </header>
-      <section className="confirm-card">
-        <div className="confirm-story">
-          <CoverArt id={campaign.coverImageId} />
-          <h2>{campaign.title}</h2>
-          <p className="organizer">{campaign.organizerName}</p>
-          <p>{campaign.description}</p>
-        </div>
-        <div className="confirm-summary">
-          {pending ? (
-            <>
-              <dl>
+    <div className="confirm-page-pro">
+      <div className="confirm-bar">
+        <Link to={backPath} className="back-link">
+          <Icon name="back" size={16} />
+          Back to campaign
+        </Link>
+      </div>
+      <div className="container narrow">
+        <header className="center-head">
+          <h1>Confirm your contribution</h1>
+          <p className="muted">
+            You’re about to make a simulated contribution to support this campaign.
+            <br />
+            Please review the details below and confirm.
+          </p>
+        </header>
+        {pending ? (
+          <>
+            <section className="panel confirm-summary-card">
+              <div className="confirm-campaign">
+                <CampaignCover campaign={campaign} />
                 <div>
-                  <dt>Contribution</dt>
-                  <dd>{formatINR(pending.amount)}</dd>
+                  <span className="eyebrow-label">Campaign</span>
+                  <h2>{campaign.title}</h2>
+                  <p className="muted small">{campaign.organizerName}</p>
                 </div>
-                <div>
-                  <dt>Total simulated amount</dt>
-                  <dd>{formatINR(pending.amount)}</dd>
-                </div>
-                <div>
-                  <dt>Payment method</dt>
-                  <dd>{pending.method === 'game' ? 'Game-based giving (illustrative)' : 'Direct donation (illustrative)'}</dd>
-                </div>
-              </dl>
-              {pending.detail ? <p className="hint">{pending.detail}</p> : null}
-              <div className="confirm-note">
-                <Icon name="check" size={16} />
-                Confirm once to add this contribution to demo progress.
               </div>
-              {error ? <p className="field-error">{error}</p> : null}
-              <button type="button" className="btn btn-primary btn-block" disabled={submitting} onClick={confirm}>
-                {submitting ? 'Saving demo contribution…' : `Confirm simulated contribution — ${formatINR(pending.amount)}`}
-                {submitting ? null : <Icon name="arrow" size={16} />}
-              </button>
+              <div className="confirm-amount">
+                <div className="money-row">
+                  <span className="eyebrow-label">Contribution</span>
+                  <span className="sim-pill">Simulated payment</span>
+                </div>
+                <strong className="amount-big">{formatINR(pending.amount)}</strong>
+                <p className="muted small">
+                  {pending.method === 'game' ? `Via ${gameMeta(campaign.gameType).name}` : 'Direct donation'}
+                </p>
+                <div className="money-row total">
+                  <span>Total</span>
+                  <strong>{formatINR(pending.amount)}</strong>
+                </div>
+              </div>
+            </section>
+            {pending.detail ? <p className="muted small center">{pending.detail}</p> : null}
+            {error ? (
+              <div className="notice error" role="alert">
+                {error}
+              </div>
+            ) : null}
+            <button type="button" className="btn btn-primary btn-block btn-xl" disabled={submitting} onClick={confirm}>
+              {submitting ? 'Saving…' : `Confirm demo contribution — ${formatINR(pending.amount)}`}
+            </button>
+            <button type="button" className="link-button center-block" onClick={() => navigate(backPath)}>
+              Cancel
+            </button>
+            <div className="notice warn compact center-notice">
+              <Icon name="info" size={18} />
+              No payment details required. No payment will be collected.
+            </div>
+            <div className="presenter-row-pro">
+              <span className="muted small">For presenters</span>
               <button
                 type="button"
-                className="text-button center-button"
-                onClick={() => navigate(pending.method === 'game' ? `/campaigns/${campaign.id}/play` : `/campaigns/${campaign.id}`)}
+                className="btn btn-outline btn-sm danger-outline"
+                onClick={() => setError('This simulated payment did not go through. No progress was updated.')}
               >
-                Cancel and return
+                Simulate failed payment
               </button>
-              <div className="presenter-row">
-                <span>For presenters (optional)</span>
-                <button type="button" className="fail-button" onClick={() => setError('This simulated payment did not go through. No demo progress was updated.')}>
-                  Simulate failed payment
-                </button>
-              </div>
-            </>
-          ) : (
-            <div className="empty-state">
-              <h2>Nothing is waiting to confirm</h2>
-              <p>Choose an amount on the campaign page. If you already confirmed, that simulated contribution is already included in the campaign progress.</p>
-              <Link to={`/campaigns/${campaign.id}`} className="btn btn-primary">
-                Back to campaign
-              </Link>
             </div>
-          )}
-        </div>
-      </section>
-      <ScenicBand />
+          </>
+        ) : (
+          <div className="panel empty">
+            <h2>Nothing is waiting to confirm</h2>
+            <p className="muted">
+              Choose an amount on the campaign page. If you already confirmed, that contribution is already included.
+            </p>
+            <Link to={`/campaigns/${campaign.id}`} className="btn btn-primary">
+              Back to campaign
+            </Link>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
