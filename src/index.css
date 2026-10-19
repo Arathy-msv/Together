@@ -464,8 +464,9 @@ legend { font-weight: 800; }
 .hud-count { display: flex; align-items: center; gap: 8px; font-weight: 800; color: #1b4a3c; }
 .hud-count i { width: 16px; height: 16px; border-radius: 50%; background: radial-gradient(circle at 40% 40%, #d6e86a, #1b4a3c); flex: none; }
 .hud-flowers { display: flex; gap: 8px; margin: 12px 0; }
-.hud-flowers span { width: 38px; height: 38px; border-radius: 50%; background: #f0ebe0; display: grid; place-items: center; }
+.hud-flowers span { width: 38px; height: 38px; border-radius: 50%; background: #f0ebe0; display: grid; place-items: center; overflow: hidden; }
 .hud-flowers span.filled { background: #fff4d0; }
+.hud-flowers img { width: 140%; height: 140%; object-fit: cover; object-position: center 12%; }
 .hud-card p { color: #4d6258; font-weight: 700; font-size: 0.9rem; }
 .hud-label { color: #6d7f76; font-size: 0.84rem; margin-top: 10px; font-weight: 700; }
 .hud-label:first-child { margin-top: 0; }
@@ -516,17 +517,30 @@ legend { font-weight: 800; }
   z-index: 2;
 }
 .soil-plot {
+  position: relative;
   border: 0;
   background: transparent;
   border-radius: 14px;
-  display: grid;
-  place-items: center;
   padding: 0;
+  overflow: visible;
 }
 .soil-plot.active {
   box-shadow: inset 0 0 0 3px rgba(246, 196, 69, 0.98), 0 0 0 5px rgba(246, 196, 69, 0.22);
   background: rgba(246, 196, 69, 0.1);
 }
+.garden-plant {
+  position: absolute;
+  left: 50%;
+  bottom: -4%;
+  width: 145%;
+  height: auto;
+  transform: translateX(-50%);
+  pointer-events: none;
+  filter: drop-shadow(0 12px 8px rgba(30, 20, 8, 0.22));
+  z-index: 4;
+}
+.garden-plant.marigold { width: 155%; bottom: -2%; }
+.garden-plant.lavender { width: 120%; bottom: 0; }
 .flower-dock {
   position: absolute;
   z-index: 3;
@@ -554,6 +568,7 @@ legend { font-weight: 800; }
   font-size: 0.78rem;
   color: #16352c;
 }
+.dock-flower img { width: 46px; height: 46px; object-fit: cover; object-position: center 8%; }
 .dock-flower.selected { border-color: #e7a317; box-shadow: 0 0 0 3px rgba(246, 196, 69, 0.4); background: #fffaf0; }
 .dock-divider {
   width: 1px;

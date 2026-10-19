@@ -1,7 +1,13 @@
 import { useState } from 'react'
-import { FlowerGlyph, LeafMark } from '../../components/illustrations.tsx'
+import { LeafMark } from '../../components/illustrations.tsx'
 import { describePlanting, FLOWER_OPTIONS, readGarden, writeGarden } from '../../lib/pending.ts'
 import type { CampaignView, FlowerKind } from '../../lib/types.ts'
+
+const PLANTS: Record<FlowerKind, string> = {
+  sunflower: '/games/plant-sunflower.png',
+  marigold: '/games/plant-marigold.png',
+  lavender: '/games/plant-lavender.png',
+}
 import { GameFrame, GameTitle } from './GameFrame.tsx'
 
 export function GardenGame({ view, preview = false }: { view: CampaignView; preview?: boolean }) {
@@ -53,7 +59,7 @@ export function GardenGame({ view, preview = false }: { view: CampaignView; prev
           <div className="hud-flowers">
             {spots.map((item, index) => (
               <span key={index} className={item ? 'filled' : ''}>
-                {item ? <FlowerGlyph kind={item} size={28} /> : null}
+                {item ? <img src={PLANTS[item]} alt="" /> : null}
               </span>
             ))}
           </div>
@@ -71,11 +77,11 @@ export function GardenGame({ view, preview = false }: { view: CampaignView; prev
             <button
               key={index}
               type="button"
-              className={index === active ? 'soil-plot active' : 'soil-plot'}
+              className={!item && index === active ? 'soil-plot active' : 'soil-plot'}
               onClick={() => plantAt(index)}
               aria-label={item ? `Change the flower in plot ${index + 1}` : `Plant a ${flower} in plot ${index + 1}`}
             >
-              {item ? <FlowerGlyph kind={item} size={86} /> : null}
+              {item ? <img className={`garden-plant ${item}`} src={PLANTS[item]} alt="" /> : null}
             </button>
           ))}
         </div>
@@ -87,7 +93,7 @@ export function GardenGame({ view, preview = false }: { view: CampaignView; prev
               className={flower === option.id ? 'dock-flower selected' : 'dock-flower'}
               onClick={() => setFlower(option.id)}
             >
-              <FlowerGlyph kind={option.id} size={46} />
+              <img src={PLANTS[option.id]} alt="" />
               <span>{option.name}</span>
             </button>
           ))}
