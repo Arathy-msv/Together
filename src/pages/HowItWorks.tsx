@@ -1,129 +1,280 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { Icon } from '../components/illustrations.tsx'
 import { GAME_THUMBS, GAMES } from '../lib/games.ts'
 
-const ORGANISER = [
-  {
-    title: 'Tell the story',
-    text: 'Add a title, a short description, and a cover. Choose a photo template or upload your own, and add an organisation logo if you have one.',
-  },
-  {
-    title: 'Set how people take part',
-    text: 'Choose a fundraising goal and suggested amounts, or let supporters enter their own. Pick an open or private group, and choose one game — or direct giving only.',
-  },
-  {
-    title: 'Choose the dates',
-    text: 'Set when the campaign opens and closes. You can close it automatically once the goal is reached. Save a draft and come back, or continue to review.',
-  },
-  {
-    title: 'Publish and share',
-    text: 'Creating a campaign saves it in this browser. From My campaigns, copy the demo link, view the page, close it, or delete it along with its simulated contributions.',
-  },
+const SUPPORTER_STEPS = [
+  { title: 'Open the campaign', text: 'Discover the cause and the people behind it.' },
+  { title: 'Give directly or play first', text: 'Enjoy a free game, or go straight to a contribution.' },
+  { title: 'Choose your amount', text: 'Review the amount before confirming.' },
+  { title: 'See your thank-you', text: 'Successful demo contributions update campaign progress.' },
 ]
 
-const SUPPORTER = [
+const FAQ = [
   {
-    title: 'Open the campaign',
-    text: 'The link shows the cover, story, organiser, goal, and progress. A private campaign asks for the demo access code first. That code is not real access control.',
+    q: 'Do I have to play before contributing?',
+    a: 'No. You can donate directly or enjoy the game first. Playing is optional.',
   },
   {
-    title: 'Give directly',
-    text: 'Choose a suggested amount or enter one, then continue to the confirmation screen. Nothing is collected until you confirm, and no payment details are asked for.',
+    q: 'Does playing charge me?',
+    a: 'No. Games are free. The total changes only when you confirm a simulated contribution.',
   },
   {
-    title: 'Or play first',
-    text: 'The campaign’s game is free. Planting, matching, puzzling, or a short gesture does not change the total. When you finish, you can still choose a simulated contribution.',
+    q: 'Can a campaign be private?',
+    a: 'Yes. Private campaigns ask for a demo access code. It is a demonstration only, not secure access control.',
   },
   {
-    title: 'See the progress move',
-    text: 'A successful confirmation updates the amount raised, the supporter count, and the progress bar. The thank-you page shows the amount and a demo reference number.',
+    q: 'Are vouchers available?',
+    a: 'Not yet. Voucher rewards are planned and shown as coming soon.',
+    soon: true,
   },
 ]
 
 export function HowItWorksPage() {
+  const [openFaq, setOpenFaq] = useState(0)
+
   useEffect(() => {
     document.title = 'How it works — Together'
   }, [])
 
   return (
-    <div className="container page-pad how">
-      <header className="how-hero">
-        <p className="eyebrow-label">How Together works</p>
-        <h1>Create a cause. Share a link. Give, or play first.</h1>
-        <p className="lead">
-          Together is a browser-only demonstration. Organisers publish a campaign. Supporters open it, contribute directly or through a short game, and confirm a simulated gift. No account and no real payment.
-        </p>
-        <div className="actions">
-          <Link to="/create?new=1" className="btn btn-primary btn-lg">
-            Create a campaign
-          </Link>
-          <Link to="/explore" className="btn btn-outline btn-lg">
-            Explore campaigns
-          </Link>
+    <div className="how2">
+      <section className="container how2-hero">
+        <div>
+          <p className="how2-eyebrow">Simple to start. Joyful to join.</p>
+          <h1>Good causes. Simple steps.</h1>
+          <p className="how2-lead">
+            Create a campaign, invite your community, and give people a meaningful way to take part.
+          </p>
+          <div className="how2-actions">
+            <Link to="/create?new=1" className="btn btn-primary btn-lg">
+              Create a campaign <Icon name="arrow" size={16} />
+            </Link>
+            <Link to="/explore" className="btn btn-outline btn-lg">
+              Explore campaigns
+            </Link>
+          </div>
         </div>
-      </header>
-
-      <section className="how-paths">
-        <article className="panel how-path">
-          <p className="eyebrow-label">For organisers</p>
-          <h2>From an idea to a shareable page</h2>
-          <ol>
-            {ORGANISER.map((step, index) => (
-              <li key={step.title}>
-                <span>{index + 1}</span>
-                <div>
-                  <h3>{step.title}</h3>
-                  <p>{step.text}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
-        </article>
-        <article className="panel how-path">
-          <p className="eyebrow-label">For supporters</p>
-          <h2>From a link to a confirmed gift</h2>
-          <ol>
-            {SUPPORTER.map((step, index) => (
-              <li key={step.title}>
-                <span>{index + 1}</span>
-                <div>
-                  <h3>{step.title}</h3>
-                  <p>{step.text}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
-        </article>
+        <div className="how2-collage" aria-hidden="true">
+          <article className="collage-card c1">
+            <img src="/covers/cover-garden.jpg" alt="" />
+            <span className="collage-tag">Demo campaign</span>
+            <div>
+              <strong>A brighter, greener tomorrow</strong>
+              <p>Helping our community’s kids grow greener spaces.</p>
+              <span className="mini-bar"><i style={{ width: '62%' }} /></span>
+            </div>
+          </article>
+          <article className="collage-card c2">
+            <div className="c2-title">
+              <strong>Grow together</strong>
+              <p>Plant seeds of kindness.</p>
+            </div>
+            <img src={GAME_THUMBS.garden} alt="" />
+          </article>
+          <div className="collage-badge">
+            <span>
+              <Icon name="check" size={18} />
+            </span>
+            Demo contribution confirmed
+          </div>
+        </div>
       </section>
 
-      <section className="how-games">
-        <div className="section-title">
-          <h2>Games you can attach to a campaign</h2>
-          <p className="muted">Pick one while creating the campaign. You can preview it before publishing.</p>
-        </div>
-        <div className="how-game-grid">
-          {GAMES.map((game) => (
-            <article key={game.id} className="how-game">
-              <img src={GAME_THUMBS[game.id]} alt="" />
+      <section className="container how2-section">
+        <h2>For organisers</h2>
+        <p className="muted">From your idea to one campaign link.</p>
+        <div className="org-cards">
+          <article className="org-card">
+            <header>
+              <b>01</b>
               <div>
-                <h3>{game.name}</h3>
-                <p>{game.hint}</p>
+                <h3>Tell your story</h3>
+                <p>Add your cause, cover image and fundraising goal.</p>
               </div>
+            </header>
+            <div className="mock mock-story">
+              <div className="mock-fields">
+                <span className="mock-label">Campaign title</span>
+                <span className="mock-input">A brighter greener tomorrow</span>
+                <span className="mock-label">Your story</span>
+                <span className="mock-line" />
+                <span className="mock-line short" />
+              </div>
+              <img src="/covers/cover-garden.jpg" alt="" />
+            </div>
+          </article>
+          <article className="org-card">
+            <header>
+              <b>02</b>
+              <div>
+                <h3>Choose how people join</h3>
+                <p>Enable direct giving and choose a playful experience.</p>
+              </div>
+            </header>
+            <div className="mock mock-join">
+              <div className="mock-games">
+                <span className="mock-game selected">
+                  <img src={GAME_THUMBS.garden} alt="" /> Garden game
+                </span>
+                <span className="mock-game">
+                  <img src={GAME_THUMBS.puzzle} alt="" /> Puzzle game
+                </span>
+              </div>
+              <div>
+                <span className="mock-label">Suggested amounts</span>
+                <div className="mock-amounts">
+                  <span>₹100</span>
+                  <span className="on">₹250</span>
+                  <span>₹500</span>
+                </div>
+                <span className="mock-toggle">
+                  Enable a game <i />
+                </span>
+              </div>
+            </div>
+          </article>
+          <article className="org-card">
+            <header>
+              <b>03</b>
+              <div>
+                <h3>Share and follow progress</h3>
+                <p>Copy your demo link and see confirmed simulated contributions.</p>
+              </div>
+            </header>
+            <div className="mock mock-share">
+              <span className="mock-label">Your campaign link (demo)</span>
+              <span className="mock-input link">
+                together.local/campaigns/green-tomorrow <Icon name="copy" size={14} />
+              </span>
+              <span className="mock-label">Campaign progress (demo)</span>
+              <span className="mini-bar gold">
+                <i style={{ width: '58%' }} />
+              </span>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section className="how2-supporters">
+        <div className="container supporters-grid">
+          <div>
+            <h2>For supporters</h2>
+            <p className="muted">A few moments. A shared purpose.</p>
+            <ol className="supporter-steps">
+              {SUPPORTER_STEPS.map((step, index) => (
+                <li key={step.title}>
+                  <span>{index + 1}</span>
+                  <div>
+                    <h3>{step.title}</h3>
+                    <p>{step.text}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </div>
+          <div className="game-showcase">
+            <div className="game-shot">
+              <img src={GAME_THUMBS.garden} alt="The Grow Our Garden game" />
+              <span className="free-pill">
+                <Icon name="game" size={14} /> Free to play
+              </span>
+            </div>
+            <div className="game-shot-foot">
+              <span className="btn btn-primary btn-block">
+                Choose a contribution <Icon name="arrow" size={16} />
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="container how2-section">
+        <h2>Games your campaign can use</h2>
+        <p className="muted">Pick one when you create a campaign, and preview it before you publish.</p>
+        <div className="games-rail">
+          {GAMES.map((game) => (
+            <article key={game.id} className="rail-game">
+              <img src={GAME_THUMBS[game.id]} alt="" />
+              <span className={game.style === 'flow' ? 'rail-chip calm' : 'rail-chip'}>
+                {game.style === 'flow' ? 'Gesture' : 'Playful'}
+              </span>
+              <h3>{game.name}</h3>
+              <p>{game.hint}</p>
             </article>
           ))}
         </div>
       </section>
 
-      <section className="panel how-rules">
-        <h2>What the demo will and won’t do</h2>
-        <ul>
-          <li>Campaigns and gifts stay in this browser. Refreshing keeps them. Another device will not see them.</li>
-          <li>A campaign accepts gifts only while it is active: after it opens, before it closes, and before it is closed by hand or by reaching its goal.</li>
-          <li>Only a confirmed simulated contribution changes the progress. A failed demo payment does not.</li>
-          <li>Playing a game is free. The fundraising total changes only if someone then confirms an amount.</li>
-          <li>Voucher rewards, accounts, and real payments are marked coming soon and are not part of this demo.</li>
-        </ul>
-        <p className="muted small">Reset demo data on My campaigns restores the sample campaigns and clears everything created in this browser.</p>
+      <section className="container trust-row">
+        <div>
+          <span className="trust-icon">
+            <Icon name="heart" size={20} />
+          </span>
+          <div>
+            <strong>Free to play</strong>
+            <p>Enjoy the game with no payment required.</p>
+          </div>
+        </div>
+        <div>
+          <span className="trust-icon">
+            <Icon name="check" size={20} />
+          </span>
+          <div>
+            <strong>You confirm every contribution</strong>
+            <p>You choose the amount before confirming.</p>
+          </div>
+        </div>
+        <div>
+          <span className="trust-icon">
+            <Icon name="chart" size={20} />
+          </span>
+          <div>
+            <strong>Clear campaign progress</strong>
+            <p>See confirmed demo contributions build progress.</p>
+          </div>
+        </div>
+      </section>
+
+      <p className="container demo-note">
+        <Icon name="info" size={16} />
+        This is a browser-only prototype. No real money is collected. Campaigns and progress are saved on this device; demo links do not transfer to another device.
+      </p>
+
+      <section className="container how2-section">
+        <h2>A few things you might wonder</h2>
+        <div className="faq">
+          {FAQ.map((item, index) => {
+            const open = openFaq === index
+            return (
+              <div key={item.q} className={open ? 'faq-item open' : 'faq-item'}>
+                <button type="button" aria-expanded={open} onClick={() => setOpenFaq(open ? -1 : index)}>
+                  <span className="faq-chevron">{open ? '⌄' : '›'}</span>
+                  {item.q}
+                  {item.soon ? <span className="soon-pill">Coming soon</span> : null}
+                </button>
+                {open ? <p>{item.a}</p> : null}
+              </div>
+            )
+          })}
+        </div>
+      </section>
+
+      <section className="container">
+        <div className="cta-band">
+          <div>
+            <h2>Bring your community together.</h2>
+            <p>Start with a cause. Add a little joy.</p>
+          </div>
+          <div className="cta-actions">
+            <Link to="/create?new=1" className="btn btn-light btn-lg">
+              Create a campaign <Icon name="arrow" size={16} />
+            </Link>
+            <Link to="/explore" className="cta-link">
+              Explore campaigns
+            </Link>
+          </div>
+        </div>
       </section>
     </div>
   )

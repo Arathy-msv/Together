@@ -14,6 +14,7 @@ import '@fontsource/figtree/800.css'
 import '@fontsource/caveat/600.css'
 import './index.css'
 import './styles/pro.css'
+import './styles/how.css'
 import './styles/flow.css'
 import App from './App.tsx'
 
