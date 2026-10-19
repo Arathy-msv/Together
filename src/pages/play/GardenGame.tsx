@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { FlowerGlyph } from '../../components/illustrations.tsx'
+import { FlowerGlyph, LeafMark } from '../../components/illustrations.tsx'
 import { describePlanting, FLOWER_OPTIONS, readGarden, writeGarden } from '../../lib/pending.ts'
 import type { CampaignView, FlowerKind } from '../../lib/types.ts'
 import { GameFrame, GameTitle } from './GameFrame.tsx'
@@ -90,7 +90,9 @@ export function GardenGame({ view }: { view: CampaignView }) {
               <span>{option.name}</span>
             </button>
           ))}
+          <span className="dock-divider" aria-hidden="true" />
           <button type="button" className="plant-btn" onClick={plantSelected}>
+            <LeafMark size={18} />
             Plant a flower
           </button>
         </div>

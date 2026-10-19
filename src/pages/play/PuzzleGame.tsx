@@ -63,6 +63,9 @@ export function PuzzleGame({ view }: { view: CampaignView }) {
           <p className="hud-big">
             {placed} <span>of 9</span>
           </p>
+          <div className="hud-progress" aria-hidden="true">
+            <span style={{ width: `${(placed / 9) * 100}%` }} />
+          </div>
           <label className="preview-toggle">
             <span>Show preview</span>
             <button
