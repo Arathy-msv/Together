@@ -405,7 +405,16 @@ legend { font-weight: 800; }
 .demo-pill.sun { background: #f6c445; color: #16352c; border-radius: 999px; padding: 5px 12px; font-weight: 800; }
 .play-stage { position: relative; flex: 1; min-height: min(68vh, 720px); }
 .scene { position: absolute; inset: 0; background-position: center; background-size: cover; background-repeat: no-repeat; }
-.scene-garden { background-image: url('/games/garden-bg.jpg'); }
+.scene-garden {
+  background-image: url('/games/garden-bg.jpg');
+  position: relative;
+  inset: auto;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  height: auto;
+  background-size: 100% 100%;
+}
+.play-stage:has(.scene-garden) { flex: none; min-height: 0; }
 .scene-memory { background-image: url('/games/memory-bg.jpg'); }
 .scene-puzzle {
   background-image:
@@ -508,40 +517,38 @@ legend { font-weight: 800; }
 }
 .soil-plots {
   position: absolute;
-  left: 22%;
-  width: 56%;
-  top: 54.5%;
-  height: 18%;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 3.2%;
+  inset: 0;
   z-index: 2;
 }
 .soil-plot {
-  position: relative;
-  border: 0;
+  position: absolute;
+  border: 2.5px dashed transparent;
   background: transparent;
-  border-radius: 14px;
+  border-radius: 3px;
   padding: 0;
   overflow: visible;
 }
+.soil-plot.plot-0 { left: 27.2%; top: 63.4%; width: 12.6%; height: 8.4%; }
+.soil-plot.plot-1 { left: 44.6%; top: 63.2%; width: 13.2%; height: 8.6%; }
+.soil-plot.plot-2 { left: 63.2%; top: 63.0%; width: 14.0%; height: 8.8%; }
 .soil-plot.active {
-  box-shadow: inset 0 0 0 3px rgba(246, 196, 69, 0.98), 0 0 0 5px rgba(246, 196, 69, 0.22);
-  background: rgba(246, 196, 69, 0.1);
+  border-color: #f6c445;
+  background: rgba(246, 196, 69, 0.16);
+  box-shadow: 0 0 0 1px rgba(246, 196, 69, 0.35);
 }
 .garden-plant {
   position: absolute;
   left: 50%;
-  bottom: -4%;
-  width: 145%;
+  bottom: -12%;
+  width: 168%;
   height: auto;
   transform: translateX(-50%);
   pointer-events: none;
-  filter: drop-shadow(0 12px 8px rgba(30, 20, 8, 0.22));
+  filter: drop-shadow(0 10px 6px rgba(30, 20, 8, 0.2));
   z-index: 4;
 }
-.garden-plant.marigold { width: 155%; bottom: -2%; }
-.garden-plant.lavender { width: 120%; bottom: 0; }
+.garden-plant.marigold { width: 188%; bottom: -4%; }
+.garden-plant.lavender { width: 150%; bottom: -2%; }
 .flower-dock {
   position: absolute;
   z-index: 3;

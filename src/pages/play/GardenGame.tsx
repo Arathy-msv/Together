@@ -77,7 +77,7 @@ export function GardenGame({ view, preview = false }: { view: CampaignView; prev
             <button
               key={index}
               type="button"
-              className={!item && index === active ? 'soil-plot active' : 'soil-plot'}
+              className={`soil-plot plot-${index}${!item && index === active ? ' active' : ''}`}
               onClick={() => plantAt(index)}
               aria-label={item ? `Change the flower in plot ${index + 1}` : `Plant a ${flower} in plot ${index + 1}`}
             >
