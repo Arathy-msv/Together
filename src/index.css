@@ -399,6 +399,7 @@ legend { font-weight: 800; }
   border-bottom: 3px solid transparent;
 }
 .play-nav a.active { color: #16352c; border-bottom-color: #f6c445; }
+.play-nav.single { margin: 0; font-weight: 800; color: #16352c; border-bottom: 2px solid #f6c445; padding-bottom: 4px; }
 .play-header-actions { display: flex; align-items: center; justify-content: flex-end; gap: 14px; }
 .play-header-actions a { color: #3e564c; font-weight: 800; text-decoration: none; }
 .demo-pill.sun { background: #f6c445; color: #16352c; border-radius: 999px; padding: 5px 12px; font-weight: 800; }

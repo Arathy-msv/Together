@@ -25,7 +25,7 @@ export function PlayPage() {
   if (!view.campaign.participation.game) {
     return <Navigate to={`/campaigns/${view.campaign.id}`} replace />
   }
-  if (!isGameType(game)) {
+  if (!isGameType(game) || game !== view.campaign.gameType) {
     return <Navigate to={`/campaigns/${view.campaign.id}/play/${view.campaign.gameType}`} replace />
   }
   if (game === 'memory') return <MemoryGame view={view} />

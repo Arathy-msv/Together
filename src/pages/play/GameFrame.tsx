@@ -1,8 +1,8 @@
 import { useState, type ReactNode } from 'react'
-import { Link, NavLink, useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { AmountPicker } from '../../components/AmountPicker.tsx'
 import { LeafMark } from '../../components/illustrations.tsx'
-import { CARTOON_GAMES, gameMeta } from '../../lib/games.ts'
+import { gameMeta } from '../../lib/games.ts'
 import { parseWholeRupees } from '../../lib/format.ts'
 import { getPending, newToken, setPending } from '../../lib/pending.ts'
 import type { CampaignView, GameType } from '../../lib/types.ts'
@@ -80,17 +80,9 @@ export function GameFrame({
           <span className="demo-pill sun">Preview</span>
         ) : (
           <>
-            <nav className="play-nav" aria-label="Games">
-              {CARTOON_GAMES.map((item) => (
-                <NavLink
-                  key={item}
-                  to={`/campaigns/${campaign.id}/play/${item}`}
-                  className={item === game ? 'active' : ''}
-                >
-                  {item === 'garden' ? 'Garden' : item === 'memory' ? 'Memory Match' : 'Puzzle'}
-                </NavLink>
-              ))}
-            </nav>
+            <p className="play-nav single" aria-current="page">
+              {gameMeta(game).name}
+            </p>
             <div className="play-header-actions">
               <Link to={`/campaigns/${campaign.id}`}>About this campaign</Link>
               <span className="demo-pill sun">Demo</span>

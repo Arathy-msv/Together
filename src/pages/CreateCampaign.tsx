@@ -670,7 +670,7 @@ function GameGallery({
         </label>
         <p className="help">
           {form.game
-            ? `${gameMeta(form.gameType).blurb} Preview any game before publishing.`
+            ? `${gameMeta(form.gameType).name} is the only game supporters will see. Preview it before publishing.`
             : 'Supporters will only see direct giving.'}
         </p>
       </div>
