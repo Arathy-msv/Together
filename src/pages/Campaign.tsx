@@ -6,16 +6,10 @@ import { ProgressBar } from '../components/ProgressBar.tsx'
 import { StatusBadge } from '../components/StatusBadge.tsx'
 import { useCampaignView } from '../hooks/useDemoStore.ts'
 import { formatDateRange, formatINR, parseWholeRupees } from '../lib/format.ts'
-import { gameMeta } from '../lib/games.ts'
+import { GAME_THUMBS, gameMeta } from '../lib/games.ts'
 import { getPending, isUnlocked, newToken, setPending, unlockCampaign } from '../lib/pending.ts'
-import type { CampaignView, GameType } from '../lib/types.ts'
+import type { CampaignView } from '../lib/types.ts'
 import { NotFoundPage } from './NotFound.tsx'
-
-const GAME_THUMBS: Record<GameType, string> = {
-  garden: '/games/garden-bg.jpg',
-  memory: '/games/memory-bg.jpg',
-  puzzle: '/games/puzzle-art.jpg',
-}
 
 export function CampaignPage() {
   const { id = '' } = useParams()
@@ -106,7 +100,14 @@ export function CampaignPage() {
       <section className="panel game-strip">
         {campaign.participation.game ? (
           <>
-            <img src={GAME_THUMBS[campaign.gameType]} alt="" />
+            <img
+              src={
+                campaign.gameType === 'puzzle' && campaign.puzzleImageData
+                  ? campaign.puzzleImageData
+                  : GAME_THUMBS[campaign.gameType]
+              }
+              alt=""
+            />
             <div>
               <h3>{game.name}</h3>
               <p className="muted small">Play a quick game and support this campaign. Playing is free.</p>

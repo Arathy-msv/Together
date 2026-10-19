@@ -81,6 +81,19 @@ export function writeGarden(campaignId: string, flowers: Array<FlowerKind | null
   sessionStorage.setItem(gardenKey(campaignId), JSON.stringify(flowers))
 }
 
+export function clearGarden(campaignId: string): void {
+  sessionStorage.removeItem(gardenKey(campaignId))
+}
+
+/** Clears pending donation, unlock, and garden session data for a campaign. */
+export function clearCampaignSession(campaignId: string): void {
+  const pending = getPending()
+  if (pending?.campaignId === campaignId) clearPending()
+  const unlocked = readUnlocked().filter((id) => id !== campaignId)
+  sessionStorage.setItem(UNLOCK_KEY, JSON.stringify(unlocked))
+  clearGarden(campaignId)
+}
+
 export function flowerLabel(flower: FlowerKind): string {
   switch (flower) {
     case 'sunflower':

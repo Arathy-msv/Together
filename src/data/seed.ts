@@ -82,6 +82,24 @@ export function createSeed(): DemoStore {
       gameType: 'memory',
       createdAt: shiftLocal(-2, 15),
     },
+    {
+      id: 'cmp_access',
+      title: 'Community Access Fund',
+      description:
+        'Help remove everyday barriers in our shared space — ramps, clearer signage, and practical accessibility improvements that welcome everyone in.',
+      coverImageId: 'reading',
+      organizerName: 'Neighbourhood Collective',
+      access: 'open',
+      goalAmount: 30000,
+      donationMode: 'fixed',
+      fixedAmounts: [50, 100, 250],
+      opensAt: shiftLocal(-5, 9),
+      closesAt: shiftLocal(40, 18),
+      autoCloseOnGoal: true,
+      participation: { direct: true, game: true },
+      gameType: 'weight',
+      createdAt: shiftLocal(-6, 10),
+    },
   ]
 
   const contributions: Contribution[] = [

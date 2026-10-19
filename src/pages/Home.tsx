@@ -75,7 +75,7 @@ export function HomePage() {
           </span>
           <div>
             <h3>Interactive experiences</h3>
-            <p>Plant a garden, match cards or finish a puzzle — then choose to contribute.</p>
+            <p>Plant a garden, match cards, finish a puzzle, or try a short gesture game — then choose to contribute.</p>
           </div>
         </article>
         <article>

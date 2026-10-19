@@ -3,7 +3,7 @@ export type DonationMode = 'fixed' | 'custom'
 export type CampaignStatus = 'draft' | 'scheduled' | 'active' | 'completed' | 'closed'
 export type ContributionMethod = 'direct' | 'game'
 export type FlowerKind = 'sunflower' | 'marigold' | 'lavender'
-export type GameType = 'garden' | 'memory' | 'puzzle'
+export type GameType = 'garden' | 'memory' | 'puzzle' | 'weight' | 'page' | 'jacket' | 'pencil'
 
 export interface Participation {
   direct: boolean
@@ -17,6 +17,7 @@ export interface Campaign {
   coverImageId: string
   coverImageData?: string
   logoData?: string
+  puzzleImageData?: string
   organizerName: string
   access: AccessMode
   accessCode?: string
@@ -57,6 +58,7 @@ export interface CampaignForm {
   coverImageId: string
   coverImageData: string
   logoData: string
+  puzzleImageData: string
   organizerName: string
   access: AccessMode
   accessCode: string

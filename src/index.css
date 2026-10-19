@@ -409,7 +409,13 @@ legend { font-weight: 800; }
 .scene-puzzle {
   background-image:
     linear-gradient(rgba(255, 248, 236, 0.22), rgba(255, 248, 236, 0.34)),
-    url('/games/puzzle-art.jpg');
+    var(--puzzle-art, url('/games/puzzle-art.jpg'));
+}
+.play-shell.play-preview {
+  min-height: 560px;
+  max-height: min(80vh, 720px);
+  overflow: auto;
+  border-radius: 12px;
 }
 .play-copy { position: absolute; z-index: 2; color: #14352c; }
 .scene-garden .play-copy { left: 3.5%; top: 5%; max-width: 440px; }
@@ -624,7 +630,7 @@ legend { font-weight: 800; }
   position: relative;
   box-shadow: 0 18px 40px rgba(22, 53, 44, 0.12);
 }
-.puzzle-board.preview { background-image: url('/games/puzzle-art.jpg'); background-size: cover; background-position: center; }
+.puzzle-board.preview { background-size: cover; background-position: center; }
 .puzzle-board.preview .puzzle-slot { background: rgba(255, 252, 247, 0.32); }
 .puzzle-slot {
   border: 1.5px dashed rgba(120, 132, 124, 0.35);

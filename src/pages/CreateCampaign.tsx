@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ChangeEvent, type ReactNode } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { CampaignCover, OrgLogo } from '../components/CampaignImage.tsx'
+import { GamePreviewModal, GameThumb } from '../components/GamePreview.tsx'
 import { Icon } from '../components/illustrations.tsx'
 import { LivePreview } from '../components/LivePreview.tsx'
 import { COVERS, UPLOADED_COVER_ID } from '../data/covers.ts'
@@ -461,63 +462,39 @@ function StoryStep({
         </div>
       </div>
 
-      <div className="two-col">
-        <div className="field">
-          <span className="field-label">Group type</span>
-          <div className="radio-stack">
-            <RadioCard
-              checked={form.access === 'open'}
-              title="Open group"
-              text="Anyone can find and support this campaign."
-              onSelect={() => onChange({ access: 'open' })}
+      <div className="field">
+        <span className="field-label">Group type</span>
+        <div className="radio-stack">
+          <RadioCard
+            checked={form.access === 'open'}
+            title="Open group"
+            text="Anyone can find and support this campaign."
+            onSelect={() => onChange({ access: 'open' })}
+          />
+          <RadioCard
+            checked={form.access === 'closed'}
+            title="Private group"
+            text="Only people with the demo access code can open it."
+            onSelect={() => onChange({ access: 'closed' })}
+          />
+        </div>
+        {form.access === 'closed' ? (
+          <div className="code-field">
+            <label htmlFor="access-code">Demo access code</label>
+            <input
+              id="access-code"
+              value={form.accessCode}
+              maxLength={12}
+              aria-invalid={Boolean(errors.accessCode)}
+              onChange={(event) => onChange({ accessCode: event.target.value.toUpperCase() })}
             />
-            <RadioCard
-              checked={form.access === 'closed'}
-              title="Private group"
-              text="Only people with the demo access code can open it."
-              onSelect={() => onChange({ access: 'closed' })}
-            />
+            <p className="help">A demo code only — not secure access control.</p>
+            {errors.accessCode ? <p className="error-text">{errors.accessCode}</p> : null}
           </div>
-          {form.access === 'closed' ? (
-            <div className="code-field">
-              <label htmlFor="access-code">Demo access code</label>
-              <input
-                id="access-code"
-                value={form.accessCode}
-                maxLength={12}
-                aria-invalid={Boolean(errors.accessCode)}
-                onChange={(event) => onChange({ accessCode: event.target.value.toUpperCase() })}
-              />
-              <p className="help">A demo code only — not secure access control.</p>
-              {errors.accessCode ? <p className="error-text">{errors.accessCode}</p> : null}
-            </div>
-          ) : null}
-        </div>
-        <div className="field">
-          <label className="field-label" htmlFor="game">
-            Choose a game
-          </label>
-          <select
-            id="game"
-            value={form.game ? form.gameType : 'none'}
-            onChange={(event) => {
-              const value = event.target.value
-              if (value === 'none') onChange({ game: false })
-              else onChange({ game: true, gameType: value as GameType })
-            }}
-          >
-            {GAMES.map((game) => (
-              <option key={game.id} value={game.id}>
-                {game.name}
-              </option>
-            ))}
-            <option value="none">No game — direct giving only</option>
-          </select>
-          <p className="help">
-            {form.game ? `${gameMeta(form.gameType).blurb} Free to play; supporters can contribute afterwards.` : 'Supporters will only see direct giving.'}
-          </p>
-        </div>
+        ) : null}
       </div>
+
+      <GameGallery form={form} onChange={onChange} />
     </div>
   )
 }
@@ -664,24 +641,105 @@ function SettingsStep({
             <span className="muted small">Thank-you vouchers from local partners.</span>
           </div>
         </div>
-        {form.game ? (
-          <div className="game-chooser" role="radiogroup" aria-label="Game">
-            {GAMES.map((game) => (
-              <button
-                key={game.id}
-                type="button"
-                role="radio"
-                aria-checked={form.gameType === game.id}
-                className={form.gameType === game.id ? 'game-choice selected' : 'game-choice'}
-                onClick={() => onChange({ gameType: game.id })}
-              >
-                <strong>{game.name}</strong>
-                <span>{game.blurb}</span>
-              </button>
-            ))}
-          </div>
-        ) : null}
+        {form.game ? <GameGallery form={form} onChange={onChange} /> : null}
       </section>
+    </div>
+  )
+}
+
+function GameGallery({
+  form,
+  onChange,
+}: {
+  form: CampaignForm
+  onChange: (patch: Partial<CampaignForm>) => void
+}) {
+  const [previewGame, setPreviewGame] = useState<GameType | null>(null)
+  const puzzle = useImagePicker((data) => onChange({ puzzleImageData: data }), {
+    maxWidth: 1200,
+    maxHeight: 1200,
+    type: 'image/jpeg',
+    quality: 0.82,
+  })
+
+  return (
+    <div className="field game-gallery">
+      <div className="field-label-row">
+        <label className="field-label" id="game-gallery-label">
+          Choose a game
+        </label>
+        <p className="help">
+          {form.game
+            ? `${gameMeta(form.gameType).blurb} Preview any game before publishing.`
+            : 'Supporters will only see direct giving.'}
+        </p>
+      </div>
+      <div className="game-chooser" role="radiogroup" aria-labelledby="game-gallery-label">
+        {GAMES.map((game) => (
+          <div
+            key={game.id}
+            className={form.game && form.gameType === game.id ? 'game-choice selected' : 'game-choice'}
+          >
+            <button
+              type="button"
+              role="radio"
+              aria-checked={form.game && form.gameType === game.id}
+              className="game-choice-main"
+              onClick={() => onChange({ game: true, gameType: game.id })}
+            >
+              <GameThumb
+                gameType={game.id}
+                customSrc={game.id === 'puzzle' && form.puzzleImageData ? form.puzzleImageData : undefined}
+              />
+              <strong>{game.name}</strong>
+              <span>{game.blurb}</span>
+            </button>
+            <button type="button" className="game-preview-btn" onClick={() => setPreviewGame(game.id)}>
+              Preview
+            </button>
+          </div>
+        ))}
+        <button
+          type="button"
+          role="radio"
+          aria-checked={!form.game}
+          className={!form.game ? 'game-choice selected none-choice' : 'game-choice none-choice'}
+          onClick={() => onChange({ game: false })}
+        >
+          <strong>No game</strong>
+          <span>Direct giving only</span>
+        </button>
+      </div>
+
+      {form.game && form.gameType === 'puzzle' ? (
+        <div className="puzzle-upload">
+          {puzzle.input}
+          <div className="puzzle-upload-row">
+            <div>
+              <strong>Puzzle image</strong>
+              <p className="help">Upload a custom image, or keep the default artwork.</p>
+            </div>
+            <div className="inline-actions">
+              <button type="button" className="btn btn-outline btn-sm" onClick={puzzle.open} disabled={puzzle.busy}>
+                {puzzle.busy ? 'Uploading…' : form.puzzleImageData ? 'Replace image' : 'Upload image'}
+              </button>
+              {form.puzzleImageData ? (
+                <button type="button" className="btn btn-outline btn-sm" onClick={() => onChange({ puzzleImageData: '' })}>
+                  Use default
+                </button>
+              ) : null}
+            </div>
+          </div>
+          <div className="puzzle-upload-preview">
+            <img src={form.puzzleImageData || '/games/puzzle-art.jpg'} alt="Puzzle artwork preview" />
+          </div>
+          {puzzle.error ? <p className="error-text">{puzzle.error}</p> : null}
+        </div>
+      ) : null}
+
+      {previewGame ? (
+        <GamePreviewModal form={form} gameType={previewGame} onClose={() => setPreviewGame(null)} />
+      ) : null}
     </div>
   )
 }

@@ -32,7 +32,7 @@ function deal(): MemoryCard[] {
   return cards
 }
 
-export function MemoryGame({ view }: { view: CampaignView }) {
+export function MemoryGame({ view, preview = false }: { view: CampaignView; preview?: boolean }) {
   const [cards, setCards] = useState(deal)
   const [open, setOpen] = useState<string[]>([])
   const [matched, setMatched] = useState<string[]>([])
@@ -74,6 +74,7 @@ export function MemoryGame({ view }: { view: CampaignView }) {
     <GameFrame
       view={view}
       game="memory"
+      preview={preview}
       note={moves > 0 ? `Found ${pairs} of 6 pairs in ${moves} moves.` : undefined}
       side={
         <aside className="hud-card">

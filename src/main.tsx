@@ -13,6 +13,7 @@ import '@fontsource/figtree/700.css'
 import '@fontsource/figtree/800.css'
 import './index.css'
 import './styles/pro.css'
+import './styles/flow.css'
 import App from './App.tsx'
 
 createRoot(document.getElementById('root')!).render(

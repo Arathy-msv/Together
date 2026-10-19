@@ -5,7 +5,7 @@ import { Icon } from '../components/illustrations.tsx'
 import { ProgressBar } from '../components/ProgressBar.tsx'
 import { StatusBadge } from '../components/StatusBadge.tsx'
 import { useCampaignViews } from '../hooks/useDemoStore.ts'
-import { closeCampaign, removeCampaign } from '../lib/campaigns.ts'
+import { closeCampaign, deleteCampaign } from '../lib/campaigns.ts'
 import { formatDate, formatINR } from '../lib/format.ts'
 import { resetStore } from '../lib/storage.ts'
 import type { CampaignView } from '../lib/types.ts'
@@ -18,6 +18,8 @@ export function DashboardPage() {
   const createdId = params.get('created')
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [menuId, setMenuId] = useState<string | null>(null)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [deletedNotice, setDeletedNotice] = useState<string | null>(null)
   const [confirmReset, setConfirmReset] = useState(false)
 
   useEffect(() => {
@@ -44,6 +46,14 @@ export function DashboardPage() {
     window.setTimeout(() => setCopiedId((current) => (current === id ? null : current)), 3000)
   }
 
+  function handleDelete(id: string, title: string) {
+    deleteCampaign(id)
+    setConfirmDeleteId(null)
+    setMenuId(null)
+    setDeletedNotice(`“${title}” was removed from this browser.`)
+    window.setTimeout(() => setDeletedNotice((current) => (current?.includes(title) ? null : current)), 5000)
+  }
+
   return (
     <div className="container page-pad">
       <div className="page-head">
@@ -61,6 +71,13 @@ export function DashboardPage() {
           <Icon name="check" size={18} />
           Campaign created and saved in this browser.
           <Link to={`/campaigns/${createdId}`}>View campaign</Link>
+        </div>
+      ) : null}
+
+      {deletedNotice ? (
+        <div className="notice success" role="status">
+          <Icon name="check" size={18} />
+          {deletedNotice}
         </div>
       ) : null}
 
@@ -98,16 +115,19 @@ export function DashboardPage() {
                   view={view}
                   copied={copiedId === view.campaign.id}
                   menuOpen={menuId === view.campaign.id}
+                  confirmDelete={confirmDeleteId === view.campaign.id}
                   onCopy={() => void copyLink(view.campaign.id)}
-                  onMenu={() => setMenuId((current) => (current === view.campaign.id ? null : view.campaign.id))}
+                  onMenu={() => {
+                    setMenuId((current) => (current === view.campaign.id ? null : view.campaign.id))
+                    setConfirmDeleteId(null)
+                  }}
                   onClose={() => {
                     closeCampaign(view.campaign.id)
                     setMenuId(null)
                   }}
-                  onDiscard={() => {
-                    removeCampaign(view.campaign.id)
-                    setMenuId(null)
-                  }}
+                  onAskDelete={() => setConfirmDeleteId(view.campaign.id)}
+                  onCancelDelete={() => setConfirmDeleteId(null)}
+                  onConfirmDelete={() => handleDelete(view.campaign.id, view.campaign.title)}
                 />
               ))}
             </tbody>
@@ -189,18 +209,24 @@ function Row({
   view,
   copied,
   menuOpen,
+  confirmDelete,
   onCopy,
   onMenu,
   onClose,
-  onDiscard,
+  onAskDelete,
+  onCancelDelete,
+  onConfirmDelete,
 }: {
   view: CampaignView
   copied: boolean
   menuOpen: boolean
+  confirmDelete: boolean
   onCopy: () => void
   onMenu: () => void
   onClose: () => void
-  onDiscard: () => void
+  onAskDelete: () => void
+  onCancelDelete: () => void
+  onConfirmDelete: () => void
 }) {
   const { campaign, raised, percent, supporters, status } = view
   const canClose = !campaign.isDraft && status !== 'closed' && status !== 'completed'
@@ -265,12 +291,23 @@ function Row({
                     Close campaign
                   </button>
                 ) : null}
-                {campaign.isDraft ? (
-                  <button type="button" role="menuitem" className="danger" onClick={onDiscard}>
-                    Discard draft
+                {confirmDelete ? (
+                  <div className="menu-confirm" role="group" aria-label="Confirm delete">
+                    <p className="menu-note">
+                      Delete this campaign and its simulated contributions from this browser? This cannot be undone.
+                    </p>
+                    <button type="button" role="menuitem" className="danger" onClick={onConfirmDelete}>
+                      Yes, delete
+                    </button>
+                    <button type="button" role="menuitem" onClick={onCancelDelete}>
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <button type="button" role="menuitem" className="danger" onClick={onAskDelete}>
+                    {campaign.isDraft ? 'Discard draft' : 'Delete campaign'}
                   </button>
-                ) : null}
-                {!canClose && !campaign.isDraft ? <span className="menu-note">No actions available</span> : null}
+                )}
               </div>
             ) : null}
           </div>

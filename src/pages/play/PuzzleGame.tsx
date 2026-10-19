@@ -3,6 +3,7 @@ import type { CampaignView } from '../../lib/types.ts'
 import { GameFrame, GameTitle } from './GameFrame.tsx'
 
 const PIECES = [0, 1, 2, 3, 4, 5, 6, 7, 8]
+const DEFAULT_ART = '/games/puzzle-art.jpg'
 
 function shuffle(): number[] {
   const pieces = [...PIECES]
@@ -15,21 +16,28 @@ function shuffle(): number[] {
   return pieces
 }
 
-function pieceStyle(index: number): CSSProperties {
+function pieceStyle(index: number, art: string): CSSProperties {
   const column = index % 3
   const row = Math.floor(index / 3)
   return {
-    backgroundImage: 'url(/games/puzzle-art.jpg)',
+    backgroundImage: `url(${art})`,
     backgroundSize: '300% 300%',
     backgroundPosition: `${column * 50}% ${row * 50}%`,
   }
 }
 
-export function PuzzleGame({ view }: { view: CampaignView }) {
+export function PuzzleGame({
+  view,
+  preview = false,
+}: {
+  view: CampaignView
+  preview?: boolean
+}) {
+  const art = view.campaign.puzzleImageData || DEFAULT_ART
   const [tray, setTray] = useState<number[]>(() => shuffle())
   const [board, setBoard] = useState<Array<number | null>>(() => Array(9).fill(null))
   const [picked, setPicked] = useState<number | null>(null)
-  const [preview, setPreview] = useState(false)
+  const [showPreview, setShowPreview] = useState(false)
   const [wrong, setWrong] = useState<number | null>(null)
   const placed = board.filter((piece) => piece != null).length
 
@@ -56,6 +64,7 @@ export function PuzzleGame({ view }: { view: CampaignView }) {
     <GameFrame
       view={view}
       game="puzzle"
+      preview={preview}
       note={placed > 0 ? `Placed ${placed} of 9 puzzle pieces.` : undefined}
       side={
         <aside className="hud-card">
@@ -71,9 +80,9 @@ export function PuzzleGame({ view }: { view: CampaignView }) {
             <button
               type="button"
               role="switch"
-              aria-checked={preview}
-              className={preview ? 'switch on' : 'switch'}
-              onClick={() => setPreview((value) => !value)}
+              aria-checked={showPreview}
+              className={showPreview ? 'switch on' : 'switch'}
+              onClick={() => setShowPreview((value) => !value)}
             >
               <span />
             </button>
@@ -84,10 +93,16 @@ export function PuzzleGame({ view }: { view: CampaignView }) {
         </aside>
       }
     >
-      <div className="scene scene-puzzle">
+      <div
+        className="scene scene-puzzle"
+        style={{ ['--puzzle-art' as string]: `url(${art})` }}
+      >
         <GameTitle game="puzzle" organizer={view.campaign.organizerName} />
         <div className="puzzle-panel">
-          <div className={preview ? 'puzzle-board preview' : 'puzzle-board'}>
+          <div
+            className={showPreview ? 'puzzle-board preview' : 'puzzle-board'}
+            style={showPreview ? { backgroundImage: `url(${art})` } : undefined}
+          >
             {board.map((piece, slot) => (
               <button
                 key={slot}
@@ -96,7 +111,7 @@ export function PuzzleGame({ view }: { view: CampaignView }) {
                 onClick={() => place(slot)}
                 aria-label={piece == null ? `Empty puzzle space ${slot + 1}` : `Puzzle piece ${slot + 1} placed`}
               >
-                {piece == null ? null : <span className="puzzle-bit" style={pieceStyle(piece)} />}
+                {piece == null ? null : <span className="puzzle-bit" style={pieceStyle(piece, art)} />}
               </button>
             ))}
           </div>
@@ -106,7 +121,7 @@ export function PuzzleGame({ view }: { view: CampaignView }) {
                 key={piece}
                 type="button"
                 className={picked === piece ? 'puzzle-bit tray selected' : 'puzzle-bit tray'}
-                style={pieceStyle(piece)}
+                style={pieceStyle(piece, art)}
                 onClick={() => setPicked(piece)}
                 aria-label={`Puzzle piece ${piece + 1}`}
               />

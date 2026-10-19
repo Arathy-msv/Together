@@ -1,4 +1,5 @@
 import { progressPercent } from './format.ts'
+import { clearCampaignSession } from './pending.ts'
 import { loadStore, saveStore } from './storage.ts'
 import type {
   Campaign,
@@ -64,6 +65,12 @@ export function removeCampaign(id: string): void {
   store.campaigns = store.campaigns.filter((campaign) => campaign.id !== id)
   store.contributions = store.contributions.filter((contribution) => contribution.campaignId !== id)
   saveStore(store)
+}
+
+/** Removes a campaign and its contributions, then clears related session data. */
+export function deleteCampaign(id: string): void {
+  removeCampaign(id)
+  clearCampaignSession(id)
 }
 
 export function closeCampaign(id: string): void {

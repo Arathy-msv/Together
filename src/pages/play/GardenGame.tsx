@@ -4,7 +4,7 @@ import { describePlanting, FLOWER_OPTIONS, readGarden, writeGarden } from '../..
 import type { CampaignView, FlowerKind } from '../../lib/types.ts'
 import { GameFrame, GameTitle } from './GameFrame.tsx'
 
-export function GardenGame({ view }: { view: CampaignView }) {
+export function GardenGame({ view, preview = false }: { view: CampaignView; preview?: boolean }) {
   const [flower, setFlower] = useState<FlowerKind>('sunflower')
   const [spots, setSpots] = useState<Array<FlowerKind | null>>(() => readGarden(view.campaign.id))
   const [active, setActive] = useState(() => {
@@ -41,6 +41,7 @@ export function GardenGame({ view }: { view: CampaignView }) {
     <GameFrame
       view={view}
       game="garden"
+      preview={preview}
       note={describePlanting(spots)}
       side={
         <aside className="hud-card">

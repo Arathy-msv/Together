@@ -46,8 +46,18 @@ function normalizeCampaign(campaign: Campaign): Campaign {
   return {
     ...campaign,
     gameType: isGameType(campaign.gameType) ? campaign.gameType : 'garden',
-    coverImageData: typeof campaign.coverImageData === 'string' && campaign.coverImageData.startsWith('data:image/') ? campaign.coverImageData : undefined,
-    logoData: typeof campaign.logoData === 'string' && campaign.logoData.startsWith('data:image/') ? campaign.logoData : undefined,
+    coverImageData:
+      typeof campaign.coverImageData === 'string' && campaign.coverImageData.startsWith('data:image/')
+        ? campaign.coverImageData
+        : undefined,
+    logoData:
+      typeof campaign.logoData === 'string' && campaign.logoData.startsWith('data:image/')
+        ? campaign.logoData
+        : undefined,
+    puzzleImageData:
+      typeof campaign.puzzleImageData === 'string' && campaign.puzzleImageData.startsWith('data:image/')
+        ? campaign.puzzleImageData
+        : undefined,
   }
 }
 

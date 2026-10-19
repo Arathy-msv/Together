@@ -16,6 +16,7 @@ export function blankForm(): CampaignForm {
     coverImageId: 'library',
     coverImageData: '',
     logoData: '',
+    puzzleImageData: '',
     organizerName: 'Community Organizer',
     access: 'open',
     accessCode: makeAccessCode(),
@@ -39,6 +40,7 @@ export function campaignToForm(campaign: Campaign): CampaignForm {
     coverImageId: campaign.coverImageId,
     coverImageData: campaign.coverImageData ?? '',
     logoData: campaign.logoData ?? '',
+    puzzleImageData: campaign.puzzleImageData ?? '',
     organizerName: campaign.organizerName,
     access: campaign.access,
     accessCode: campaign.accessCode ?? makeAccessCode(),
@@ -65,6 +67,7 @@ export function formToCampaign(form: CampaignForm, options: { isDraft: boolean; 
     coverImageId: form.coverImageId || 'library',
     coverImageData: form.coverImageId === 'upload' && form.coverImageData ? form.coverImageData : undefined,
     logoData: form.logoData || undefined,
+    puzzleImageData: form.puzzleImageData || undefined,
     organizerName: form.organizerName.trim() || 'Community Organizer',
     access: form.access,
     accessCode: form.access === 'closed' ? form.accessCode.trim().toUpperCase() : undefined,
@@ -99,6 +102,7 @@ export function readWizard(): WizardSnapshot | null {
     if (!isGameType(snapshot.form.gameType)) snapshot.form.gameType = 'garden'
     if (typeof snapshot.form.coverImageData !== 'string') snapshot.form.coverImageData = ''
     if (typeof snapshot.form.logoData !== 'string') snapshot.form.logoData = ''
+    if (typeof snapshot.form.puzzleImageData !== 'string') snapshot.form.puzzleImageData = ''
     return snapshot
   } catch {
     return null
@@ -111,7 +115,10 @@ export function writeWizard(snapshot: WizardSnapshot): void {
   } catch {
     sessionStorage.setItem(
       WIZARD_KEY,
-      JSON.stringify({ ...snapshot, form: { ...snapshot.form, coverImageData: '', logoData: '' } }),
+      JSON.stringify({
+        ...snapshot,
+        form: { ...snapshot.form, coverImageData: '', logoData: '', puzzleImageData: '' },
+      }),
     )
   }
 }
