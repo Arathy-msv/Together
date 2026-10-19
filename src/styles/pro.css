@@ -418,8 +418,34 @@
 .receipt-facts strong { display: block; font-size: 1.4rem; margin-top: 2px; }
 .center-actions { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
 
+.how-hero { max-width: 42rem; margin-bottom: 36px; }
+.how-hero h1 { font-size: clamp(2.2rem, 4vw, 3.4rem); font-weight: 800; line-height: 1.08; margin: 8px 0 14px; }
+.how-hero .lead { font-size: 1.12rem; color: var(--p-ink-2); margin-bottom: 22px; }
+.how-hero .actions { display: flex; gap: 12px; flex-wrap: wrap; }
+.how-paths { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.how-path { padding: 22px 22px 8px; }
+.how-path h2 { font-size: 1.35rem; margin: 6px 0 16px; }
+.how-path ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; }
+.how-path li { display: grid; grid-template-columns: 32px 1fr; gap: 12px; }
+.how-path li span { width: 32px; height: 32px; border-radius: 50%; background: var(--p-green); color: #fff; display: grid; place-items: center; font-weight: 700; }
+.how-path h3 { font-size: 1rem; margin-bottom: 4px; }
+.how-path p { margin: 0 0 4px; color: var(--p-ink-2); font-size: 0.95rem; }
+.how-games { margin-top: 40px; }
+.how-games .section-title { display: block; }
+.how-games .section-title p { margin-top: 4px; }
+.how-game-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.how-game { background: #fff; border: 1px solid var(--p-line); border-radius: 14px; overflow: hidden; }
+.how-game img { width: 100%; height: 120px; object-fit: cover; display: block; }
+.how-game div { padding: 12px 14px 14px; }
+.how-game h3 { font-size: 1rem; margin-bottom: 4px; }
+.how-game p { margin: 0; color: var(--p-muted); font-size: 0.88rem; }
+.how-rules { margin-top: 28px; padding: 22px 24px; }
+.how-rules h2 { font-size: 1.25rem; margin-bottom: 12px; }
+.how-rules ul { margin: 0 0 12px; padding-left: 18px; display: grid; gap: 8px; color: var(--p-ink-2); }
+.how-rules li { line-height: 1.5; }
+
 @media (max-width: 980px) {
-  .home-hero, .create-grid, .campaign-grid, .review-grid, .confirm-summary-card { grid-template-columns: 1fr; }
+  .home-hero, .create-grid, .campaign-grid, .review-grid, .confirm-summary-card, .how-paths, .how-game-grid { grid-template-columns: 1fr; }
   .feature-campaigns, .tile-grid, .stat-cards, .value-row, .option-grid, .game-chooser { grid-template-columns: 1fr; }
   .value-row article { padding: 12px 0; }
   .value-row article + article { border-left: 0; border-top: 1px solid var(--p-line); }

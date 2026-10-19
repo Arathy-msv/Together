@@ -45,7 +45,7 @@ export function AppShell() {
           </button>
           <nav id="site-nav" className={open ? 'topnav open' : 'topnav'}>
             <NavLink to="/explore">Explore campaigns</NavLink>
-            <Link to="/#how-it-works">How it works</Link>
+            <NavLink to="/how-it-works">How it works</NavLink>
             <NavLink to="/dashboard">My campaigns</NavLink>
             <NavLink to="/create?new=1" className="btn btn-primary btn-sm">
               Create campaign
