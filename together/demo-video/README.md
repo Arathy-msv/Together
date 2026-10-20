@@ -15,6 +15,7 @@ All media goes to ignored folders (`work/` and `output/`); only scripts and docs
 | --- | --- |
 | `output/together-demo.mp4` | Main walkthrough, 1920×1080, 30 fps, H.264 + AAC, soft English subtitles, chapter markers |
 | `output/together-demo.en.srt` | English subtitles |
+| `output/together-presales.mp4` (+ `.en.srt`) | Short presales cut: the scenes listed in `scripts/presales.mjs`, same recording and narration |
 | `output/chapters/NN-<chapter>.mp4` (+ `.en.srt`) | One clip per chapter: opening preview, Platform Admin, Organization Admin, Campaign Organizer, Supporter, Merchant, Delivery and reporting |
 | `output/scene-timings.md` | The narration script with the final start and end time of every scene |
 | `output/assembly-report.json` | Durations, any scenes played faster, and console errors found during recording |
@@ -94,11 +95,36 @@ Edit `narration/script.md`, then rerun all three steps. Scene ids must match
 `scripts/scenes.mjs`; `card-*` scenes are title cards (their text is in `scripts/cards.mjs`).
 Use `{shown|spoken}` when subtitles and speech should differ, e.g. `{₹200|two hundred rupees}`.
 
+## Presales cut
+
+`assemble.mjs` also writes `output/together-presales.mp4` from the scene ids in
+`scripts/presales.mjs`. It reuses the full recording and narration, so there is nothing extra to
+record. Pick scenes whose narration stands on its own (the first sentence names who is acting).
+Assembly stops if a listed id is not in `narration/script.md`.
+
+## Scene checklist
+
+What each part of the walkthrough must show. `scenes.mjs` checks these on screen and fails the
+run instead of recording a wrong result.
+
+| Scenes | Must show |
+| --- | --- |
+| `oa-features` | Recommended settings first, then "Choose individually" to switch features one by one |
+| `oa-publish` | "Your website is ready." with "Create your first campaign" as the next step |
+| `og-assistant`, `og-form` | One setup indicator (Your cause, Goal and dates, Ways to contribute, Review) shared by the assistant and the form |
+| `og-submit`, `og-approve` | Approval does not publish; the campaign stays a draft until "Publish approved campaign" |
+| `op-game`, `sp-direct`, `sp-game` | A labelled choice between "Give an amount" and "Play Memory Match" |
+| `sp-game`, `sp-game-confirm` | Rules up front, nonblocking per-pair feedback, "New board" keeps the suggestion, review from the bar, final amount chosen by the supporter |
+| `sp-vouchers` | Voucher card, full-screen "Show voucher" view, then My activity (contributions, following, vouchers) |
+| `sp-lowdata` | Low-data mode turns on and off |
+| `fn-public` | "Funding goal reached" panel with delivery reported separately; a milestone's linked expense opens the filtered expense list |
+
 ## Video freshness
 
-- Last verified application commit: `575795d`
+- Last verified application commit: `dfbd5d8`
 - Recording date: 2026-10-20
 - Scenes affected by later changes: none
-- Final video: current (`output/together-demo.mp4`, 13:09, with chapter clips and `together-demo.en.srt`)
+- Final video: current (`output/together-demo.mp4`, 13:57, with chapter clips and `together-demo.en.srt`)
+- Presales cut: current (`output/together-presales.mp4`, 4:32, with `together-presales.en.srt`)
 
 Update this section whenever a user-facing change touches the walkthrough. If a scene or the final video could not be re-recorded, list the scene ids here and set the final video to stale, with the blocker.
