@@ -1,0 +1,94 @@
+# Together — narrated demo video
+
+Scripts that record the real running app across all five demo roles, narrate it with a local
+offline voice, and assemble a 1080p walkthrough: "Greenwood School raises funds for school
+supplies."
+
+Everything here runs locally. No video is uploaded or published, and no cloud or paid TTS
+service is called.
+
+## What gets produced
+
+All media goes to ignored folders (`work/` and `output/`); only scripts and docs are committed.
+
+| File | What it is |
+| --- | --- |
+| `output/together-demo.mp4` | Main walkthrough, 1920×1080, 30 fps, H.264 + AAC, soft English subtitles, chapter markers |
+| `output/together-demo.en.srt` | English subtitles |
+| `output/chapters/NN-<chapter>.mp4` (+ `.en.srt`) | One clip per chapter: opening preview, Platform Admin, Organization Admin, Campaign Organizer, Supporter, Merchant, Delivery and reporting |
+| `output/scene-timings.md` | The narration script with the final start and end time of every scene |
+| `output/assembly-report.json` | Durations, any scenes played faster, and console errors found during recording |
+| `narration/script.md` | Editable narration (one line = one subtitle cue) |
+| `FEATURE-STATUS.md` | What works, and what is missing, limited or simulated |
+
+## Requirements
+
+* Node 22 or newer (uses the built-in `WebSocket` and `fetch`)
+* Google Chrome (driven headless through the DevTools protocol)
+* ffmpeg and ffprobe with libx264
+* For narration, either your own recordings or [Piper](https://github.com/OHF-Voice/piper1-gpl):
+
+```bash
+python3 -m venv /tmp/ttsvenv && /tmp/ttsvenv/bin/pip install piper-tts
+mkdir -p /tmp/voices && cd /tmp/voices
+curl -LO https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/ljspeech/high/en_US-ljspeech-high.onnx
+curl -LO https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/ljspeech/high/en_US-ljspeech-high.onnx.json
+```
+
+Override the paths with `PIPER_PYTHON`, `PIPER_VOICE` and `PIPER_LENGTH_SCALE` (default 1.08,
+slightly slower than the voice's natural pace).
+
+## Running it
+
+Start the app first (from the project root): `npm run dev` serves it on http://127.0.0.1:4321.
+Then, from `demo-video/scripts/`:
+
+```bash
+node narrate.mjs     # 1. narration per scene → work/narration (durations, sentence timings)
+node record.mjs      # 2. full recording in a fresh, isolated Chrome profile (about 20 minutes)
+node assemble.mjs    # 3. title cards, clips, subtitles, chapters → output/
+```
+
+Checking flows without capturing video:
+
+```bash
+DRY=1 node record.mjs                     # every scene, fast, one screenshot per scene in work/recording/checks
+DRY=1 FROM=sp-home node record.mjs        # resume from the checkpoint saved before a scene
+DRY=1 UNTIL=oa-publish node record.mjs    # stop after a scene
+```
+
+## How the recording stays isolated and honest
+
+* The recorder starts its own headless Chrome with a throwaway profile in
+  `work/chrome-demo-profile`, wiped before every run. Your normal browser's saved campaigns and
+  contributions are never read or changed.
+* The connected flow (supporter claims a voucher, merchant redeems it) runs in that one browser
+  context, because all data is localStorage-based. The narration says it does not work across
+  devices.
+* Scenes are real clicks and typing in the app (`scripts/scenes.mjs`). The only overlay is a
+  pointer with a click ripple. Steps marked `record: false` prepare demo data off camera with
+  the app's own modules, acting as the person who would do it: the people, last term's campaign,
+  and the later contributions that take the campaign past its target.
+* Every scene checks what the app shows (for example "No payment will be collected.", a second
+  redemption is blocked, the duplicate has no contributions, the final report stays a draft) and
+  the run fails rather than recording a wrong result.
+* Console errors are collected per scene and listed in `output/assembly-report.json`.
+* The video never shows a terminal, developer tools or credentials; the app runs headless.
+
+## Voice and timing
+
+* Voice order: your recording in `narration/recordings/<scene-id>.wav` (or `.mp3`/`.m4a`) wins;
+  otherwise local Piper TTS with one voice for the whole video: `en_US-ljspeech-high`, trained on
+  the public-domain LJ Speech dataset. It does not imitate any specific person.
+* Each scene holds the live screen until its narration has finished (narration length + 1.2 s),
+  so narration is never cut or sped up.
+* Where a scene is much longer than its narration (typing into forms), the screen part plays up
+  to 1.8× faster. The audio is never sped up. Affected scenes are listed in
+  `output/scene-timings.md`.
+* No background music is used.
+
+## Editing the narration
+
+Edit `narration/script.md`, then rerun all three steps. Scene ids must match
+`scripts/scenes.mjs`; `card-*` scenes are title cards (their text is in `scripts/cards.mjs`).
+Use `{shown|spoken}` when subtitles and speech should differ, e.g. `{₹200|two hundred rupees}`.

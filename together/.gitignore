@@ -27,3 +27,4 @@ dist-ssr
 # Demo video build artefacts (large media, browser profiles)
 demo-video/work/
 demo-video/output/
+!demo-video/assets/
