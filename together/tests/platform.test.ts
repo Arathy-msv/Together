@@ -100,3 +100,28 @@ test('demo plans have no prices and state their limits', () => {
     assert.doesNotMatch(JSON.stringify(plan), /[₹$£€]\s?\d/)
   }
 })
+
+test('setup resumes on the right step for both the old six-step and the new four-step flow', async () => {
+  const { resumeSetupStep, SETUP_STEP_COUNT } = await import('../src/lib/website.ts')
+  assert.equal(SETUP_STEP_COUNT, 4)
+  assert.equal(resumeSetupStep(undefined), 1)
+  assert.equal(resumeSetupStep({ step: 2, updatedAt: '' }), 2)
+  assert.equal(resumeSetupStep({ step: 4, updatedAt: '' }), 3)
+  assert.equal(resumeSetupStep({ step: 6, updatedAt: '' }), 4)
+  assert.equal(resumeSetupStep({ step: 4, updatedAt: '', flow: 4 }), 4)
+  assert.equal(resumeSetupStep({ step: 9, updatedAt: '', flow: 4 }), 4)
+})
+
+test('the first-visit checklist is computed from saved state', async () => {
+  const { setupTasks } = await import('../src/lib/website.ts')
+  const fresh = createOrganization('community')
+  const tasks = setupTasks(fresh, 0, `/workspace/${fresh.id}`)
+  assert.deepEqual(tasks.map((task) => task.id), ['details', 'customize', 'publish', 'campaign'])
+  assert.ok(tasks.every((task) => !task.done))
+  assert.equal(tasks[0].to, `/start/${fresh.id}`)
+
+  const maple = loadOrganizations().find((org) => org.slug === 'maple-grove')!
+  const done = setupTasks(maple, 2, `/workspace/${maple.id}`)
+  assert.ok(done.every((task) => task.done))
+  assert.equal(setupTasks(maple, 0, `/workspace/${maple.id}`).find((task) => !task.done)?.id, 'campaign')
+})

@@ -249,3 +249,10 @@ describe('money', () => {
     assert.equal(formatPaise(12050), '₹120.50')
   })
 })
+
+test('the game explanation and action amounts use plain wording', async () => {
+  const { GAME_EXPLANATION, gameActionAmounts } = await import('../src/lib/gameContribution.ts')
+  assert.match(GAME_EXPLANATION, /No payment is taken while you play\.$/)
+  assert.equal(gameActionAmounts('garden', 5000), 'Each completed plant adds ₹50.')
+  assert.match(gameActionAmounts('jacket', 5000), /kindness tag adds ₹25/)
+})
