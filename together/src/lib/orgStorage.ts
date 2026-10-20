@@ -1,4 +1,5 @@
 import { createOrganizationSeed } from '../data/organizations.ts'
+import { recommendedFeatures } from './features.ts'
 import { DEFAULT_ORG_ID, normalizeOrganization } from './organizations.ts'
 import { notifyChange, StorageFullError } from './storage.ts'
 import type { Organization, PlanId } from './types.ts'
@@ -105,8 +106,9 @@ export function createOrganization(planId: PlanId): Organization {
     name: '',
     content: { ...base.content, headline: '', description: '', footerText: '' },
     plan: { id: planId, selectedAt: now },
+    features: recommendedFeatures('school', planId),
     website: { status: 'setup', updatedAt: now },
-    onboarding: { step: 1, updatedAt: now },
+    onboarding: { step: 1, updatedAt: now, flow: 5 },
   }
   org.website.draft = websiteConfigOf(org)
   return saveOrganization(org)

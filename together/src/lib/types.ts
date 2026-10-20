@@ -87,14 +87,31 @@ export interface Organization {
   visibility: OrgVisibility
   /** Selected demo plan. Nothing is billed or enforced in this prototype. */
   plan: { id: PlanId; selectedAt: string }
+  /** Organization activation of optional features (separate from detailed feature settings). */
+  features: OrgFeatures
   website: OrganizationWebsite
-  /** `flow: 4` marks progress saved by the four-step setup; older saves used six steps. */
+  /** `flow: 5` is the current setup (details → features → branding → review → confirm). */
   onboarding?: { step: number; updatedAt: string; flow?: number }
   createdAt: string
   updatedAt: string
 }
 
 export type PlanId = 'starter' | 'community' | 'organization'
+
+/** Optional website features an organization can activate. See lib/features.ts. */
+export type FeatureKey =
+  | 'sponsorPlay'
+  | 'updateCommitments'
+  | 'shareKit'
+  | 'campaignDuplication'
+  | 'reviewApproval'
+  | 'lowDataMode'
+  | 'recordExports'
+  | 'supporterHistory'
+
+export type OrgFeatures = Record<FeatureKey, boolean>
+
+export type ApprovalStatus = 'draft' | 'pending_review' | 'approved' | 'rejected'
 
 /** setup: onboarding unfinished · draft: set up but never published · published: live in this browser. */
 export type WebsiteStatus = 'setup' | 'draft' | 'published'
@@ -144,6 +161,14 @@ export interface Campaign {
   participation: Participation
   gameType: GameType
   gameSettings?: GameContributionSettings
+  /** When true and the organization has sponsorPlay, this campaign offers sponsor-funded play. */
+  sponsorEnabled?: boolean
+  /** Organizer-promised date for the next public update (updateCommitments). */
+  nextUpdateAt?: string
+  /** Review workflow status when the organization has reviewApproval. */
+  approvalStatus?: ApprovalStatus
+  approvalNote?: string
+
   createdAt: string
   manualClosedAt?: string
   isDraft?: boolean
@@ -383,6 +408,8 @@ export interface CampaignForm {
   beneficiary: string
   budget: { id: string; label: string; amount: string }[]
   milestonePlan: { id: string; title: string; due: string }[]
+  sponsorEnabled: boolean
+  nextUpdateAt: string
 }
 
 export interface PendingDonation {

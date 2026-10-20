@@ -214,6 +214,8 @@ function SettingsEditor({ stored, variant }: { stored: Organization; variant: Va
             <p className="small">
               Demo plan: <strong>{demoPlan(stored.plan.id).name}</strong> ·{' '}
               <Link to={`/workspace/${stored.id}/plan`}>View or change plan</Link>
+              {' · '}
+              <Link to={`/workspace/${stored.id}/features`}>Website features</Link>
             </p>
           ) : null}
         </div>

@@ -1076,3 +1076,36 @@ a.ai-button { text-decoration: none; }
 @media (max-width: 760px) {
   .settings-head { position: static; }
 }
+
+/* ---------- Optional website features ---------- */
+
+.feature-heading { font-size: 1.25rem; font-weight: 800; margin: 0 0 6px; }
+.feature-picker { display: grid; gap: 16px; }
+.feature-reco { display: grid; gap: 10px; padding: 12px 14px; border: 1px solid var(--p-line); border-radius: 12px; background: var(--p-surface-2); }
+.feature-reasons { margin: 0; padding-left: 18px; display: grid; gap: 4px; color: var(--p-ink-2); font-size: 0.9rem; }
+.feature-cards { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.feature-card { display: flex; justify-content: space-between; gap: 14px; align-items: flex-start; padding: 14px 16px; border: 1px solid var(--p-line); border-radius: 12px; background: var(--p-surface); }
+.feature-card.on { border-color: var(--org-primary); box-shadow: inset 3px 0 0 var(--org-primary); }
+.feature-card.locked { opacity: 0.72; }
+.feature-card-text { display: grid; gap: 4px; min-width: 0; }
+.feature-card-text p { margin: 0; }
+.feature-toggle { flex: none; display: inline-flex; align-items: center; gap: 8px; font-weight: 800; min-height: 44px; }
+.feature-toggle input { width: 18px; height: 18px; }
+.confirm-subscribe { display: grid; gap: 10px; }
+.confirm-subscribe p { margin: 0; }
+.onboarding-steps { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+html.low-data *, html.low-data *::before, html.low-data *::after { animation: none !important; transition: none !important; }
+html.low-data img:not(.keep-image) { filter: none; }
+html.low-data .hero-stack, html.low-data .play-side { display: none; }
+.share-kit, .export-panel, .history-list, .sponsor-banner { display: grid; gap: 10px; }
+.share-kit-poster { border: 1px dashed var(--p-line); padding: 18px; border-radius: 12px; background: var(--p-surface-2); display: grid; gap: 8px; justify-items: start; }
+.share-kit-poster strong { font-size: 1.2rem; }
+.qr-box { width: 140px; height: 140px; border: 1px solid var(--p-line); border-radius: 8px; display: grid; place-items: center; background: #fff; font-size: 0.75rem; text-align: center; padding: 8px; }
+.low-data-bar { display: flex; justify-content: flex-end; padding: 6px 16px; font-size: 0.85rem; }
+@media (max-width: 980px) {
+  .onboarding-steps { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .feature-card { flex-direction: column; }
+}
+@media (max-width: 640px) {
+  .onboarding-steps { grid-template-columns: 1fr 1fr; }
+}

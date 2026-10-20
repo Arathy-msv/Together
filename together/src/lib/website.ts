@@ -123,13 +123,22 @@ export function sampleWebsiteContent(org: Pick<Organization, 'name' | 'type' | '
   }
 }
 
-export const SETUP_STEP_COUNT = 4
+/** details → features → branding → review → confirm */
+export const SETUP_STEP_COUNT = 5
 
-/** The setup step to resume at. Progress saved by the earlier six-step flow maps onto the new steps. */
+/**
+ * Resume the current five-step setup. Older four-step and six-step progress maps into it
+ * without losing the visitor’s place.
+ */
 export function resumeSetupStep(onboarding: Organization['onboarding']): number {
   const step = onboarding?.step ?? 1
-  if (onboarding?.flow === 4) return Math.min(SETUP_STEP_COUNT, Math.max(1, step))
-  return step <= 2 ? Math.max(1, step) : step <= 5 ? 3 : 4
+  if (onboarding?.flow === 5) return Math.min(SETUP_STEP_COUNT, Math.max(1, step))
+  if (onboarding?.flow === 4) {
+    if (step <= 2) return 1
+    if (step === 3) return 3
+    return 4
+  }
+  return step <= 2 ? 1 : step <= 5 ? 3 : 4
 }
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/

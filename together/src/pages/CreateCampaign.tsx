@@ -9,7 +9,9 @@ import { Icon } from '../components/illustrations.tsx'
 import { LivePreview } from '../components/LivePreview.tsx'
 import { COVERS, UPLOADED_COVER_ID } from '../data/covers.ts'
 import { useAutosave } from '../hooks/useAutosave.ts'
-import { getCampaign, publishCampaign } from '../lib/campaigns.ts'
+import { getCampaign } from '../lib/campaigns.ts'
+import { canUseFeature, campaignNeedsApproval } from '../lib/features.ts'
+import { formCampaignForOrg, publishWithPolicy } from '../lib/featureActions.ts'
 import { deleteDraft, listDrafts, newDraftId, readDraft, saveDraft } from '../lib/drafts.ts'
 import { currencySymbol, formatDateTime, formatINR, setDisplayCurrency } from '../lib/format.ts'
 import { formatPaise, gameConfig } from '../lib/gameContribution.ts'
@@ -21,7 +23,6 @@ import {
   blankForm,
   campaignToForm,
   formGameSettings,
-  formToCampaign,
   gameSettingsFields,
   requiredChecklist,
   validateAll,
@@ -240,18 +241,17 @@ function CreateCampaignEditor({ start }: { start: EditorStart }) {
       return
     }
     const existing = form.id ? getCampaign(form.id) : undefined
-    const campaign = formToCampaign(form, { isDraft: false, existing })
+    const campaign = formCampaignForOrg(form, org, { isDraft: false, existing })
     try {
-      publishCampaign(campaign, form.milestonePlan)
+      const result = publishWithPolicy(campaign, form.milestonePlan)
+      deleteDraft(start.draftId)
+      navigate(`${workspace}/campaigns?${result.mode === 'pending_review' ? 'pending' : 'created'}=${campaign.id}`)
     } catch (error) {
       setNotice({
         tone: 'error',
-        text: error instanceof StorageFullError ? error.message : 'The campaign could not be saved in this browser.',
+        text: error instanceof StorageFullError ? error.message : error instanceof Error ? error.message : 'The campaign could not be saved in this browser.',
       })
-      return
     }
-    deleteDraft(start.draftId)
-    navigate(`${workspace}/campaigns?created=${campaign.id}`)
   }
 
   const copy = STEP_COPY[step]
@@ -344,7 +344,7 @@ function CreateCampaignEditor({ start }: { start: EditorStart }) {
             <span className="eyebrow-label">Preview — how supporters will see it</span>
             <LivePreview form={form} />
             <div className="publish-box">
-              <p className="small">Publishing makes this campaign visible on your organization’s demo website.</p>
+              <p className="small">{campaignNeedsApproval(org) ? 'A reviewer in your organization must approve this campaign before supporters see it.' : 'Publishing makes this campaign visible on your organization’s demo website.'}</p>
               <div className="aside-actions">
                 <button type="button" className="btn btn-outline" onClick={() => goToStep(3)}>
                   Back
@@ -364,7 +364,7 @@ function CreateCampaignEditor({ start }: { start: EditorStart }) {
                   Preview
                 </button>
                 <button type="button" className="btn btn-primary" onClick={publish} disabled={checklist.some((item) => !item.done)}>
-                  Publish campaign
+                  {campaignNeedsApproval(org) ? 'Submit for review' : 'Publish campaign'}
                 </button>
               </div>
             </div>
@@ -807,6 +807,23 @@ function SettingsStep({
             </span>
           </label>
         </section>
+        {canUseFeature(org, 'updateCommitments') ? (
+          <section className="panel form-panel">
+            <Field
+              label="When will you post the next update?"
+              htmlFor="next-update"
+              optional
+              hint="Supporters see this date on the campaign. You can change it later."
+            >
+              <input
+                id="next-update"
+                type="date"
+                value={form.nextUpdateAt}
+                onChange={(event) => onChange({ nextUpdateAt: event.target.value })}
+              />
+            </Field>
+          </section>
+        ) : null}
       </div>
     )
   }
@@ -836,6 +853,23 @@ function SettingsStep({
           />
         </div>
         {errors.form ? <p className="error-text">{errors.form}</p> : null}
+        {canUseFeature(org, 'sponsorPlay') && form.game ? (
+          <label className="toggle-row">
+            <button
+              type="button"
+              role="switch"
+              aria-checked={form.sponsorEnabled}
+              className={form.sponsorEnabled ? 'switch on' : 'switch'}
+              onClick={() => onChange({ sponsorEnabled: !form.sponsorEnabled })}
+            >
+              <span />
+            </button>
+            <span>
+              <strong>Sponsor-funded play for this campaign</strong>
+              <em>Supporters can unlock a suggested contribution from a participating sponsor. Configure the sponsor when you manage the campaign.</em>
+            </span>
+          </label>
+        ) : null}
         {form.game ? <GameGallery form={form} errors={errors} onChange={onChange} org={org} /> : null}
         {form.game ? <GameContributionSettingsPanel form={form} errors={errors} onChange={onChange} /> : null}
       </section>

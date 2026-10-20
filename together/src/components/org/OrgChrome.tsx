@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { canUseFeature } from '../../lib/features.ts'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { orgInitials } from '../../lib/organizations.ts'
 import type { Organization } from '../../lib/types.ts'
@@ -139,6 +140,7 @@ export function OrgFooter({ org, base, workspace, preview = false }: { org: Orga
                 <Link to={`${base}/campaigns`}>Campaigns</Link>
                 <Link to={`${base}/about`}>About</Link>
                 <Link to={`${base}/how-it-works`}>How giving works</Link>
+                {canUseFeature(org, 'supporterHistory') ? <Link to={`${base}/my-history`}>Your contributions</Link> : null}
               </>
             )}
             {links.map((link) =>

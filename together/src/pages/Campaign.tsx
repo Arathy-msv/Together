@@ -17,6 +17,7 @@ import { canHaveSharingPages, shareWorkspacePath } from '../lib/referrals.ts'
 import { campaignMilestones, deliverySummary, latestUpdateDate } from '../lib/transparency.ts'
 import { OrgNotFound } from './org/OrgNotFound.tsx'
 import { formatDate, formatDateRange, formatINR, parseWholeRupees } from '../lib/format.ts'
+import { canUseFeature, campaignUsesSponsor } from '../lib/features.ts'
 import { GAME_EXPLANATION, campaignGameSettings, gameActionAmounts } from '../lib/gameContribution.ts'
 import { gameMeta } from '../lib/games.ts'
 import { getPending, isUnlocked, markGameIntroSeen, newToken, setPending, unlockCampaign } from '../lib/pending.ts'
@@ -140,6 +141,14 @@ function CampaignDetails({ view, referral }: { view: CampaignView; referral?: Re
               <button type="button" className="link-button" onClick={() => openSection('story')}>
                 Read the full story
               </button>
+            </p>
+          ) : null}
+          {canUseFeature(org, 'updateCommitments') && campaign.nextUpdateAt ? (
+            <p className="muted small">Next update expected by {formatDate(campaign.nextUpdateAt)} (organizer commitment).</p>
+          ) : null}
+          {campaignUsesSponsor(org, campaign) ? (
+            <p className="sponsor-banner notice success compact">
+              <strong>Sponsor-funded play is on.</strong> You can unlock a suggested contribution from a participating sponsor, or give directly.
             </p>
           ) : null}
           <div className="mobile-support" aria-label="Campaign progress">
@@ -374,7 +383,8 @@ function GivePanel({
   onContinue: (amount: number) => void
 }) {
   const { campaign } = view
-  const { base } = useOrg()
+  const { org, base } = useOrg()
+  const sponsorPlay = campaignUsesSponsor(org, campaign)
   const [selected, setSelected] = useState<number | null>(() => {
     if (campaign.donationMode !== 'fixed') return null
     const pending = getPending(campaign.id)
@@ -422,6 +432,9 @@ function GivePanel({
           >
             Start playing
           </Link>
+          {sponsorPlay ? (
+            <p className="muted small">A participating sponsor can cover your suggested amount in this demo — continue through the game, then confirm as usual. No real payment is taken.</p>
+          ) : null}
           {campaign.participation.direct ? (
             <button type="button" className="link-button center-block" onClick={() => onTab('direct')}>
               Give directly instead

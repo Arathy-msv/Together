@@ -9,6 +9,8 @@ import { useOrg } from '../../components/org/OrgContext.tsx'
 import { Select, TextArea, TextInput } from '../../components/workspace/fields.tsx'
 import { useCampaignView, useDemoStore } from '../../hooks/useDemoStore.ts'
 import { campaignDetailsPath, closeCampaign } from '../../lib/campaigns.ts'
+import { canUseFeature } from '../../lib/features.ts'
+import { setApprovalStatus } from '../../lib/featureActions.ts'
 import { currencySymbol, formatDate, formatMoney } from '../../lib/format.ts'
 import { parseRupeesToPaise } from '../../lib/gameContribution.ts'
 import { fromDateInput, minorToInput, toDateInput, nowIso } from '../../lib/inputs.ts'
@@ -143,6 +145,21 @@ function Overview({ campaign, view, store }: WorkspaceProps) {
   const fundraisingOpen = !campaign.manualClosedAt && (view.status === 'active' || view.status === 'scheduled')
   return (
     <div className="workspace-grid">
+      {canUseFeature(org, 'reviewApproval') && campaign.approvalStatus === 'pending_review' ? (
+        <section className="panel ws-card wide" aria-labelledby="approval-title">
+          <h2 id="approval-title">Waiting for review</h2>
+          <p className="muted">This campaign is not visible to supporters until someone in your organization approves it. In this demo you can approve it here.</p>
+          <div className="inline-actions">
+            <button type="button" className="btn btn-primary btn-sm" onClick={() => setApprovalStatus(campaign.id, 'approved')}>
+              Approve and publish
+            </button>
+            <button type="button" className="btn btn-outline btn-sm" onClick={() => setApprovalStatus(campaign.id, 'rejected', 'Needs changes before publishing.')}>
+              Send back for edits
+            </button>
+          </div>
+        </section>
+      ) : null}
+
       <section className="panel ws-card wide" aria-labelledby="report-tasks-title">
         <h2 id="report-tasks-title">Keep supporters informed</h2>
         <ul className="status-lines">

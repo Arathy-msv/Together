@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useOrganizations } from '../../hooks/useOrganizations.ts'
+import { FEATURE_CARDS } from '../../lib/features.ts'
 import { DEMO_PLANS, demoPlan } from '../../lib/plans.ts'
 import { createOrganization } from '../../lib/orgStorage.ts'
 import { StorageFullError } from '../../lib/storage.ts'
@@ -58,6 +59,12 @@ export function PlansPage() {
             <ul>
               {plan.features.map((feature) => (
                 <li key={feature}>{feature}</li>
+              ))}
+            </ul>
+            <h3>Optional features included</h3>
+            <ul>
+              {plan.optionalFeatures.map((key) => (
+                <li key={key}>{FEATURE_CARDS.find((card) => card.key === key)?.name ?? key}</li>
               ))}
             </ul>
             <h3>Limits</h3>

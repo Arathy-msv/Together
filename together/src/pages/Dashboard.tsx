@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { CampaignCover } from '../components/CampaignImage.tsx'
 import { Icon } from '../components/illustrations.tsx'
 import { ProgressBar } from '../components/ProgressBar.tsx'
@@ -7,6 +7,8 @@ import { StatusBadge } from '../components/StatusBadge.tsx'
 import { useOrg } from '../components/org/OrgContext.tsx'
 import { useCampaignViews } from '../hooks/useDemoStore.ts'
 import { closeCampaign, deleteCampaign } from '../lib/campaigns.ts'
+import { canUseFeature } from '../lib/features.ts'
+import { duplicateCampaign, exportOrganizationRecords } from '../lib/featureActions.ts'
 import { formatDate, formatDateTime, formatINR, formatMoney } from '../lib/format.ts'
 import { gameMeta } from '../lib/games.ts'
 import { clearGameData } from '../lib/gameLedger.ts'
@@ -30,7 +32,9 @@ export function DashboardPage() {
   const { org, base, workspace } = useOrg()
   const [params] = useSearchParams()
   const createdId = params.get('created')
+  const pendingId = params.get('pending')
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [actionError, setActionError] = useState('')
   const [menuId, setMenuId] = useState<string | null>(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const [deletedNotice, setDeletedNotice] = useState<string | null>(null)
@@ -101,6 +105,51 @@ export function DashboardPage() {
             </Link>
           </div>
         </section>
+      ) : null}
+
+      {pendingId && views.some((view) => view.campaign.id === pendingId) ? (
+        <section className="panel ready-card" role="status" aria-labelledby="pending-title">
+          <span className="success-pill">Waiting for review</span>
+          <h2 id="pending-title">Submitted for review.</h2>
+          <p className="muted">
+            “{views.find((view) => view.campaign.id === pendingId)?.campaign.title}” needs approval before it appears on your website. Open Manage to approve it in this demo.
+          </p>
+          <Link to={`${workspace}/campaigns/${pendingId}`} className="btn btn-primary">
+            Manage campaign
+          </Link>
+        </section>
+      ) : null}
+
+      {actionError ? (
+        <div className="notice error" role="alert">
+          {actionError}
+        </div>
+      ) : null}
+
+      {canUseFeature(org, 'recordExports') ? (
+        <div className="inline-actions" style={{ marginBottom: 12 }}>
+          <button
+            type="button"
+            className="btn btn-outline btn-sm"
+            onClick={() => {
+              try {
+                const json = exportOrganizationRecords(org)
+                const blob = new Blob([json], { type: 'application/json' })
+                const url = URL.createObjectURL(blob)
+                const link = document.createElement('a')
+                link.href = url
+                link.download = `${org.slug || 'organization'}-records.json`
+                link.click()
+                URL.revokeObjectURL(url)
+                setActionError('')
+              } catch (error) {
+                setActionError(error instanceof Error ? error.message : 'Export is not available.')
+              }
+            }}
+          >
+            Export campaign records
+          </button>
+        </div>
       ) : null}
 
       {deletedNotice ? (
@@ -287,8 +336,11 @@ function Row({
   onCancelDelete: () => void
   onConfirmDelete: () => void
 }) {
+  const { org } = useOrg()
+  const navigate = useNavigate()
   const { campaign, raised, percent, supporters, status } = view
   const canClose = !campaign.isDraft && status !== 'closed' && status !== 'completed'
+  const canReuse = canUseFeature(org, 'campaignDuplication') && !campaign.isDraft
   const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -367,6 +419,23 @@ function Row({
             </button>
             {menuOpen ? (
               <div className="menu" role="menu">
+                {canReuse ? (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      try {
+                        const copy = duplicateCampaign(campaign)
+                        onDismiss()
+                        navigate(`${workspace}/campaigns/new?draft=${copy.id}`)
+                      } catch (error) {
+                        window.alert(error instanceof Error ? error.message : 'Could not reuse this campaign.')
+                      }
+                    }}
+                  >
+                    Reuse this campaign
+                  </button>
+                ) : null}
                 {canClose ? (
                   <button type="button" role="menuitem" onClick={onClose}>
                     Close campaign
@@ -397,3 +466,4 @@ function Row({
     </tr>
   )
 }
+

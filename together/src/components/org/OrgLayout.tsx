@@ -5,6 +5,7 @@ import { useOrganizations } from '../../hooks/useOrganizations.ts'
 import { DEFAULT_BRANDING } from '../../lib/theme.ts'
 import { isPreviewingWebsite, isPubliclyAvailable, previewOrganization, setWebsitePreview, websiteStatusLabel, workspacePath } from '../../lib/website.ts'
 import { OrgNotFound } from '../../pages/org/OrgNotFound.tsx'
+import { LowDataToggle } from './LowDataToggle.tsx'
 import { OrgFooter, OrgHeader } from './OrgChrome.tsx'
 import { OrgContext, orgContextValue, useOrg } from './OrgContext.tsx'
 
@@ -79,6 +80,7 @@ export function OrgLayout() {
         </a>
         {banner}
         <OrgHeader org={shown} base={value.base} />
+        <LowDataToggle org={shown} />
         <main id="main">
           <Outlet />
         </main>

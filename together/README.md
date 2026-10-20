@@ -25,6 +25,23 @@ npm test
 
 `npm test` runs the contribution rules, stage gating, checkout, organization, theming, storage migration, assistant, referral attribution, fund summary, trust, draft and AI-preview tests with Node’s built-in test runner.
 
+## Optional website features
+
+Organizations choose which optional features to activate during setup (and later under **Settings → Website features**). A feature is usable only when it is implemented on the platform, included in the selected demo plan, and turned on for that organization. Checks go through `canUseFeature` in `src/lib/features.ts` — hiding a button alone is not enough.
+
+| Key | What it adds |
+| --- | --- |
+| `sponsorPlay` | Sponsor-funded play on campaigns that opt in |
+| `updateCommitments` | Next-update date for supporters |
+| `shareKit` | QR/poster/message kit (basic copy-link always stays) |
+| `campaignDuplication` | Reuse a past campaign as a template |
+| `reviewApproval` | Submit for review before publish |
+| `lowDataMode` | Optional low-data page switch |
+| `recordExports` | Download JSON records from this browser |
+| `supporterHistory` | Device-local contribution history |
+
+Baseline accessibility, copy-link sharing and individual receipts are never optional upgrades. Disabling a feature that would break an active sponsorship or review is blocked with an explanation; other disables stop new use and keep history.
+
 ## The three journeys
 
 Every screen has one primary action, and advanced settings stay folded away until needed.
@@ -48,7 +65,7 @@ Together is now a platform where companies, schools, clubs and nonprofits each g
 | Organization workspace | `/workspace/:organizationId/overview`, `/website`, `/campaigns`, `/campaigns/new`, `/campaigns/:campaignId/:tab`, `/assistant`, `/settings`, `/plan` | Navigation: Overview, My website, Campaigns, Settings, plus a Help menu (setup checklist, demo plan, how giving works) |
 
 - **Demo plans:** three sample plans with features and illustrative limits. They have no prices. New websites start on the Community plan; change it any time under Settings. Confirmation is simulated: no payment, billing, renewals or invoices, and limits are not enforced.
-- **Setup:** four steps (your organization, website address, look and content, review and publish with desktop/mobile preview). Step 3 asks only for a main colour and homepage photo; **Use sample content** fills the text, and logo, fonts, footer and fundraising defaults sit under **Customize more**. Progress autosaves; clicking **Create your website** again resumes your unfinished setup, and setups saved in the older six-step format resume on the matching new step. Website addresses are lowercase, unique ignoring case, and can’t use reserved platform names.
+- **Setup:** choose a demo plan, then five steps (organization details including website address, website features, look and content, review selections, confirm simulated subscription and publish). Branding asks for a main colour and homepage photo first; **Use sample content** fills the text, and logo, fonts, footer and fundraising defaults sit under **Customize more**. Progress autosaves; unfinished setups resume, including older four-step and six-step progress mapped onto the current flow. Website addresses are lowercase, unique ignoring case, and can’t use reserved platform names.
 - **Website lifecycle:** *Setup in progress* → *Draft* → *Published*. The public site always uses the published settings. In the website editor, *Save draft*, *Preview changes*, *Publish changes* and *Discard unpublished changes* work on a separate draft. Organizer preview is a labelled demo control on this device only. Publishing a website never publishes campaign drafts. Before the first publish, the public address shows an “isn’t published yet” page.
 - **Website addresses are locked once published**, so shared links keep working.
 - **Isolation:** campaigns, sharing pages, drafts and totals are filtered by `organizationId`. A campaign or referral code under the wrong organization address shows not found. The demo organization switcher appears only in the workspace, never on public sites.

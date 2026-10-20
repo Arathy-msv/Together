@@ -88,6 +88,7 @@ export function WorkspaceLayout() {
               <div className="ws-help-menu">
                 <Link to={`${root}/overview?checklist=1`}>Setup checklist</Link>
                 <Link to={`${root}/plan`}>Your demo plan</Link>
+                <Link to={`${root}/features`}>Website features</Link>
                 <Link to={`/o/${org.slug}/how-it-works`}>How giving works for supporters</Link>
                 <p className="muted small">Everything is saved on this device only.</p>
               </div>

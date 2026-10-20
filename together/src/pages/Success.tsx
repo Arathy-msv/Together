@@ -5,7 +5,8 @@ import { Icon } from '../components/illustrations.tsx'
 import { ProgressBar } from '../components/ProgressBar.tsx'
 import { useCampaignView, useDemoStore } from '../hooks/useDemoStore.ts'
 import { campaignPlayPath, goalReached } from '../lib/campaigns.ts'
-import { useOrgBase } from '../components/org/OrgContext.tsx'
+import { useOrg, useOrgBase } from '../components/org/OrgContext.tsx'
+import { rememberContribution } from './org/SupporterHistory.tsx'
 import { GoalGesture } from '../components/GoalGesture.tsx'
 import { formatDate, formatDateTime, formatINR } from '../lib/format.ts'
 import { useCampaignBackPath } from '../hooks/useBackPath.ts'
@@ -18,6 +19,7 @@ export function SuccessPage() {
   const { id = '', contributionId = '' } = useParams()
   const view = useCampaignView(id)
   const base = useOrgBase()
+  const { org } = useOrg()
   const store = useDemoStore()
   const backPath = useCampaignBackPath(id)
   const [following, setFollowingState] = useState(() => Boolean(followedAt(id)))
@@ -26,6 +28,10 @@ export function SuccessPage() {
   useEffect(() => {
     document.title = 'Contribution successful — Together'
   }, [])
+
+  useEffect(() => {
+    if (contribution) rememberContribution(org.id, contribution.id)
+  }, [org.id, contribution])
 
   if (!view) return <NotFoundPage />
   if (!contribution) {

@@ -84,6 +84,8 @@ export function blankForm(org: OrgFormContext = FALLBACK_CONTEXT): CampaignForm 
     gameType,
     ...gameSettingsFields(gameType),
     ...emptyStoryFields(),
+    sponsorEnabled: false,
+    nextUpdateAt: '',
   }
 }
 
@@ -103,6 +105,8 @@ export function completeForm(form: Partial<CampaignForm> & Pick<CampaignForm, 'o
   if (!Array.isArray(merged.fixedAmounts)) merged.fixedAmounts = base.fixedAmounts
   if (!isGameType(merged.gameType)) merged.gameType = 'garden'
   if (!isCurrencyCode(merged.currency)) merged.currency = 'INR'
+  if (typeof merged.sponsorEnabled !== 'boolean') merged.sponsorEnabled = false
+  if (typeof merged.nextUpdateAt !== 'string') merged.nextUpdateAt = ''
   for (const key of ['title', 'description', 'storyWho', 'storyNeed', 'storySupports', 'storyNext', 'beneficiary', 'coverImageData', 'logoData', 'puzzleImageData'] as const) {
     if (typeof merged[key] !== 'string') merged[key] = ''
   }
@@ -141,6 +145,8 @@ export function campaignToForm(campaign: Campaign): CampaignForm {
     beneficiary: campaign.story?.beneficiary ?? '',
     budget: (campaign.budget ?? []).map((line) => ({ id: line.id, label: line.label, amount: paiseToInput(line.amountMinor) })),
     milestonePlan: [],
+    sponsorEnabled: Boolean(campaign.sponsorEnabled),
+    nextUpdateAt: campaign.nextUpdateAt ? campaign.nextUpdateAt.slice(0, 10) : '',
   }
 }
 
@@ -178,6 +184,10 @@ export function formToCampaign(form: CampaignForm, options: { isDraft: boolean; 
     participation: { direct: form.direct, game: form.game },
     gameType: isGameType(form.gameType) ? form.gameType : 'garden',
     gameSettings: form.game ? formGameSettings(form) : options.existing?.gameSettings,
+    sponsorEnabled: form.sponsorEnabled || undefined,
+    nextUpdateAt: form.nextUpdateAt.trim() ? new Date(`${form.nextUpdateAt.trim()}T12:00:00`).toISOString() : undefined,
+    approvalStatus: options.existing?.approvalStatus,
+    approvalNote: options.existing?.approvalNote,
     createdAt: options.existing?.createdAt ?? new Date().toISOString(),
     manualClosedAt: options.isDraft ? undefined : options.existing?.manualClosedAt,
     isDraft: options.isDraft,

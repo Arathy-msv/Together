@@ -1,3 +1,4 @@
+import { inferFeatures, normalizeFeatures, recommendedFeatures } from './features.ts'
 import { isCurrencyCode } from './format.ts'
 import { GAMES, isGameType } from './games.ts'
 import { DEFAULT_BRANDING, isFontChoice, isHexColor, normalizeHex } from './theme.ts'
@@ -7,6 +8,7 @@ import type {
   OrgBranding,
   OrgContent,
   OrgDefaults,
+  OrgFeatures,
   OrgLink,
   OrgType,
   OrgVisibility,
@@ -201,14 +203,33 @@ export function normalizeOrganization(value: unknown): Organization | null {
     defaults: normalizeDefaults(raw.defaults),
     visibility: normalizeVisibility(raw.visibility),
     plan: normalizePlan(raw.plan, updatedAt),
+    features: normalizeOrgFeatures(raw.features, {
+      ...raw,
+      id: raw.id,
+      type: ORG_TYPES.some((type) => type.id === raw.type) ? (raw.type as OrgType) : 'nonprofit',
+      plan: normalizePlan(raw.plan, updatedAt),
+      website: normalizeWebsite(raw.website, name, updatedAt),
+    } as Organization),
     website: normalizeWebsite(raw.website, name, updatedAt),
     onboarding:
       raw.onboarding && typeof raw.onboarding === 'object' && Number.isInteger(raw.onboarding.step)
-        ? { step: Math.min(6, Math.max(1, raw.onboarding.step)), updatedAt: typeof raw.onboarding.updatedAt === 'string' ? raw.onboarding.updatedAt : updatedAt, flow: raw.onboarding.flow === 4 ? 4 : undefined }
+        ? {
+            step: Math.min(6, Math.max(1, raw.onboarding.step)),
+            updatedAt: typeof raw.onboarding.updatedAt === 'string' ? raw.onboarding.updatedAt : updatedAt,
+            flow: typeof raw.onboarding.flow === 'number' ? raw.onboarding.flow : undefined,
+          }
         : undefined,
     createdAt: typeof raw.createdAt === 'string' ? raw.createdAt : updatedAt,
     updatedAt,
   }
+}
+
+function normalizeOrgFeatures(value: unknown, partial: Organization): OrgFeatures {
+  if (value && typeof value === 'object') {
+    return normalizeFeatures(value, recommendedFeatures(partial.type, partial.plan.id))
+  }
+  // Organizations saved before the feature layer: infer from plan and existing records.
+  return inferFeatures(partial)
 }
 
 export const PLAN_IDS: PlanId[] = ['starter', 'community', 'organization']

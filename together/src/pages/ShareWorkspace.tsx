@@ -1,5 +1,6 @@
 import { useEffect, useId, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { ShareKit } from '../components/org/ShareKit.tsx'
 import { useOrg } from '../components/org/OrgContext.tsx'
 import { AiButton } from '../components/ai/AiUI.tsx'
 import { ReferralWriter } from '../components/ai/ReferralWriter.tsx'
@@ -80,7 +81,7 @@ function ShareEditor({ existing, mine }: { existing?: Referral; mine: Referral[]
   const store = useDemoStore()
   const navigate = useNavigate()
   const location = useLocation()
-  const { base } = useOrg()
+  const { org, base } = useOrg()
   const campaign = view.campaign
   const [input, setInput] = useState<ReferralInput>(() => ({
     displayName: existing?.displayName ?? '',
@@ -204,6 +205,8 @@ function ShareEditor({ existing, mine }: { existing?: Referral; mine: Referral[]
           </div>
         </section>
       ) : null}
+
+      {existing ? <ShareKit org={org} campaign={campaign} shareUrl={shareUrl} /> : null}
 
       <div className="share-grid">
         <form

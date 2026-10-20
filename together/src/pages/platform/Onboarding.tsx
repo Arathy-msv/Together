@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { SaveIndicator } from '../../components/drafts/DraftUI.tsx'
+import { FeaturePicker } from '../../components/org/FeaturePicker.tsx'
 import { BrandPreview } from '../../components/org/BrandPreview.tsx'
 import { OrgLogoMark } from '../../components/org/OrgChrome.tsx'
 import { Checkbox, Select, TextArea, TextInput } from '../../components/workspace/fields.tsx'
@@ -11,12 +12,18 @@ import { CURRENCIES, formatMoney, isCurrencyCode } from '../../lib/format.ts'
 import { GAMES } from '../../lib/games.ts'
 import { COMING_SOON_GAMES, IMAGE_GALLERY, ORG_TYPES, slugify, validateOrganization, validateSlug } from '../../lib/organizations.ts'
 import { saveOrganization, setActiveOrgId } from '../../lib/orgStorage.ts'
-import { demoPlan } from '../../lib/plans.ts'
+import {
+  ALWAYS_INCLUDED,
+  clampFeaturesToPlan,
+  enabledFeatureLabels,
+  recommendedFeatures,
+} from '../../lib/features.ts'
+import { demoPlan, optionalFeatureNames } from '../../lib/plans.ts'
 import { contrastChecks, FONT_CHOICES, isHexColor } from '../../lib/theme.ts'
-import type { FontChoice, GameType, Organization, OrgType } from '../../lib/types.ts'
+import type { FontChoice, GameType, Organization, OrgFeatures, OrgType } from '../../lib/types.ts'
 import { previewOrganization, publicWebsiteUrl, resumeSetupStep, sampleWebsiteContent, SETUP_STEP_COUNT, websiteConfigOf, withPublishedWebsite } from '../../lib/website.ts'
 
-const STEPS = ['Your organization', 'Your website address', 'Your look and content', 'Review and publish']
+const STEPS = ['Your organization', 'Website features', 'Your look and content', 'Review selections', 'Confirm and publish']
 const LAST = SETUP_STEP_COUNT
 const ONBOARDING_TYPES: OrgType[] = ['company', 'school', 'nonprofit', 'club', 'other']
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
@@ -29,8 +36,6 @@ function stepErrors(step: number, org: Organization, all: Organization[]): Recor
     if (!org.name.trim()) errors.name = 'Add your organization’s name.'
     if (org.about.trim().length < 10) errors.about = 'Add a short description (at least 10 characters).'
     if (!EMAIL.test(org.content.contactEmail.trim())) errors.contactEmail = 'Enter a public contact email like hello@example.org.'
-  }
-  if (step === 2) {
     const slug = validateSlug(org.slug, org.id, all)
     if (slug) errors.slug = slug
   }
@@ -78,7 +83,7 @@ function Wizard({ stored }: { stored: Organization }) {
   const autosave = useAutosave(snapshot, (value) => {
     if (finished.current) return
     const now = new Date().toISOString()
-    saveOrganization({ ...value.org, website: { status: 'setup', draft: websiteConfigOf(value.org), updatedAt: now }, onboarding: { step: value.step, updatedAt: now, flow: 4 } })
+    saveOrganization({ ...value.org, website: { status: 'setup', draft: websiteConfigOf(value.org), updatedAt: now }, onboarding: { step: value.step, updatedAt: now, flow: 5 } })
   })
 
   useEffect(() => {
@@ -88,6 +93,7 @@ function Wizard({ stored }: { stored: Organization }) {
   const patch = (next: Partial<Organization>) => setOrg((current) => ({ ...current, ...next }))
   const patchContent = (next: Partial<Organization['content']>) => setOrg((current) => ({ ...current, content: { ...current.content, ...next } }))
   const patchBranding = (next: Partial<Organization['branding']>) => setOrg((current) => ({ ...current, branding: { ...current.branding, ...next } }))
+  const patchFeatures = (features: OrgFeatures) => setOrg((current) => ({ ...current, features: clampFeaturesToPlan(features, current.plan.id) }))
 
   function goNext() {
     const next = stepErrors(step, org, all)
@@ -169,16 +175,12 @@ function Wizard({ stored }: { stored: Organization }) {
           </h2>
           {step === 1 ? (
             <>
-              <p className="muted">Tell supporters who you are. Fields marked Optional can be skipped.</p>
+              <p className="muted">Tell supporters who you are, and choose the link you’ll share. Fields marked Optional can be skipped.</p>
               <TextInput label="Organization name" value={org.name} maxLength={80} error={errors.name} help="For example: Greenwood School" onChange={(name) => patch({ name, slug: org.slug.startsWith('new-') && name ? slugify(name) : org.slug })} />
-              <Select label="Type" value={org.type} options={ORG_TYPES.filter((type) => ONBOARDING_TYPES.includes(type.id)).map((type) => ({ value: type.id, label: type.label }))} onChange={(type) => patch({ type: type as OrgType })} />
+              <Select label="Type" value={org.type} options={ORG_TYPES.filter((type) => ONBOARDING_TYPES.includes(type.id)).map((type) => ({ value: type.id, label: type.label }))} onChange={(type) => patch({ type: type as OrgType, features: recommendedFeatures(type as OrgType, org.plan.id) })} />
               <TextArea label="Short description" value={org.about} maxLength={600} error={errors.about} help="One or two sentences, e.g. “A primary school of 400 pupils with a big garden and a bigger heart.” Shown on your About page." onChange={(about) => patch({ about })} />
               <TextInput label="Public contact email" type="email" value={org.content.contactEmail} maxLength={120} error={errors.contactEmail} help="Supporters can write to this address. For example: office@greenwood.example" onChange={(contactEmail) => patchContent({ contactEmail })} />
               <TextInput label="Public location" optional value={org.content.location} maxLength={120} help="A city or area. Avoid street addresses." onChange={(location) => patchContent({ location })} />
-            </>
-          ) : null}
-          {step === 2 ? (
-            <>
               <TextInput
                 label="Website address"
                 value={org.slug}
@@ -201,15 +203,22 @@ function Wizard({ stored }: { stored: Organization }) {
               })()}
             </>
           ) : null}
+          {step === 2 ? (
+            <>
+              <h3 className="feature-heading">Choose what your fundraising website needs.</h3>
+              <p className="muted">Start with the essentials. You can manage optional features later.</p>
+              <FeaturePicker features={org.features} planId={org.plan.id} orgType={org.type} onChange={patchFeatures} />
+            </>
+          ) : null}
           {step === 3 ? (
             <LookAndContentStep org={org} errors={errors} patch={patch} patchBranding={patchBranding} patchContent={patchContent} />
           ) : null}
-          {step === LAST ? (
+          {step === 4 ? (
             <dl className="detail-list">
               <div>
-                <dt>Demo plan</dt>
+                <dt>Organization</dt>
                 <dd>
-                  {demoPlan(org.plan.id).name} · no payment collected
+                  {org.name} · {ORG_TYPES.find((type) => type.id === org.type)?.label}
                 </dd>
               </div>
               <div>
@@ -219,31 +228,43 @@ function Wizard({ stored }: { stored: Organization }) {
                 </dd>
               </div>
               <div>
-                <dt>Organization</dt>
+                <dt>Selected demo plan</dt>
+                <dd>{demoPlan(org.plan.id).name} · no payment collected</dd>
+              </div>
+              <div>
+                <dt>Selected optional features</dt>
+                <dd>{enabledFeatureLabels(org).length ? enabledFeatureLabels(org).join(' · ') : 'None — essentials only'}</dd>
+              </div>
+              <div>
+                <dt>Always included</dt>
+                <dd>{ALWAYS_INCLUDED.join(' · ')}</dd>
+              </div>
+              <div>
+                <dt>Look</dt>
                 <dd>
-                  {org.name} · {ORG_TYPES.find((type) => type.id === org.type)?.label}
+                  {org.content.headline.trim() || org.name || 'Your name'} · main colour {org.branding.primary}
                 </dd>
               </div>
               <div>
-                <dt>Contact</dt>
-                <dd>{[org.content.contactEmail, org.content.location].filter(Boolean).join(' · ')}</dd>
-              </div>
-              <div>
-                <dt>Fonts</dt>
-                <dd>
-                  {FONT_CHOICES.find((font) => font.id === org.branding.headingFont)?.label} / {FONT_CHOICES.find((font) => font.id === org.branding.bodyFont)?.label}
-                </dd>
-              </div>
-              <div>
-                <dt>Fundraising</dt>
-                <dd>
-                  {org.defaults.currency} · amounts {org.defaults.suggestedAmounts.map((amount) => formatMoney(amount, org.defaults.currency)).join(', ')} ·{' '}
-                  {org.visibility.games ? `${org.defaults.games.length} game${org.defaults.games.length === 1 ? '' : 's'}` : 'no games'}
-                  {org.visibility.direct ? ' · direct giving' : ''}
-                  {org.visibility.assistant ? ' · campaign assistant' : ''}
-                </dd>
+                <dt>Configuration still needed</dt>
+                <dd>Detailed settings for each feature are collected when you first use them — nothing else is required to publish.</dd>
               </div>
             </dl>
+          ) : null}
+          {step === 5 ? (
+            <div className="confirm-subscribe">
+              <p>
+                You are about to confirm a <strong>simulated subscription</strong> to the {demoPlan(org.plan.id).name} and publish <strong>{org.name}</strong> at{' '}
+                <code>{url}</code>.
+              </p>
+              <p className="muted small">
+                No payment is collected. There is no billing, renewal or invoice. Optional features included in this plan: {optionalFeatureNames(org.plan.id).join(', ')}.
+                Publishing the website does not publish any campaign drafts.
+              </p>
+              <p>
+                <strong>Selected:</strong> {enabledFeatureLabels(org).length ? enabledFeatureLabels(org).join(', ') : 'Essentials only'}.
+              </p>
+            </div>
           ) : null}
           {errors.form ? <p className="error-text">{errors.form}</p> : null}
           <div className="inline-actions onboarding-actions">
@@ -262,7 +283,7 @@ function Wizard({ stored }: { stored: Organization }) {
                   Save as draft website
                 </button>
                 <button type="button" className="btn btn-primary" onClick={() => finish(true)}>
-                  Publish demo website
+                  Confirm simulated subscription and publish
                 </button>
               </>
             )}
@@ -270,7 +291,7 @@ function Wizard({ stored }: { stored: Organization }) {
               Finish later
             </Link>
           </div>
-          {step === LAST ? <p className="muted small">Publishing makes your website visible at the address above on this device. It doesn’t publish any campaigns.</p> : null}
+          {step === LAST ? <p className="muted small">Confirming publishes your website at the address above on this device. It doesn’t publish any campaigns.</p> : null}
         </section>
         <aside className="onboarding-preview" aria-label="Website preview">
           <div className="preview-toolbar">

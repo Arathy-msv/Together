@@ -10,6 +10,7 @@ import { AssistantPage } from './pages/org/Assistant.tsx'
 import { CampaignScope } from './pages/org/CampaignScope.tsx'
 import { LegacyCampaignRedirect, LegacyPublicRedirect, LegacyWorkspaceRedirect } from './pages/org/LegacyRedirect.tsx'
 import { OrgAboutPage } from './pages/org/OrgAbout.tsx'
+import { SupporterHistoryPage } from './pages/org/SupporterHistory.tsx'
 import { OrgHomePage } from './pages/org/OrgHome.tsx'
 import { OrgNotFound } from './pages/org/OrgNotFound.tsx'
 import { OrganizationSettingsPage, WebsiteEditorPage } from './pages/org/OrgSettings.tsx'
@@ -24,6 +25,7 @@ import { ShareWorkspacePage } from './pages/ShareWorkspace.tsx'
 import { SuccessPage } from './pages/Success.tsx'
 import { CampaignWorkspacePage } from './pages/workspace/CampaignWorkspace.tsx'
 import { PlanPage } from './pages/workspace/PlanPage.tsx'
+import { WebsiteFeaturesPage } from './pages/workspace/WebsiteFeaturesPage.tsx'
 import { WorkspaceLayout } from './pages/workspace/WorkspaceLayout.tsx'
 import { WorkspaceOverviewPage } from './pages/workspace/WorkspaceOverview.tsx'
 
@@ -45,6 +47,7 @@ export default function App() {
         <Route path="/o/:organizationSlug" element={<OrgLayout />}>
           <Route index element={<OrgHomePage />} />
           <Route path="about" element={<OrgAboutPage />} />
+          <Route path="my-history" element={<SupporterHistoryPage />} />
           <Route path="campaigns" element={<ExplorePage />} />
           <Route path="campaigns/:id" element={<CampaignScope />}>
             <Route index element={<CampaignPage />} />
@@ -78,6 +81,7 @@ export default function App() {
           <Route path="assistant" element={<AssistantPage />} />
           <Route path="settings" element={<OrganizationSettingsPage />} />
           <Route path="plan" element={<PlanPage />} />
+          <Route path="features" element={<WebsiteFeaturesPage />} />
           <Route path="*" element={<OrgNotFound kind="page" />} />
         </Route>
 

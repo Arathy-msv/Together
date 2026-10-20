@@ -101,15 +101,18 @@ test('demo plans have no prices and state their limits', () => {
   }
 })
 
-test('setup resumes on the right step for both the old six-step and the new four-step flow', async () => {
+test('setup resumes on the right step across flow versions', async () => {
   const { resumeSetupStep, SETUP_STEP_COUNT } = await import('../src/lib/website.ts')
-  assert.equal(SETUP_STEP_COUNT, 4)
+  assert.equal(SETUP_STEP_COUNT, 5)
   assert.equal(resumeSetupStep(undefined), 1)
-  assert.equal(resumeSetupStep({ step: 2, updatedAt: '' }), 2)
+  assert.equal(resumeSetupStep({ step: 2, updatedAt: '' }), 1)
   assert.equal(resumeSetupStep({ step: 4, updatedAt: '' }), 3)
   assert.equal(resumeSetupStep({ step: 6, updatedAt: '' }), 4)
+  assert.equal(resumeSetupStep({ step: 2, updatedAt: '', flow: 4 }), 1)
+  assert.equal(resumeSetupStep({ step: 3, updatedAt: '', flow: 4 }), 3)
   assert.equal(resumeSetupStep({ step: 4, updatedAt: '', flow: 4 }), 4)
-  assert.equal(resumeSetupStep({ step: 9, updatedAt: '', flow: 4 }), 4)
+  assert.equal(resumeSetupStep({ step: 2, updatedAt: '', flow: 5 }), 2)
+  assert.equal(resumeSetupStep({ step: 9, updatedAt: '', flow: 5 }), 5)
 })
 
 test('the first-visit checklist is computed from saved state', async () => {
