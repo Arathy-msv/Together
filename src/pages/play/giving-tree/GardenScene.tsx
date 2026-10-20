@@ -47,7 +47,7 @@ export const GardenScene = forwardRef<HTMLDivElement, GardenSceneProps>(function
     <section className={`gt-scene${effect ? ` is-${effect.kind}` : ''}${celebrating ? ' is-goal' : ''}`} aria-label="Garden">
       <p className="gt-visually-hidden">
         The shared campaign tree is at the {milestone.name.toLowerCase()} stage.
-        {celebrating ? ' Birds have flown in to nest in its branches, and thank-you notes hang there.' : ''}
+        {celebrating ? ' Tags reading Hope, Care, Kindness, Together and Thank you hang from its branches.' : ''}
       </p>
       <img className="gt-bg" src={`${ART}/garden-bg.webp`} alt="" draggable={false} />
       <div className="gt-visually-hidden" aria-hidden="true">
@@ -91,43 +91,34 @@ export const GardenScene = forwardRef<HTMLDivElement, GardenSceneProps>(function
   )
 })
 
-const NOTES = [
-  { left: '18%', top: '16%', delay: '1.6s' },
-  { left: '62%', top: '12%', delay: '1.9s' },
-  { left: '70%', top: '34%', delay: '2.2s' },
-  { left: '28%', top: '38%', delay: '2.5s' },
+const TAGS = [
+  { word: 'Hope', left: '6%', top: '30%', delay: '0.1s' },
+  { word: 'Care', left: '24%', top: '24%', delay: '0.25s' },
+  { word: 'Kindness', left: '40%', top: '18%', delay: '0.4s' },
+  { word: 'Together', left: '58%', top: '26%', delay: '0.55s' },
+  { word: 'Thank you', left: '74%', top: '34%', delay: '0.7s' },
 ]
 
 function TreeCelebration() {
   return (
     <div className="gt-celebrate" aria-hidden="true">
-      <svg className="gt-nest" viewBox="0 0 80 36">
-        <path d="M8 16c6 14 58 14 64 0-8 10-56 10-64 0z" fill="#8a5a32" />
-        <path d="M14 16c4 4 10 6 16 6M30 18c6 2 14 2 22-2M18 14c8-4 20-6 34-2" fill="none" stroke="#c9894a" strokeWidth="2" strokeLinecap="round" />
-        <ellipse cx="40" cy="14" rx="16" ry="5" fill="#e7d3a1" />
-      </svg>
-      <Bird className="gt-bird gt-bird-a" />
-      <Bird className="gt-bird gt-bird-b" />
-      <Bird className="gt-bird gt-bird-c" />
-      {NOTES.map((note) => (
-        <span key={note.left} className="gt-note" style={{ left: note.left, top: note.top, animationDelay: note.delay }}>
-          <i />
-          Thank you
+      {TAGS.map((tag) => (
+        <span key={tag.word} className="gt-tag" style={{ left: tag.left, top: tag.top, animationDelay: tag.delay }}>
+          <span className="gt-tag-string" />
+          <TagLeaf />
+          {tag.word}
         </span>
       ))}
     </div>
   )
 }
 
-function Bird({ className }: { className: string }) {
+function TagLeaf() {
   return (
-    <svg className={className} viewBox="0 0 64 40" aria-hidden="true">
-      <ellipse cx="34" cy="24" rx="16" ry="8" fill="#3d6b86" />
-      <circle cx="48" cy="18" r="7" fill="#3d6b86" />
-      <path d="M54 18h8l-5 2z" fill="#e6b14a" />
-      <circle cx="50" cy="16.5" r="1.1" fill="#17382d" />
-      <path className="gt-wing" d="M28 20c-8-10-18-8-22 0 6 2 14 2 22 0z" fill="#2f556c" />
-      <path d="M22 28c-2 6-1 8 2 8" fill="none" stroke="#e6b14a" strokeWidth="1.6" strokeLinecap="round" />
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 20c0-8 6-12 10-14-2 8-6 12-10 14z" fill="#7ea36a" />
+      <path d="M12 20c0-8-6-12-10-14 2 8 6 12 10 14z" fill="#3f6b45" />
+      <path d="M12 20V8" stroke="#2f5534" strokeWidth="1.2" strokeLinecap="round" />
     </svg>
   )
 }
