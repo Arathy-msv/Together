@@ -52,6 +52,11 @@ const UI_ML: Record<string, string> = {
   'Not translated yet': 'ഇതുവരെ വിവർത്തനം ചെയ്തിട്ടില്ല',
 }
 
+/** Prepared sample translation, or undefined. Used to seed organizer-reviewed demo content. */
+export function preparedTranslation(text: string): string | undefined {
+  return PREPARED_ML[text.trim()]
+}
+
 export function uiLabel(label: string, language: LanguageCode): string {
   return language === 'ml' ? (UI_ML[label] ?? label) : label
 }

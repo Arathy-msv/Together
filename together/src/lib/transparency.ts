@@ -196,7 +196,7 @@ export const deleteDocument = (id: string) => remove('supportingDocuments', id)
 /** Updates organizer-editable campaign fields. The demo verification flag can never be changed here. */
 export function saveCampaignFields(
   campaignId: string,
-  patch: Partial<Pick<Campaign, 'description' | 'category' | 'story' | 'budget' | 'impactExamples' | 'finalReport' | 'fundingNote'>>,
+  patch: Partial<Pick<Campaign, 'description' | 'category' | 'story' | 'budget' | 'impactExamples' | 'finalReport' | 'fundingNote' | 'translations'>>,
 ): void {
   const store = loadStore()
   const index = store.campaigns.findIndex((item) => item.id === campaignId)

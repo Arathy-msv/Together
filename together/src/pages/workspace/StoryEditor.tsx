@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { MediaEditor, Select, TextArea, TextInput, VideoEditor } from '../../components/workspace/fields.tsx'
+import { TranslationEditor } from '../../components/ai/Translation.tsx'
 import { currencySymbol, formatDateRange, formatMoney } from '../../lib/format.ts'
 import { gameMeta } from '../../lib/games.ts'
 import { parseRupeesToPaise } from '../../lib/gameContribution.ts'
@@ -148,6 +149,29 @@ export function StoryEditor({ campaign, view }: WorkspaceProps) {
           </button>
         ) : null}
         {errors.impact ? <p className="error-text">{errors.impact}</p> : null}
+      </section>
+
+      <section className="panel ws-card wide" id="translations">
+        <h2>Translations</h2>
+        <TranslationEditor
+          fields={[
+            { key: 'title', label: 'Title', original: campaign.title },
+            { key: 'description', label: 'Summary', original: campaign.description },
+            { key: 'whoItHelps', label: 'Who this helps', original: campaign.story?.whoItHelps ?? '' },
+            { key: 'whatTheyNeed', label: 'What they need', original: campaign.story?.whatTheyNeed ?? '' },
+            { key: 'whatItSupports', label: 'What contributions will support', original: campaign.story?.whatItSupports ?? '' },
+            { key: 'whatHappensNext', label: 'What happens next', original: campaign.story?.whatHappensNext ?? '' },
+            { key: 'beneficiary', label: 'Beneficiary description', original: campaign.story?.beneficiary ?? '' },
+          ]}
+          saved={campaign.translations?.ml ?? {}}
+          onApply={(key, text) => {
+            const ml = { ...(campaign.translations?.ml ?? {}), [key]: text }
+            if (!text) delete ml[key as keyof typeof ml]
+            saveCampaignFields(campaign.id, { translations: Object.keys(ml).length ? { ml } : undefined })
+            setNotice(text ? 'Translation applied. It appears when supporters preview Malayalam.' : 'Translation removed.')
+          }}
+        />
+        <p className="muted small">Translations use the saved story. Save story changes first, then update translations.</p>
       </section>
 
       <section className="panel ws-card wide">

@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { Checkbox, Select, SingleImage, TextArea, TextInput } from '../../components/workspace/fields.tsx'
+import { AiButton } from '../../components/ai/AiUI.tsx'
+import { ReceiptAssistant } from '../../components/ai/ReceiptAssistant.tsx'
 import { currencySymbol, formatDate } from '../../lib/format.ts'
 import { parseRupeesToPaise } from '../../lib/gameContribution.ts'
 import { fromDateInput, minorToInput, toDateInput, nowIso } from '../../lib/inputs.ts'
@@ -47,6 +49,7 @@ export function ExpensesEditor({ campaign, store }: WorkspaceProps) {
   const [draft, setDraft] = useState<ExpenseDraft | null>(null)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [notice, setNotice] = useState('')
+  const [assisting, setAssisting] = useState(false)
   const [fundingNote, setFundingNote] = useState(campaign.fundingNote ?? '')
 
   function save(status: PublishState) {
@@ -88,10 +91,25 @@ export function ExpensesEditor({ campaign, store }: WorkspaceProps) {
       <section className="panel ws-card wide">
         <div className="section-head-row">
           <h2>Expenses</h2>
-          <button type="button" className="btn btn-primary btn-sm" onClick={() => setDraft(toDraft())}>
-            + Report an expense
-          </button>
+          <div className="inline-actions">
+            <AiButton onClick={() => setAssisting(true)}>Try receipt assistance</AiButton>
+            <button type="button" className="btn btn-primary btn-sm" onClick={() => setDraft(toDraft())}>
+              + Report an expense
+            </button>
+          </div>
         </div>
+        {assisting ? (
+          <ReceiptAssistant
+            campaignCurrency={campaign.currency}
+            onClose={() => setAssisting(false)}
+            onUse={(values) => {
+              if (draft && draft.description && !window.confirm('Replace what is currently in the expense form?')) return
+              setDraft({ ...toDraft(), ...values, receiptRedacted: false })
+              setAssisting(false)
+              setNotice('Sample values copied into a new expense below. Check them, confirm the receipt is redacted, then save as draft or publish.')
+            }}
+          />
+        ) : null}
         <dl className="ws-stats">
           <div>
             <dt>Confirmed simulated contributions</dt>

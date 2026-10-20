@@ -8,6 +8,7 @@ import { StatusBadge } from '../components/StatusBadge.tsx'
 import { useOrg } from '../components/org/OrgContext.tsx'
 import { FundUseTab, StoryTab, TrustTab, UpdatesTab } from '../components/campaign/PublicSections.tsx'
 import { ReferralIntro } from '../components/referral/ReferralIntro.tsx'
+import { CampaignQuestions } from '../components/ai/CampaignQuestions.tsx'
 import { useCampaignView, useDemoStore } from '../hooks/useDemoStore.ts'
 import { campaignDetailsPath, campaignPlayPath } from '../lib/campaigns.ts'
 import { followedAt, setFollowing } from '../lib/follows.ts'
@@ -160,6 +161,14 @@ function CampaignDetails({ view, referral }: { view: CampaignView; referral?: Re
             {section === 'fund' ? <FundUseTab campaign={campaign} store={store} /> : null}
             {section === 'trust' ? <TrustTab campaign={campaign} store={store} org={org} /> : null}
           </div>
+          <CampaignQuestions
+            campaign={campaign}
+            store={store}
+            onOpenTab={(tab) => {
+              showSection(tab)
+              document.getElementById(`tab-${tab}`)?.focus()
+            }}
+          />
         </div>
 
         <aside className="support-column">

@@ -122,7 +122,13 @@ export interface Campaign {
   fundingNote?: string
   /** Seeded example only. There is no UI that lets organizers set this. */
   demoVerification?: { label: string; note: string; date: string }
+  /** Organizer-reviewed translations, kept separate from the original text. */
+  translations?: Translations<CampaignTextKey>
 }
+
+export type CampaignTextKey = 'title' | 'description' | 'whoItHelps' | 'whatTheyNeed' | 'whatItSupports' | 'whatHappensNext' | 'beneficiary'
+export type TranslationLanguage = 'ml'
+export type Translations<K extends string> = Partial<Record<TranslationLanguage, Partial<Record<K, string>>>>
 
 export type CampaignCategory = 'education' | 'clothing' | 'environment' | 'sports' | 'community' | 'other'
 
@@ -190,6 +196,7 @@ export interface Referral {
   /** Optional personal target in the campaign's currency, whole units. */
   personalTarget?: number
   coverImage?: string
+  translations?: Translations<'headline' | 'message'>
   createdAt: string
   updatedAt: string
 }
@@ -227,6 +234,7 @@ export interface CampaignUpdate {
   expenseIds: string[]
   /** Organizer confirmed they have permission to publish the attached media. */
   mediaConsent: boolean
+  translations?: Translations<'title' | 'body'>
   status: PublishState
   createdAt: string
   updatedAt: string
@@ -296,7 +304,7 @@ export interface Contribution {
 }
 
 export interface DemoStore {
-  version: 3
+  version: 4
   campaigns: Campaign[]
   contributions: Contribution[]
   referrals: Referral[]

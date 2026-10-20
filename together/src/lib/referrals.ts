@@ -103,6 +103,16 @@ export function updateReferral(id: string, input: ReferralInput): Referral | nul
   return next
 }
 
+/** Saves translations the sharer reviewed. The original message is untouched. */
+export function saveReferralTranslations(id: string, ml: Partial<Record<'headline' | 'message', string>>): void {
+  const store = loadStore()
+  const index = store.referrals.findIndex((item) => item.id === id)
+  if (index < 0) return
+  const clean = Object.fromEntries(Object.entries(ml).filter(([, text]) => text?.trim()))
+  store.referrals[index] = { ...store.referrals[index], translations: Object.keys(clean).length ? { ml: clean } : undefined, updatedAt: new Date().toISOString() }
+  saveStore(store)
+}
+
 export interface ReferralTotals {
   amount: number
   count: number

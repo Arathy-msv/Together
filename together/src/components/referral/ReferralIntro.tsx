@@ -1,4 +1,7 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { LanguageToggle } from '../ai/Translation.tsx'
+import { uiLabel, type LanguageCode } from '../../lib/ai/translations.ts'
 import { campaignCoverSrc } from '../../data/covers.ts'
 import { useDemoStore } from '../../hooks/useDemoStore.ts'
 import { formatMoney } from '../../lib/format.ts'
@@ -46,6 +49,10 @@ export function SharingGoal({ referral, campaign }: { referral: Referral; campai
 /** Personal introduction at the top of a sharing page. Campaign facts are rendered separately, unchanged. */
 export function ReferralIntro({ referral, view, preview = false }: { referral: Referral; view: CampaignView; preview?: boolean }) {
   const { base } = useOrg()
+  const [language, setLanguage] = useState<LanguageCode>('en')
+  const ml = referral.translations?.ml
+  const headline = language === 'ml' ? ml?.headline : referral.headline
+  const message = language === 'ml' ? ml?.message : referral.message
   const cover = referral.coverImage || campaignCoverSrc(view.campaign)
   return (
     <section className="referral-hero" aria-label={`Shared by ${referral.displayName}`}>
@@ -60,10 +67,11 @@ export function ReferralIntro({ referral, view, preview = false }: { referral: R
             <strong>{referral.displayName}</strong>
           </span>
         </div>
-        <h2>{referral.headline}</h2>
-        <figure className="referral-message">
-          <figcaption className="eyebrow-label">Why I support this campaign</figcaption>
-          <blockquote>{referral.message}</blockquote>
+        {ml && !preview ? <LanguageToggle language={language} onChange={setLanguage} /> : null}
+        <h2 lang={language}>{headline ?? 'Not translated yet'}</h2>
+        <figure className="referral-message" lang={language}>
+          <figcaption className="eyebrow-label">{uiLabel('Why I support this campaign', language)}</figcaption>
+          <blockquote>{message ?? 'Not translated yet'}</blockquote>
         </figure>
         <SharingGoal referral={referral} campaign={view.campaign} />
         <p className="muted small">

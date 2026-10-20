@@ -15,7 +15,9 @@ import {
   publishedUpdates,
   UPDATE_TYPE_LABEL,
 } from '../../lib/transparency.ts'
-import type { Campaign, CampaignUpdate, DemoStore, Expense, ExpenseCategory, MediaItem, MediaVideo, Milestone, Organization } from '../../lib/types.ts'
+import { LanguageToggle } from '../ai/Translation.tsx'
+import { uiLabel, type LanguageCode } from '../../lib/ai/translations.ts'
+import type { Campaign, CampaignTextKey, CampaignUpdate, DemoStore, Expense, ExpenseCategory, MediaItem, MediaVideo, Milestone, Organization } from '../../lib/types.ts'
 import { EXPENSE_CATEGORIES } from '../../lib/records.ts'
 
 /* Public, read-only campaign sections. Wording keeps organizer claims, attached evidence and
@@ -126,24 +128,30 @@ export function MilestoneTimeline({ milestones, compact = false }: { milestones:
 
 export function StoryTab({ campaign, store, onShowUpdates }: { campaign: Campaign; store: DemoStore; onShowUpdates: () => void }) {
   const story = campaign.story
-  const sections = [
-    ['Who this helps', story?.whoItHelps],
-    ['What they need', story?.whatTheyNeed],
-    ['What contributions will support', story?.whatItSupports],
-    ['What happens next', story?.whatHappensNext],
-  ].filter((entry): entry is [string, string] => Boolean(entry[1]?.trim()))
+  const [language, setLanguage] = useState<LanguageCode>('en')
+  const ml = campaign.translations?.ml
+  const shown = (key: CampaignTextKey, original: string) => (language === 'ml' ? ml?.[key] : original)
+  const sections = (
+    [
+      ['Who this helps', 'whoItHelps', story?.whoItHelps],
+      ['What they need', 'whatTheyNeed', story?.whatTheyNeed],
+      ['What contributions will support', 'whatItSupports', story?.whatItSupports],
+      ['What happens next', 'whatHappensNext', story?.whatHappensNext],
+    ] as Array<[string, CampaignTextKey, string | undefined]>
+  ).filter((entry): entry is [string, CampaignTextKey, string] => Boolean(entry[2]?.trim()))
   const budget = campaign.budget ?? []
   const budgetTotal = budget.reduce((sum, line) => sum + line.amountMinor, 0)
   const milestones = campaignMilestones(store, campaign.id)
   return (
-    <div className="tab-body">
-      <p className="story-lead">{campaign.description}</p>
+    <div className="tab-body" lang={language}>
+      {ml ? <LanguageToggle language={language} onChange={setLanguage} /> : null}
+      <TranslatedText className="story-lead" text={shown('description', campaign.description)} language={language} />
       {sections.length > 0 ? (
         <div className="story-grid">
-          {sections.map(([title, text]) => (
+          {sections.map(([title, key, text]) => (
             <section key={title}>
-              <h3>{title}</h3>
-              <p>{text}</p>
+              <h3>{uiLabel(title, language)}</h3>
+              <TranslatedText text={shown(key, text)} language={language} />
             </section>
           ))}
         </div>
@@ -221,7 +229,19 @@ export function StoryTab({ campaign, store, onShowUpdates }: { campaign: Campaig
   )
 }
 
+/** Shows translated text, or a clear marker when a part has not been translated — never the original as if translated. */
+function TranslatedText({ text, language, className }: { text: string | undefined; language: LanguageCode; className?: string }) {
+  if (text?.trim()) return <p className={className}>{text}</p>
+  return (
+    <p className={`${className ?? ''} not-translated`} lang="en">
+      {language === 'ml' ? `${uiLabel('Not translated yet', 'ml')} · Not translated yet` : ''}
+    </p>
+  )
+}
+
 function UpdateCard({ update, store, campaign }: { update: CampaignUpdate; store: DemoStore; campaign: Campaign }) {
+  const [language, setLanguage] = useState<LanguageCode>('en')
+  const ml = update.translations?.ml
   const milestone = update.milestoneId ? store.milestones.find((item) => item.id === update.milestoneId) : undefined
   const expenses = update.expenseIds
     .map((id) => store.expenses.find((item) => item.id === id && item.status === 'published'))
@@ -232,8 +252,9 @@ function UpdateCard({ update, store, campaign }: { update: CampaignUpdate; store
         <StatusPill tone={update.type === 'delay' ? 'warn' : 'neutral'}>{UPDATE_TYPE_LABEL[update.type]}</StatusPill>
         <time dateTime={update.date}>{formatDate(update.date)}</time>
       </header>
-      <h3>{update.title}</h3>
-      {update.body ? <p className="update-body">{update.body}</p> : null}
+      {ml ? <LanguageToggle language={language} onChange={setLanguage} /> : null}
+      <h3 lang={language}>{language === 'ml' ? (ml?.title ?? 'Not translated yet') : update.title}</h3>
+      {update.body ? <TranslatedText className="update-body" text={language === 'ml' ? ml?.body : update.body} language={language} /> : null}
       <MediaGallery items={update.media} />
       <VideoBlock video={update.video} />
       {milestone || expenses.length ? (

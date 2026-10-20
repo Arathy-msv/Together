@@ -31,6 +31,7 @@ import {
 } from '../lib/wizard.ts'
 import { StoryDetails, TemplatePicker } from '../components/story/StoryDetails.tsx'
 import { ReadinessPanel } from '../components/ai/ReadinessPanel.tsx'
+import { SetupSuggestions } from '../components/ai/SetupSuggestions.tsx'
 import { readinessFromForm, type ReadinessField } from '../lib/ai/readiness.ts'
 
 const STEP_COPY: Record<number, { title: string; sub: string }> = {
@@ -340,6 +341,7 @@ function StoryStep({
 
   return (
     <div className="panel form-panel">
+      <SetupSuggestions form={form} allowedGames={selectableGames(org)} onChange={onChange} />
       <TemplatePicker form={form} allowedGames={selectableGames(org)} onChange={onChange} />
       <Field label="Campaign title" htmlFor="title" error={errors.title} counter={`${form.title.trim().length}/80`}>
         <input

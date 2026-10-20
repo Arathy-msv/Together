@@ -15,6 +15,7 @@ import type {
   MilestoneStatus,
   Referral,
   SupportingDocument,
+  Translations,
   UpdateType,
 } from './types.ts'
 
@@ -125,6 +126,21 @@ export function normalizeFinalReport(value: unknown): FinalReport | undefined {
   }
 }
 
+/** Keeps only string translations for known fields and languages. */
+export function normalizeTranslations<K extends string>(value: unknown, keys: readonly K[]): Translations<K> | undefined {
+  const raw = obj(value)
+  const ml = raw ? obj(raw.ml) : null
+  if (!ml) return undefined
+  const clean: Partial<Record<K, string>> = {}
+  for (const key of keys) {
+    const text = ml[key]
+    if (typeof text === 'string' && text.trim()) clean[key] = text.slice(0, 5000)
+  }
+  return Object.keys(clean).length ? { ml: clean } : undefined
+}
+
+export const CAMPAIGN_TEXT_KEYS = ['title', 'description', 'whoItHelps', 'whatTheyNeed', 'whatItSupports', 'whatHappensNext', 'beneficiary'] as const
+
 /** Repairs the optional storytelling fields on a campaign. */
 export function normalizeCampaignExtras(campaign: Campaign): Campaign {
   const next: Campaign = { ...campaign }
@@ -134,6 +150,7 @@ export function normalizeCampaignExtras(campaign: Campaign): Campaign {
   next.impactExamples = normalizeImpact(campaign.impactExamples)
   next.finalReport = normalizeFinalReport(campaign.finalReport)
   next.fundingNote = typeof campaign.fundingNote === 'string' ? campaign.fundingNote.slice(0, 1000) : undefined
+  next.translations = normalizeTranslations(campaign.translations, CAMPAIGN_TEXT_KEYS)
   const verification = obj(campaign.demoVerification)
   next.demoVerification =
     verification && typeof verification.label === 'string' && typeof verification.note === 'string'
@@ -160,6 +177,7 @@ export function normalizeReferral(value: unknown, campaigns: Map<string, Campaig
     message: str(raw.message, 1200),
     personalTarget: Number.isSafeInteger(target) && target > 0 ? target : undefined,
     coverImage: isMediaSource(raw.coverImage) ? (raw.coverImage as string) : undefined,
+    translations: normalizeTranslations(raw.translations, ['headline', 'message'] as const),
     createdAt: isoOr(raw.createdAt, now),
     updatedAt: isoOr(raw.updatedAt, isoOr(raw.createdAt, now)),
   }
@@ -239,6 +257,7 @@ export function normalizeUpdate(
     milestoneId: typeof raw.milestoneId === 'string' && milestoneIds.has(raw.milestoneId) ? raw.milestoneId : undefined,
     expenseIds,
     mediaConsent: raw.mediaConsent === true,
+    translations: normalizeTranslations(raw.translations, ['title', 'body'] as const),
     status,
     createdAt: isoOr(raw.createdAt, now),
     updatedAt: isoOr(raw.updatedAt, now),

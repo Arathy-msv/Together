@@ -1,4 +1,4 @@
-import { createSeed } from '../data/seed.ts'
+import { createSeed, translateSampleCampaign, translateSampleReferral, translateSampleUpdate } from '../data/seed.ts'
 import { normalizeGameSettings } from './gameContribution.ts'
 import { clearPlayers, ensureSampleRoster } from './players.ts'
 import { isGameType } from './games.ts'
@@ -12,7 +12,7 @@ import {
   normalizeReferral,
   normalizeUpdate,
 } from './records.ts'
-import type { Campaign, Contribution, DemoStore } from './types.ts'
+import type { Campaign, CampaignUpdate, Contribution, DemoStore, Referral } from './types.ts'
 
 export const STORAGE_KEY = 'together.demo.v1'
 
@@ -146,9 +146,10 @@ export function loadStore(): DemoStore {
       supportingDocuments: list(record.supportingDocuments),
     }
     const merged = withDefaultCampaigns(draft)
-    const changed = merged.changed || retired || version !== 3
+    const changed = merged.changed || retired || version !== 4
     draft = merged.store
     if (version < 3) draft = withSeededTransparency(draft)
+    if (version < 4) draft = withSeededTranslations(draft)
     const store = withRelationships(draft)
     if (changed) {
       try {
@@ -197,7 +198,7 @@ function withRelationships(raw: RawStore): DemoStore {
   const expenseMap = new Map(expenses.map((item) => [item.id, item]))
   const referralMap = new Map(uniqueReferrals.map((item) => [item.id, item]))
   return {
-    version: 3,
+    version: 4,
     campaigns,
     contributions: raw.contributions.map((contribution) => normalizeContributionReferral(contribution, referralMap)),
     referrals: uniqueReferrals,
@@ -235,6 +236,18 @@ function withSeededTransparency(store: RawStore): RawStore {
     campaignUpdates: add(store.campaignUpdates, seed.campaignUpdates),
     expenses: add(store.expenses, seed.expenses),
     supportingDocuments: add(store.supportingDocuments, seed.supportingDocuments),
+  }
+}
+
+/** One-time v3 → v4 migration: adds the reviewed sample translations to unchanged sample records. */
+function withSeededTranslations(store: RawStore): RawStore {
+  const touch = <T,>(items: unknown[], translate: (item: T) => T) =>
+    items.map((item) => (item && typeof item === 'object' && !('translations' in item) ? translate(item as T) : item))
+  return {
+    ...store,
+    campaigns: store.campaigns.map(translateSampleCampaign),
+    campaignUpdates: touch<CampaignUpdate>(store.campaignUpdates, translateSampleUpdate),
+    referrals: touch<Referral>(store.referrals, translateSampleReferral),
   }
 }
 

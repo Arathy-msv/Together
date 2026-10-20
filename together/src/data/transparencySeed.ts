@@ -1,4 +1,5 @@
 import { shiftLocal } from '../lib/format.ts'
+import { preparedTranslation } from '../lib/ai/translations.ts'
 import type { Campaign, CampaignUpdate, Contribution, Expense, Milestone, Referral, SupportingDocument } from '../lib/types.ts'
 
 /* Fictional organizer content for a few sample campaigns. Everything here is an organizer claim in a
@@ -363,3 +364,15 @@ export function seedDocuments(): SupportingDocument[] {
     },
   ]
 }
+
+/** Sample Malayalam translations, presented as already reviewed by the organizer. */
+export function withSeedTranslations<T extends { id: string }>(record: T, fields: Record<string, string | undefined>): T {
+  const ml: Record<string, string> = {}
+  for (const [key, text] of Object.entries(fields)) {
+    const translated = text ? preparedTranslation(text) : undefined
+    if (translated) ml[key] = translated
+  }
+  return Object.keys(ml).length ? { ...record, translations: { ml } } : record
+}
+
+export const TRANSLATED_SAMPLES = { campaigns: ['cmp_harbour_blankets'], updates: ['upd_hb_purchase', 'upd_hb_delay'], referrals: ['ref_priya'] }

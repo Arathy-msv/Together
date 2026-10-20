@@ -1,6 +1,9 @@
 import { useEffect, useId, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useOrg } from '../components/org/OrgContext.tsx'
+import { AiButton } from '../components/ai/AiUI.tsx'
+import { ReferralWriter } from '../components/ai/ReferralWriter.tsx'
+import { TranslationEditor } from '../components/ai/Translation.tsx'
 import { ReferralIntro, ReferrerAvatar } from '../components/referral/ReferralIntro.tsx'
 import { campaignCoverSrc } from '../data/covers.ts'
 import { useCampaignView, useDemoStore } from '../hooks/useDemoStore.ts'
@@ -14,6 +17,7 @@ import {
   isMyReferral,
   referralPath,
   referralTotals,
+  saveReferralTranslations,
   shareWorkspacePath,
   updateReferral,
   validateReferral,
@@ -90,6 +94,7 @@ function ShareEditor({ existing, mine }: { existing?: Referral; mine: Referral[]
   const [errors, setErrors] = useState<ReferralErrors>({})
   const [notice, setNotice] = useState<{ tone: 'success' | 'error'; text: string } | null>(null)
   const [copied, setCopied] = useState(false)
+  const [writing, setWriting] = useState(false)
   const avatar = useImagePicker((data) => setInput((current) => ({ ...current, avatarData: data })), {
     maxWidth: 160,
     maxHeight: 160,
@@ -241,6 +246,17 @@ function ShareEditor({ existing, mine }: { existing?: Referral; mine: Referral[]
             <textarea id={ids.message} rows={5} value={input.message} maxLength={1200} aria-invalid={Boolean(errors.message)} onChange={(event) => setInput({ ...input, message: event.target.value })} />
             <p className="help">Speak for yourself. Please don’t add new facts about the campaign or name people it helps.</p>
             {errors.message ? <p className="error-text">{errors.message}</p> : null}
+            {writing ? (
+              <ReferralWriter
+                campaignTitle={campaign.title}
+                organizerName={campaign.organizerName}
+                current={input.message}
+                onApply={(message) => setInput((current) => ({ ...current, message }))}
+                onClose={() => setWriting(false)}
+              />
+            ) : (
+              <AiButton onClick={() => setWriting(true)}>Help me write my message</AiButton>
+            )}
           </div>
           <div className="field">
             <label className="field-label" htmlFor={ids.target}>
@@ -305,6 +321,26 @@ function ShareEditor({ existing, mine }: { existing?: Referral; mine: Referral[]
           <ReferralIntro referral={previewReferral} view={view} preview />
         </aside>
       </div>
+
+      {existing ? (
+        <section className="panel drafts-panel">
+          <TranslationEditor
+            fields={[
+              { key: 'headline', label: 'Headline', original: existing.headline },
+              { key: 'message', label: 'Why I support this campaign', original: existing.message },
+            ]}
+            saved={existing.translations?.ml ?? {}}
+            onApply={(key, text) => {
+              const ml = { ...(existing.translations?.ml ?? {}), [key]: text }
+              try {
+                saveReferralTranslations(existing.id, ml)
+              } catch {
+                setNotice({ tone: 'error', text: 'The translation could not be saved in this browser.' })
+              }
+            }}
+          />
+        </section>
+      ) : null}
 
       {mine.length > 0 ? (
         <section className="panel drafts-panel">

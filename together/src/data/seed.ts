@@ -1,5 +1,5 @@
 import { shiftLocal } from '../lib/format.ts'
-import type { Campaign, Contribution, DemoStore } from '../lib/types.ts'
+import type { Campaign, CampaignUpdate, Contribution, DemoStore, Referral } from '../lib/types.ts'
 import { ORG_HARBOUR, ORG_LUMEN, ORG_MAPLE } from './organizations.ts'
 import {
   seedDocuments,
@@ -9,6 +9,8 @@ import {
   seedReferrals,
   seedStoryFields,
   seedUpdates,
+  TRANSLATED_SAMPLES,
+  withSeedTranslations,
 } from './transparencySeed.ts'
 
 function contribution(
@@ -180,12 +182,12 @@ export function createSeed(): DemoStore {
 
   const stories = seedStoryFields()
   return {
-    version: 3,
-    campaigns: campaigns.map((campaign) => ({ ...campaign, ...stories[campaign.id] })),
+    version: 4,
+    campaigns: campaigns.map((campaign) => translateSampleCampaign({ ...campaign, ...stories[campaign.id] })),
     contributions,
-    referrals: seedReferrals(),
+    referrals: seedReferrals().map(translateSampleReferral),
     milestones: seedMilestones(),
-    campaignUpdates: seedUpdates(),
+    campaignUpdates: seedUpdates().map(translateSampleUpdate),
     expenses: seedExpenses(),
     supportingDocuments: seedDocuments(),
   }
@@ -385,4 +387,28 @@ function organizationContributions(): Contribution[] {
     ...gifts('harbour_kitchen', 'cmp_harbour_kitchen', [4000, 2000, 1000, 1000, 500], 1410, 5),
     ...gifts('harbour_reading', 'cmp_harbour_reading', [5000, 4000, 3000, 2000, 1000], 1420, 25),
   ]
+}
+
+export function translateSampleCampaign(campaign: Campaign): Campaign {
+  if (!TRANSLATED_SAMPLES.campaigns.includes(campaign.id) || campaign.translations) return campaign
+  const story = campaign.story
+  return withSeedTranslations(campaign, {
+    title: campaign.title,
+    description: campaign.description,
+    whoItHelps: story?.whoItHelps,
+    whatTheyNeed: story?.whatTheyNeed,
+    whatItSupports: story?.whatItSupports,
+    whatHappensNext: story?.whatHappensNext,
+    beneficiary: story?.beneficiary,
+  })
+}
+
+export function translateSampleUpdate(update: CampaignUpdate): CampaignUpdate {
+  if (!TRANSLATED_SAMPLES.updates.includes(update.id) || update.translations) return update
+  return withSeedTranslations(update, { title: update.title, body: update.body })
+}
+
+export function translateSampleReferral(referral: Referral): Referral {
+  if (!TRANSLATED_SAMPLES.referrals.includes(referral.id) || referral.translations) return referral
+  return withSeedTranslations(referral, { headline: referral.headline, message: referral.message })
 }

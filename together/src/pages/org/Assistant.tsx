@@ -25,6 +25,7 @@ import { RequiredProgress, ResumeDrafts, SaveIndicator } from '../../components/
 import { AiBadge } from '../../components/ai/AiUI.tsx'
 import { DraftSuggestions, NotedFacts } from '../../components/ai/DraftSuggestions.tsx'
 import { ReadinessPanel } from '../../components/ai/ReadinessPanel.tsx'
+import { SetupSuggestions } from '../../components/ai/SetupSuggestions.tsx'
 import { BudgetLines } from '../../components/story/StoryDetails.tsx'
 import { parseCampaignMessage } from '../../lib/ai/parse.ts'
 import { readinessFromForm, type ReadinessField } from '../../lib/ai/readiness.ts'
@@ -625,6 +626,7 @@ function StepInput({
           <p className="help">
             {templateFor(form.category).blurb} At review you can accept suggested milestones and a game for this type — nothing is added until you do.
           </p>
+          <SetupSuggestions form={form} allowedGames={allowed} onChange={onChange} />
         </>
       )
     }
