@@ -10,47 +10,33 @@ export interface SceneEffect {
 }
 
 interface GardenSceneProps {
-  plantStage: number
   treeStage: number
   effect: SceneEffect | null
-  plantStatus: string
   treeCaption: string
   onTreeSign: () => void
   overlay?: ReactNode
   toast?: ReactNode
 }
 
-const PLANT_DESCRIPTIONS = [
-  'a seed resting in the soil',
-  'a tiny shoot emerging from the soil',
-  'a seedling with two broad leaves',
-  'a young plant with five leaves',
-  'a lush young plant with glossy leaves',
-]
-
 /**
- * Layered garden: background, shared campaign tree, soil mound, personal plant and
- * care effects are separate images so each can change on its own.
+ * One shared campaign tree in the garden. Care effects play on that tree.
+ * Its growth stage follows confirmed campaign progress only.
  */
 export const GardenScene = forwardRef<HTMLDivElement, GardenSceneProps>(function GardenScene(
-  { plantStage, treeStage, effect, plantStatus, treeCaption, onTreeSign, overlay, toast },
-  plantRef,
+  { treeStage, effect, treeCaption, onTreeSign, overlay, toast },
+  treeRef,
 ) {
   const milestone = TREE_MILESTONES[treeStage]
-  const description =
-    plantStage < 0
-      ? 'An empty soil mound is ready for your seed.'
-      : `Your care plant is ${PLANT_DESCRIPTIONS[plantStage]}.`
 
   return (
     <section className={`gt-scene${effect ? ` is-${effect.kind}` : ''}`} aria-label="Garden">
       <p className="gt-visually-hidden">
-        {description} The shared campaign tree is at the {milestone.name.toLowerCase()} stage.
+        The shared campaign tree is at the {milestone.name.toLowerCase()} stage.
       </p>
       <img className="gt-bg" src={`${ART}/garden-bg.webp`} alt="" draggable={false} />
       <div className="gt-sun-glow" aria-hidden="true" />
 
-      <div className="gt-tree-anchor" aria-hidden="true">
+      <div className="gt-tree-anchor" ref={treeRef}>
         {TREE_MILESTONES.map((item, index) => (
           <img
             key={item.name}
@@ -60,30 +46,18 @@ export const GardenScene = forwardRef<HTMLDivElement, GardenSceneProps>(function
             draggable={false}
           />
         ))}
+        {effect?.kind === 'seed' ? (
+          <img key={`seed-${effect.key}`} className="gt-seed-drop" src={`${ART}/plant-0.webp`} alt="" aria-hidden="true" />
+        ) : null}
+        {effect?.kind === 'sun' ? <Sparkles key={`spark-${effect.key}`} /> : null}
       </div>
       <button type="button" className="gt-sign gt-sign-tree" onClick={onTreeSign}>
         <span className="gt-sign-title">Shared campaign growth</span>
         <span className="gt-sign-sub">{treeCaption}</span>
       </button>
 
-      <img className="gt-mound" src={`${ART}/soil-mound.webp`} alt="" draggable={false} />
       {effect?.kind === 'water' ? <span key={`wet-${effect.key}`} className="gt-wet" aria-hidden="true" /> : null}
       {effect?.kind === 'fertilizer' ? <Roots key={`roots-${effect.key}`} /> : null}
-
-      <div className="gt-plant-anchor" ref={plantRef}>
-        {plantStage >= 0 ? (
-          <img key={plantStage} className="gt-plant" src={`${ART}/plant-${plantStage}.webp`} alt="" draggable={false} />
-        ) : null}
-        {effect?.kind === 'seed' ? (
-          <img key={`seed-${effect.key}`} className="gt-seed-drop" src={`${ART}/plant-0.webp`} alt="" aria-hidden="true" />
-        ) : null}
-        {effect?.kind === 'sun' ? <Sparkles key={`spark-${effect.key}`} /> : null}
-      </div>
-
-      <div className="gt-sign gt-sign-plant" aria-hidden="true">
-        <span className="gt-sign-title">Your care plant</span>
-        <span className="gt-sign-sub">{plantStatus}</span>
-      </div>
 
       {effect?.kind === 'water' ? <Watering key={`water-${effect.key}`} /> : null}
       {effect?.kind === 'fertilizer' ? <Fertilizing key={`fert-${effect.key}`} /> : null}

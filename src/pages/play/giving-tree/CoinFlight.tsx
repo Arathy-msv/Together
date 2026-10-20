@@ -9,7 +9,7 @@ export interface Point {
 const COIN = 58
 
 /**
- * A gold coin that rises from the plant and arcs into the cart. Both ends are measured
+ * A gold coin that rises from the shared tree and arcs into the cart. Both ends are measured
  * from the rendered elements when the flight starts, so it follows any layout or size.
  */
 export function CoinFlight({

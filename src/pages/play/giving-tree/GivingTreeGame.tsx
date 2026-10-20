@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Leaderboard } from '../../../components/Leaderboard.tsx'
+import { Leaderboard, RankBanner } from '../../../components/Leaderboard.tsx'
 import { contributionAvailability } from '../../../lib/availability.ts'
 import { addContribution, campaignDetailsPath, findContribution } from '../../../lib/campaigns.ts'
 import { PAISE_PER_RUPEE, campaignGameSettings, formatPaise } from '../../../lib/gameContribution.ts'
@@ -17,7 +17,6 @@ import {
   newGivingTree,
   nextActionId,
   parseGivingTree,
-  plantStage,
   recommendedCare,
   recordCare,
   suggestedPaise,
@@ -58,8 +57,8 @@ const WORKING: Record<CareKind, string> = {
   sun: 'Giving sunlight…',
 }
 
-/** Coin start height as a share of the plant frame, per growth stage. */
-const PLANT_TOP = [0.18, 0.28, 0.5, 0.68, 0.82]
+/** Coin start height as a share of the shared-tree frame, from seed to full tree. */
+const TREE_TOP = [0.34, 0.48, 0.6, 0.76, 0.86, 0.93]
 
 type Panel = 'cart' | 'amount' | 'growth' | null
 
@@ -108,7 +107,8 @@ export function GivingTreeGame({ view, preview = false }: { view: CampaignView; 
   const [success, setSuccess] = useState<number | null>(null)
   const [caption, setCaption] = useState<string | null>(null)
   const [announcement, setAnnouncement] = useState('')
-  const plantRef = useRef<HTMLDivElement>(null)
+  const treeRef = useRef<HTMLDivElement>(null)
+  const sharedStageRef = useRef(0)
   const cartIconRef = useRef<HTMLSpanElement>(null)
   const cartRef = useRef<HTMLButtonElement>(null)
   const timers = useRef<number[]>([])
@@ -137,7 +137,7 @@ export function GivingTreeGame({ view, preview = false }: { view: CampaignView; 
   const goal = campaign.goalAmount
   const percent = campaignPercent(raised, goal)
   const sharedStage = treeStage(raised, goal)
-  const stage = plantStage(state)
+  sharedStageRef.current = sharedStage
   const recommended = recommendedCare(state)
   const summary: CampaignSummary = { title: campaign.title, raised, goal, percent }
 
@@ -210,9 +210,9 @@ export function GivingTreeGame({ view, preview = false }: { view: CampaignView; 
   }
 
   const coinStart = useCallback((): Point | null => {
-    const box = plantRef.current?.getBoundingClientRect()
+    const box = treeRef.current?.getBoundingClientRect()
     if (!box || box.width === 0) return null
-    const ratio = PLANT_TOP[Math.max(0, plantStage(stateRef.current))]
+    const ratio = TREE_TOP[Math.min(TREE_TOP.length - 1, Math.max(0, sharedStageRef.current))]
     return { x: box.left + box.width / 2, y: box.bottom - box.height * ratio }
   }, [])
 
@@ -238,7 +238,7 @@ export function GivingTreeGame({ view, preview = false }: { view: CampaignView; 
     if (confirming.current) return 'Your contribution is already being confirmed.'
     if (blockedReason) return blockedReason
     const current = stateRef.current
-    if (current.cart.length === 0) return 'Care for your plant to start a suggestion first.'
+    if (current.cart.length === 0) return 'Care for the shared tree to start a suggestion first.'
     if (amountPaise % PAISE_PER_RUPEE !== 0 || amountPaise <= 0) return 'Enter a whole rupee amount, like 100.'
     confirming.current = true
     try {
@@ -292,7 +292,6 @@ export function GivingTreeGame({ view, preview = false }: { view: CampaignView; 
             ? 'Contribution confirmed'
             : (caption ?? (state.seedPlanted ? `Next: ${CARE_ACTIONS[recommended].next}` : 'Plant a seed'))
 
-  const plantStatus = state.seedPlanted ? `${state.carePoints} care points` : 'Not started'
   const careCount = state.cart.length
 
   return (
@@ -320,6 +319,7 @@ export function GivingTreeGame({ view, preview = false }: { view: CampaignView; 
           </div>
           <span className="gt-demo">{preview ? 'Preview' : 'Demo'}</span>
         </header>
+        {campaign.access === 'closed' && !preview ? <RankBanner campaignId={campaignId} /> : null}
         <p className="gt-step" aria-live="polite">
           {stepCaption}
         </p>
@@ -379,11 +379,9 @@ export function GivingTreeGame({ view, preview = false }: { view: CampaignView; 
         </div>
 
         <GardenScene
-          ref={plantRef}
-          plantStage={stage}
+          ref={treeRef}
           treeStage={sharedStage}
           effect={effect}
-          plantStatus={plantStatus}
           treeCaption={`${formatPercent(percent)} complete`}
           onTreeSign={() => setPanel('growth')}
           toast={
@@ -410,7 +408,7 @@ export function GivingTreeGame({ view, preview = false }: { view: CampaignView; 
             ) : !state.seedPlanted && !busy ? (
               <div className="gt-intro">
                 <h2>Every little action can help us grow.</h2>
-                <p>Care for your plant and, together, we can grow a greener, brighter {campaign.title.replace(/^Grow (our )?/i, '').toLowerCase() || 'campaign'}.</p>
+                <p>Care for our shared tree and, together, we can grow a greener, brighter {campaign.title.replace(/^Grow (our )?/i, '').toLowerCase() || 'campaign'}.</p>
               </div>
             ) : null
           }

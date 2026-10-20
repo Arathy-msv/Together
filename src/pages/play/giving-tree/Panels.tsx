@@ -42,10 +42,10 @@ export function CartReview({
       </h2>
       {lines.length === 0 ? (
         <>
-          <p className="gt-panel-lead">Your cart is empty. Care for your plant to add a suggestion — nothing is charged while you play.</p>
+          <p className="gt-panel-lead">Your cart is empty. Care for the shared tree to add a suggestion — nothing is charged while you play.</p>
           <div className="gt-empty-cart">
             <SproutMark size={40} />
-            <p>Plant a seed, water it, add fertilizer or give sunlight. Each care action adds a small suggested amount here.</p>
+            <p>Plant a seed, add water, fertilizer or sunlight. Each care action adds a small suggested amount here.</p>
           </div>
           <div className="gt-panel-actions">
             <button type="button" className="gt-btn gt-btn-primary" onClick={onContinue}>
@@ -55,7 +55,7 @@ export function CartReview({
         </>
       ) : (
         <>
-          <p className="gt-panel-lead">These items will help your care plant and support the campaign when you contribute.</p>
+          <p className="gt-panel-lead">These care actions support the shared tree and the campaign when you contribute.</p>
           <ul className="gt-lines">
             {lines.map((line) => (
               <li key={line.kind}>
@@ -81,8 +81,8 @@ export function CartReview({
               <LeafPoints size={26} />
             </span>
             <span className="gt-line-name">
-              <strong>Personal care</strong>
-              <span>Points for your plant</span>
+              <strong>Care points</strong>
+              <span>Kept with you after you contribute</span>
             </span>
             <strong>{state.carePoints} points</strong>
           </div>
@@ -321,7 +321,7 @@ export function GrowthReference({ campaign, stage }: { campaign: CampaignSummary
         ))}
       </ol>
       <p className="gt-growth-foot">
-        <SproutMark /> Only confirmed simulated contributions change shared growth. Personal care and the pending cart do not.
+        <SproutMark /> Only confirmed simulated contributions change the shared tree. Care points and the pending cart do not.
       </p>
     </div>
   )
