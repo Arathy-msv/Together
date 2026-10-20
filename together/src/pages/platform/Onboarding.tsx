@@ -51,6 +51,8 @@ function stepErrors(step: number, org: Organization, all: Organization[]): Recor
 export function OnboardingPage() {
   const { organizationId = '' } = useParams()
   const stored = useOrganizations().find((org) => org.id === organizationId)
+  // Publishing changes the status mid-session; keep the wizard mounted so it can show the result.
+  const [startedInSetup] = useState(stored?.website.status === 'setup')
   if (!stored) {
     return (
       <div className="container narrow page-pad">
@@ -64,7 +66,7 @@ export function OnboardingPage() {
       </div>
     )
   }
-  if (stored.website.status !== 'setup') return <Navigate to={`/workspace/${stored.id}/overview`} replace />
+  if (stored.website.status !== 'setup' && !startedInSetup) return <Navigate to={`/workspace/${stored.id}/overview`} replace />
   return <Wizard key={stored.id} stored={stored} />
 }
 

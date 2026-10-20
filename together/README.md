@@ -1,10 +1,10 @@
 # Together
 
-Together is a browser-only proof of concept for an interactive fundraising platform. Organisers create campaigns. Supporters open a campaign link, which opens the campaign’s game when one is enabled (Grow Our Garden, Memory Match, Community Puzzle, or Zip the Jacket). Each completed game action adds a set amount to a suggested contribution that the supporter can edit, donate, or cancel. Direct giving stays available from the campaign details.
+Together is a browser-only proof of concept for a fundraising platform. Companies, schools, clubs and nonprofits choose a demo plan, set up and publish their own branded fundraising website, and create campaigns from a management workspace. Supporters open a campaign link, which opens the campaign’s game when one is enabled (Grow Our Garden, Memory Match, Community Puzzle, or Zip the Jacket). Each completed game action adds a set amount to a suggested contribution that the supporter can edit, donate, or cancel. Direct giving stays available from the campaign details.
 
 The organiser and supporter screens use a clean, photographic product style. The games keep an illustrated, storybook style.
 
-One codebase serves many organizations — companies, schools, clubs, and nonprofits. Each organization has its own logo, colours, fonts, homepage content, campaign defaults, and available games, all driven by configuration.
+One codebase serves every organization. Each has its own website address, logo, colours, fonts, homepage, about page, campaign defaults and available games, all driven by configuration rather than separate copies of the site.
 
 No real money is collected. There is no backend, database, account system, or payment gateway. Organizations, campaigns, and simulated contributions stay in `localStorage` in this browser.
 
@@ -25,44 +25,28 @@ npm test
 
 `npm test` runs the contribution rules, stage gating, checkout, organization, theming, storage migration, assistant, referral attribution, fund summary, trust, draft and AI-preview tests with Node’s built-in test runner.
 
-## Organizations
+## Platform structure
 
-Every page lives under an organization:
+Together is now a platform where companies, schools, clubs and nonprofits each get their own branded fundraising website. There are three separate areas:
 
-| Route | What it shows |
-| --- | --- |
-| `/o/:organizationSlug` | Branded homepage |
-| `/o/:organizationSlug/campaigns` | That organization’s campaigns |
-| `/o/:organizationSlug/campaigns/:campaignId` | Campaign (opens the game when one is enabled) |
-| `/o/:organizationSlug/create` | Campaign form, pre-filled with the organization’s defaults |
-| `/o/:organizationSlug/assistant` | Scripted campaign creation assistant |
-| `/o/:organizationSlug/settings` | Brand settings with a live preview |
-| `/o/:organizationSlug/dashboard` | Organizer view of that organization’s campaigns |
+| Area | Routes | Purpose |
+| --- | --- | --- |
+| Together platform website | `/`, `/plans`, `/start`, `/start/:organizationId`, `/workspace` | Product homepage (how it works, features, examples), demo plan selection, guided onboarding, demo workspace entry |
+| Organization public website | `/o/:organizationSlug`, `/about`, `/campaigns`, `/campaigns/:campaignId`, `/campaigns/:campaignId/r/:referralCode` (plus play, confirm, success, share) | One branded site per organization, showing only that organization’s campaigns |
+| Organization workspace | `/workspace/:organizationId/overview`, `/website`, `/campaigns`, `/campaigns/new`, `/campaigns/:campaignId/:tab`, `/assistant`, `/settings`, `/plan` | Management: website editor, campaigns (updates, milestones, expenses, evidence, sharing pages), assistant, settings, demo plan |
 
-A campaign only opens under the organization it belongs to (`organizationId`). Unknown slugs and mismatched campaigns show a not-found screen. Old links still work: `/campaigns/:id/...` redirects to the campaign’s organization, and `/`, `/explore`, `/create`, `/dashboard` redirect to the organization last picked in the demo switcher (Together by default).
+**Customer journey:** Choose a plan → Add organization details → Customize website → Publish demo site → Create campaigns.
 
-Seeded organizations:
+- **Demo plans:** three sample plans with features and illustrative limits. They have no prices. Confirmation is simulated: no payment, billing, renewals or invoices, and limits are not enforced.
+- **Onboarding:** six steps (details, website address, branding, content, fundraising preferences, review with desktop/mobile preview). Progress autosaves, and `/start` resumes an unfinished setup. Website addresses are lowercase, unique ignoring case, and can’t use reserved platform names.
+- **Website lifecycle:** *Setup in progress* → *Draft* → *Published*. The public site always uses the published settings. In the website editor, *Save draft*, *Preview changes*, *Publish changes* and *Discard unpublished changes* work on a separate draft. Organizer preview is a labelled demo control on this device only. Publishing a website never publishes campaign drafts. Before the first publish, the public address shows an “isn’t published yet” page.
+- **Website addresses are locked once published**, so shared links keep working.
+- **Isolation:** campaigns, sharing pages, drafts and totals are filtered by `organizationId`. A campaign or referral code under the wrong organization address shows not found. The demo organization switcher appears only in the workspace, never on public sites.
+- **Local only:** websites you create work at their addresses in this browser. Because there is no server, they are not visible on other devices.
 
-- **Together** (`/o/together`) — the default theme (warm ivory, forest green, soft sage, gold). Campaigns saved before organizations existed belong here.
-- **Lumen & Co.** (`/o/lumen-co`) — a company with employee campaigns in US dollars.
-- **Maple Grove Public School** (`/o/maple-grove`) — a school with student and family campaigns.
-- **Open Harbour Foundation** (`/o/open-harbour`) — a nonprofit with shelter and kitchen campaigns.
+Seeded organizations: **Maple Grove Public School** (`/o/maple-grove`), **Lumen & Co.** (`/o/lumen-co`) and **Open Harbour Foundation** (`/o/open-harbour`). Each has distinct branding, a published site, an about page, campaigns and different games. **Together** (`/o/together`) keeps the original sample campaigns. **Riverside Runners Club** is an unfinished onboarding (step 3) you can resume from `/start`.
 
-Organizer pages (dashboard, create, assistant, settings) show a **Demo organizer controls** bar with an organization switcher. It exists for reviewing the demo and is not secure tenant isolation. Supporter pages never show it.
-
-### Brand settings
-
-Edit identity, colours and fonts, homepage content, games and participation, and footer links. The preview on the right updates as you type, in desktop or mobile size; the live site only changes when you choose **Save changes**. **Discard changes** returns to the saved version, and **Restore default branding** puts the Together colours and fonts into the preview.
-
-Text colours are chosen automatically for contrast, and the page warns when a colour combination is hard to read. Logo and hero uploads are checked for type and size, resized, and compressed; the hero can also come from a built-in gallery. If browser storage is full, nothing is saved and a message explains why.
-
-Turning a game off stops new campaigns from choosing it; campaigns that already use it keep working. Pencil writing and Paper opening are listed as coming soon.
-
-Campaign currency is fixed per campaign. The organization currency is only the default for new campaigns.
-
-### Campaign assistant
-
-A scripted, question-by-question flow (no AI service). It asks for the purpose, name, target, dates, group type, participation, game, amounts, and cover, with quick-answer chips, back and edit, a live draft preview, and **Save draft** (kept per organization). Answers are validated with the same rules as the campaign form. Nothing is published until you choose **Create campaign** on the review step.
+Old links still work: `/campaigns/:id/...` goes to the campaign’s organization site; `/dashboard`, `/create` and `/o/:slug/dashboard|create|assistant|settings` go to the matching workspace page; `/explore` goes to the demo organization’s campaigns.
 
 ## Sharing pages and attribution
 
@@ -83,7 +67,7 @@ Campaign pages have **Story**, **Updates**, **Fund use** and **Trust & documents
 
 ### Organizer workspace
 
-From the organizer dashboard, **Manage** opens `/o/:organizationSlug/dashboard/:campaignId` with Overview, Story & settings, Referral pages, Milestones, Updates, Expenses, Trust & documents and Final report. The overview suggests next steps (no published updates, past-due milestones, expenses without evidence, goal reached). Closing fundraising and publishing a final report are separate actions. Receipts can be kept organizer-only with a separate redacted public copy, and publishing asks for privacy confirmation.
+In the workspace, Campaigns → **Manage** opens `/workspace/:organizationId/campaigns/:campaignId` with Overview, Story & settings, Referral pages, Milestones, Updates, Expenses, Trust & documents and Final report. The overview suggests next steps (no published updates, past-due milestones, expenses without evidence, goal reached). Closing fundraising and publishing a final report are separate actions. Receipts can be kept organizer-only with a separate redacted public copy, and publishing asks for privacy confirmation.
 
 ## Stories, templates and drafts
 
@@ -115,7 +99,7 @@ All features go through one small typed interface, `AssistantService` in `src/li
 
 | Key | Contents |
 | --- | --- |
-| `together.organizations.v1` | Organization configurations |
+| `together.organizations.v1` | Organizations, version 2: details, slug, demo plan, onboarding progress, published website settings, website draft, status and timestamps |
 | `together.demo.v1` | Format version 4 (adds optional reviewed `translations` on campaigns, updates and sharing pages): campaigns, contributions (optional `referralId`), referrals, milestones, campaignUpdates, expenses, supportingDocuments |
 | `together.campaignDrafts.v1` | Form and assistant drafts, each with a stable ID and organization |
 | `together.followed.v1` | Campaigns followed on this device |
