@@ -531,3 +531,5 @@ html.org-theme :focus-visible { outline-color: var(--org-focus); }
   .pro .chat { padding: 16px; }
 }
 .org-theme .preview-overlay { font-family: var(--org-heading-font); font-weight: 700; }
+.gt-brand.game-brand { font-size: 22px; }
+.gt-brand.game-brand .game-brand-name { max-width: 28ch; }
