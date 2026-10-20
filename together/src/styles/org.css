@@ -660,11 +660,11 @@ html.org-theme :focus-visible { outline-color: var(--org-focus); }
 .timeline-legend { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.82rem; color: var(--p-muted); }
 .timeline-legend li { display: inline-flex; align-items: center; gap: 6px; }
 .timeline { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
-.timeline li { display: grid; grid-template-columns: 22px 1fr; gap: 12px; position: relative; padding-bottom: 18px; }
-.timeline li::before { content: ''; position: absolute; left: 10px; top: 18px; bottom: 0; width: 2px; background: var(--p-line); }
-.timeline li:last-child::before { display: none; }
-.timeline li > div { display: grid; gap: 3px; min-width: 0; }
-.timeline.compact li { padding-bottom: 10px; }
+.timeline > li { display: grid; grid-template-columns: 22px 1fr; gap: 12px; position: relative; padding-bottom: 18px; }
+.timeline > li::before { content: ''; position: absolute; left: 10px; top: 18px; bottom: 0; width: 2px; background: var(--p-line); }
+.timeline > li:last-child::before { display: none; }
+.timeline > li > div { display: grid; gap: 3px; min-width: 0; }
+.timeline.compact > li { padding-bottom: 10px; }
 .timeline-head { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; align-items: center; }
 .dot { width: 14px; height: 14px; border-radius: 50%; display: inline-block; border: 2px solid var(--p-muted); background: var(--p-surface); margin-top: 3px; position: relative; z-index: 1; }
 .timeline .dot { margin-left: 4px; }
@@ -1108,6 +1108,8 @@ html.low-data img:not(.keep-image) { filter: none; }
 html.low-data .hero-stack, html.low-data .play-side { display: none; }
 .export-panel, .history-list, .sponsor-banner { display: grid; gap: 10px; }
 .low-data-bar { display: flex; justify-content: flex-end; padding: 6px 16px; font-size: 0.85rem; }
+.low-data-bar label { display: inline-flex; align-items: flex-start; gap: 8px; flex-wrap: nowrap; max-width: 52ch; cursor: pointer; }
+.low-data-bar input[type='checkbox'] { flex: none; width: 16px; height: 16px; margin: 2px 0 0; }
 @media (max-width: 980px) {
   .onboarding-steps { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .feature-card { flex-direction: column; }
@@ -1279,3 +1281,6 @@ html.low-data .hero-stack, html.low-data .play-side { display: none; }
 .voucher-present-code { margin: 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: clamp(1.8rem, 8vw, 3rem); font-weight: 800; letter-spacing: 0.12em; overflow-wrap: anywhere; }
 .voucher-present-sub { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 1.3rem; }
 .voucher-present-note { max-width: 40ch; font-size: 0.9rem; color: #333; margin: 0; }
+
+.my-activity > section { margin-top: 28px; display: grid; gap: 10px; }
+.my-activity > section > h2 { margin: 0; }

@@ -184,7 +184,7 @@ export function MilestoneTimeline({ milestones, compact = false, links }: { mile
           const tone = milestoneTone(milestone)
           const delayed = isMilestoneDelayed(milestone)
           return (
-            <li key={milestone.id} className={tone}>
+            <li key={milestone.id} className={`timeline-item is-${tone}`}>
               <span className={`dot tone-${tone}`} aria-hidden="true" />
               <div>
                 <div className="timeline-head">

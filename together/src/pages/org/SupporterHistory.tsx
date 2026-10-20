@@ -66,7 +66,7 @@ export function SupporterHistoryPage() {
     .filter((row): row is { follow: (typeof row)['follow']; campaign: NonNullable<(typeof row)['campaign']> } => Boolean(row.campaign))
 
   return (
-    <div className="container narrow page-pad">
+    <div className="container narrow page-pad my-activity">
       <Link to={base} className="back-link page-back">
         ← Back to {org.name}
       </Link>
