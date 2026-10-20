@@ -79,7 +79,7 @@ export function OrgLayout() {
           Skip to content
         </a>
         {banner}
-        <OrgHeader org={shown} base={value.base} />
+        <OrgHeader org={shown} base={value.base} workspace={value.workspace} />
         <LowDataToggle org={shown} />
         <main id="main">
           <Outlet />

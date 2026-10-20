@@ -40,7 +40,7 @@ function OrgBrandLink({ org, base }: { org: Organization; base: string }) {
   )
 }
 
-export function OrgHeader({ org, base }: { org: Organization; base: string }) {
+export function OrgHeader({ org, base, workspace }: { org: Organization; base: string; workspace?: string }) {
   const { pathname } = useLocation()
   const [menuPath, setMenuPath] = useState<string | null>(null)
   const open = menuPath === pathname
@@ -74,6 +74,11 @@ export function OrgHeader({ org, base }: { org: Organization; base: string }) {
           </NavLink>
           <NavLink to={`${base}/campaigns`}>Campaigns</NavLink>
           <NavLink to={`${base}/about`}>About</NavLink>
+          {workspace ? (
+            <Link to={`${workspace}/overview`} className="oh-nav-manage">
+              Manage this website <span className="demo-badge small-badge">Demo</span>
+            </Link>
+          ) : null}
         </nav>
       </div>
     </header>
