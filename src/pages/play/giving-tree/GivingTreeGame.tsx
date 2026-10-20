@@ -21,8 +21,8 @@ import {
   recommendedCare,
   recordCare,
   suggestedPaise,
+  TREE_MILESTONES,
   treeStage,
-  visibleTreeStage,
   type CareKind,
   type GivingTreeState,
 } from '../../../lib/givingTree.ts'
@@ -139,8 +139,7 @@ export function GivingTreeGame({ view, preview = false }: { view: CampaignView; 
   const goal = campaign.goalAmount
   const finished = goalReached(raised, goal)
   const percent = campaignPercent(raised, goal)
-  const campaignStage = treeStage(raised, goal)
-  const sharedStage = visibleTreeStage(campaignStage, state, finished)
+  const sharedStage = treeStage(raised, goal)
   sharedStageRef.current = sharedStage
   const recommended = recommendedCare(state)
   const summary: CampaignSummary = { title: campaign.title, raised, goal, percent }
@@ -398,7 +397,7 @@ export function GivingTreeGame({ view, preview = false }: { view: CampaignView; 
           ref={treeRef}
           treeStage={sharedStage}
           effect={effect}
-          treeCaption={finished ? 'Goal reached' : `${formatPercent(percent)} complete`}
+          treeCaption={finished ? 'Goal reached' : `${TREE_MILESTONES[sharedStage].name} · ${formatPercent(percent)}`}
           celebrating={finished}
           onTreeSign={() => setPanel('growth')}
           toast={
@@ -570,7 +569,7 @@ export function GivingTreeGame({ view, preview = false }: { view: CampaignView; 
       ) : null}
       {panel === 'growth' ? (
         <Sheet labelledBy="gt-growth-title" onClose={() => setPanel(null)} variant="modal">
-          <GrowthReference campaign={summary} stage={campaignStage} />
+          <GrowthReference campaign={summary} stage={sharedStage} />
         </Sheet>
       ) : null}
     </>

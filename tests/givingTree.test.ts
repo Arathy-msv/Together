@@ -19,7 +19,6 @@ import {
   recordCare,
   suggestedPaise,
   treeStage,
-  visibleTreeStage,
   type CareKind,
   type GivingTreeState,
 } from '../src/lib/givingTree.ts'
@@ -131,19 +130,6 @@ describe('shared campaign growth', () => {
     assert.equal(treeStage(30000, 50000), 3)
     assert.equal(treeStage(40000, 50000), 4)
     assert.equal(treeStage(50000, 50000), 5)
-  })
-
-  test('care grows the one tree, and the goal finishes it', () => {
-    const bare = { seedPlanted: false, carePoints: 0 }
-    assert.equal(visibleTreeStage(0, bare, false), 0)
-    assert.equal(visibleTreeStage(1, bare, false), 1)
-    assert.equal(visibleTreeStage(0, { seedPlanted: true, carePoints: 10 }, false), 1)
-    assert.equal(visibleTreeStage(0, { seedPlanted: true, carePoints: 30 }, false), 2)
-    assert.equal(visibleTreeStage(0, { seedPlanted: true, carePoints: 60 }, false), 3)
-    assert.equal(visibleTreeStage(0, { seedPlanted: true, carePoints: 70 }, false), 4)
-    assert.equal(visibleTreeStage(0, { seedPlanted: true, carePoints: 90 }, false), 4)
-    assert.equal(visibleTreeStage(3, { seedPlanted: true, carePoints: 10 }, false), 3)
-    assert.equal(visibleTreeStage(1, { seedPlanted: true, carePoints: 90 }, true), 5)
   })
 
   test('personal plant grows with care points', () => {

@@ -330,18 +330,19 @@ a.gt-back:hover { color: var(--gt-ink); text-decoration: underline; text-underli
 .gt-fx { position: absolute; inset: 0; z-index: 6; pointer-events: none; }
 .gt-can {
   position: absolute;
-  left: calc(var(--tree-x) - 24%);
-  bottom: 36%;
-  width: 18%;
-  transform-origin: 30% 60%;
-  animation: gt-can 1800ms ease-in-out forwards;
+  z-index: 2;
+  left: max(1.5%, calc(var(--tree-x) - var(--tree-w) / 2 - 6%));
+  bottom: calc(var(--tree-b) + 22%);
+  width: 20%;
+  transform-origin: 18% 70%;
+  opacity: 1;
+  animation: gt-can 1800ms ease-in-out both;
   filter: drop-shadow(0 10px 12px rgba(30, 30, 20, 0.25));
 }
 @keyframes gt-can {
-  0% { transform: translate(-30%, -10%) rotate(-6deg); opacity: 0; }
-  18% { transform: translate(0, 0) rotate(0deg); opacity: 1; }
-  32%, 78% { transform: translate(0, 0) rotate(24deg); opacity: 1; }
-  100% { transform: translate(-20%, -8%) rotate(0deg); opacity: 0; }
+  0% { transform: translate(-12%, -6%) rotate(-10deg); opacity: 0; }
+  12% { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+  28%, 100% { transform: translate(0, 0) rotate(26deg); opacity: 1; }
 }
 .gt-drops {
   position: absolute;
@@ -973,7 +974,7 @@ a.gt-back:hover { color: var(--gt-ink); text-decoration: underline; text-underli
   .gt-intro { width: 88%; top: 6%; }
   .gt-intro h2 { font-size: clamp(22px, 7cqw, 32px); }
   .gt-intro p { font-size: clamp(13px, 3.6cqw, 16px); margin-top: 6px; }
-  .gt-can { width: 32%; left: calc(var(--tree-x) - 38%); bottom: 40%; }
+  .gt-can { width: 34%; left: max(1%, calc(var(--tree-x) - var(--tree-w) / 2 - 10%)); bottom: calc(var(--tree-b) + 28%); }
   .gt-drops { width: 20%; left: calc(var(--tree-x) - 12%); }
   .gt-scoop { width: 22%; }
   .gt-granules { width: 12%; }
@@ -1056,7 +1057,8 @@ a.gt-back:hover { color: var(--gt-ink); text-decoration: underline; text-underli
     animation-iteration-count: 1 !important;
     transition-duration: 1ms !important;
   }
-  .gt-can, .gt-scoop, .gt-rays, .gt-drops, .gt-granules, .gt-seed-drop, .gt-sparkles { display: none; }
+  .gt-can, .gt-scoop { animation: none; opacity: 1; }
+  .gt-rays, .gt-drops, .gt-granules, .gt-seed-drop, .gt-sparkles { display: none; }
   .gt-roots .gt-root { stroke-dashoffset: 0; opacity: 0.8; }
   .gt-cart.is-pulse { border-color: var(--gt-gold); box-shadow: 0 0 0 3px rgba(239, 177, 67, 0.35); }
 }

@@ -1,7 +1,20 @@
-import { forwardRef, type ReactNode } from 'react'
+import { forwardRef, useEffect, type ReactNode } from 'react'
 import { TREE_MILESTONES, type CareKind } from '../../../lib/givingTree.ts'
 
 export const ART = '/giving-tree'
+
+const PRELOAD = ['watering-can.webp', 'fertilizer-scoop.webp', 'coin.webp']
+
+/** Decode the care props before the first animation, so a late image cannot finish invisible. */
+function usePreloadArt() {
+  useEffect(() => {
+    for (const file of PRELOAD) {
+      const image = new Image()
+      image.src = `${ART}/${file}`
+      image.decode?.().catch(() => undefined)
+    }
+  }, [])
+}
 
 export interface SceneEffect {
   kind: CareKind
@@ -27,6 +40,7 @@ export const GardenScene = forwardRef<HTMLDivElement, GardenSceneProps>(function
   { treeStage, effect, treeCaption, onTreeSign, celebrating = false, overlay, toast },
   treeRef,
 ) {
+  usePreloadArt()
   const milestone = TREE_MILESTONES[treeStage]
 
   return (
@@ -35,6 +49,11 @@ export const GardenScene = forwardRef<HTMLDivElement, GardenSceneProps>(function
         The shared campaign tree is at the {milestone.name.toLowerCase()} stage.
       </p>
       <img className="gt-bg" src={`${ART}/garden-bg.webp`} alt="" draggable={false} />
+      <div className="gt-visually-hidden" aria-hidden="true">
+        {PRELOAD.map((file) => (
+          <img key={file} src={`${ART}/${file}`} alt="" />
+        ))}
+      </div>
       <div className="gt-sun-glow" aria-hidden="true" />
 
       <div className="gt-tree-anchor" ref={treeRef}>
