@@ -112,6 +112,169 @@ export interface Campaign {
   createdAt: string
   manualClosedAt?: string
   isDraft?: boolean
+  category?: CampaignCategory
+  story?: CampaignStory
+  /** Organizer's planned budget. Planned amounts are never treated as spending. */
+  budget?: BudgetLine[]
+  impactExamples?: ImpactExample[]
+  finalReport?: FinalReport
+  /** Organizer explanation shown when reported spending exceeds simulated contributions. */
+  fundingNote?: string
+  /** Seeded example only. There is no UI that lets organizers set this. */
+  demoVerification?: { label: string; note: string; date: string }
+}
+
+export type CampaignCategory = 'education' | 'clothing' | 'environment' | 'sports' | 'community' | 'other'
+
+export interface MediaItem {
+  id: string
+  /** Public path or compressed data URL. */
+  src: string
+  caption: string
+  alt: string
+}
+
+export interface MediaVideo {
+  src: string
+  caption: string
+}
+
+export interface CampaignStory {
+  whoItHelps: string
+  whatTheyNeed: string
+  whatItSupports: string
+  whatHappensNext: string
+  beneficiary: string
+  imageStory: MediaItem[]
+  video?: MediaVideo
+}
+
+export interface BudgetLine {
+  id: string
+  label: string
+  /** Integer minor units (paise, cents). */
+  amountMinor: number
+}
+
+export interface ImpactExample {
+  id: string
+  amountMinor: number
+  outcome: string
+  /** Required: where the organizer's cost figure comes from. */
+  costBasis: string
+}
+
+export interface FinalReport {
+  status: 'draft' | 'published'
+  outcomes: string
+  outcomeFields: { label: string; value: string }[]
+  remainingPlan: string
+  evidenceDocumentIds: string[]
+  evidenceUpdateIds: string[]
+  updatedAt: string
+  publishedAt?: string
+}
+
+export type PublishState = 'draft' | 'published'
+
+export interface Referral {
+  id: string
+  campaignId: string
+  organizationId: string
+  /** Stable, URL-safe and unique. Attribution only — never an editing password. */
+  code: string
+  displayName: string
+  avatarData?: string
+  headline: string
+  message: string
+  /** Optional personal target in the campaign's currency, whole units. */
+  personalTarget?: number
+  coverImage?: string
+  createdAt: string
+  updatedAt: string
+}
+
+export type MilestoneStatus = 'planned' | 'in_progress' | 'reported_complete'
+
+export interface Milestone {
+  id: string
+  campaignId: string
+  title: string
+  description: string
+  dueDate: string
+  plannedBudgetMinor?: number
+  status: MilestoneStatus
+  completedAt?: string
+  /** Organizer note for partial delivery, e.g. "120 of 200 kits delivered". */
+  progressNote: string
+  order: number
+  createdAt: string
+  updatedAt: string
+}
+
+export type UpdateType = 'launch' | 'progress' | 'purchase' | 'distribution' | 'delay' | 'final'
+
+export interface CampaignUpdate {
+  id: string
+  campaignId: string
+  type: UpdateType
+  title: string
+  date: string
+  body: string
+  media: MediaItem[]
+  video?: MediaVideo
+  milestoneId?: string
+  expenseIds: string[]
+  /** Organizer confirmed they have permission to publish the attached media. */
+  mediaConsent: boolean
+  status: PublishState
+  createdAt: string
+  updatedAt: string
+  publishedAt?: string
+}
+
+export type ExpenseCategory = 'materials' | 'transport' | 'event' | 'administration' | 'other'
+
+export interface Expense {
+  id: string
+  campaignId: string
+  description: string
+  category: ExpenseCategory
+  /** Integer minor units in the campaign currency. */
+  amountMinor: number
+  date: string
+  vendor: string
+  milestoneId?: string
+  /** Organizer-only copy. Never rendered on public pages. */
+  privateReceipt?: string
+  /** Redacted image shown publicly. */
+  publicReceipt?: string
+  /** Organizer confirmed the public receipt has personal details removed. */
+  receiptRedacted: boolean
+  publicNote: string
+  status: PublishState
+  createdAt: string
+  updatedAt: string
+  publishedAt?: string
+}
+
+export type DocumentVisibility = 'public' | 'private'
+
+export interface SupportingDocument {
+  id: string
+  campaignId: string
+  organizationId: string
+  visibility: DocumentVisibility
+  title: string
+  docType: string
+  description: string
+  /** Public path or compressed image data URL. Private verification placeholders never store files. */
+  fileSrc?: string
+  /** Fictional sample shipped with the prototype. */
+  sample: boolean
+  /** Private verification workflow state (demo only). */
+  reviewState?: 'submitted_demo'
+  createdAt: string
 }
 
 export interface Contribution {
@@ -128,12 +291,19 @@ export interface Contribution {
   playerName?: string
   /** Another player's referral code, when this gift came through them. */
   referralCode?: string
+  /** Personalized sharing page credited with this contribution. Totals still count once, in the campaign. */
+  referralId?: string
 }
 
 export interface DemoStore {
-  version: 2
+  version: 3
   campaigns: Campaign[]
   contributions: Contribution[]
+  referrals: Referral[]
+  milestones: Milestone[]
+  campaignUpdates: CampaignUpdate[]
+  expenses: Expense[]
+  supportingDocuments: SupportingDocument[]
 }
 
 export interface CampaignForm {
@@ -162,6 +332,14 @@ export interface CampaignForm {
   gameRoundSize: string
   gameAllowCustom: boolean
   gameCap: string
+  category: CampaignCategory
+  storyWho: string
+  storyNeed: string
+  storySupports: string
+  storyNext: string
+  beneficiary: string
+  budget: { id: string; label: string; amount: string }[]
+  milestonePlan: { id: string; title: string; due: string }[]
 }
 
 export interface PendingDonation {
@@ -174,6 +352,7 @@ export interface PendingDonation {
   playerId?: string
   playerName?: string
   referralCode?: string
+  referralId?: string
 }
 
 export interface CampaignView {

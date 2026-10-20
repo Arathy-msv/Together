@@ -7,10 +7,11 @@ import { StatusBadge } from '../components/StatusBadge.tsx'
 import { useOrg } from '../components/org/OrgContext.tsx'
 import { useCampaignViews } from '../hooks/useDemoStore.ts'
 import { closeCampaign, deleteCampaign } from '../lib/campaigns.ts'
-import { formatDate, formatINR, formatMoney } from '../lib/format.ts'
+import { formatDate, formatDateTime, formatINR, formatMoney } from '../lib/format.ts'
 import { gameMeta } from '../lib/games.ts'
 import { clearGameData } from '../lib/gameLedger.ts'
 import { resetOrganizations } from '../lib/orgStorage.ts'
+import { deleteDraft, draftTitle, listDrafts } from '../lib/drafts.ts'
 import { resetStore } from '../lib/storage.ts'
 import type { CampaignView, CurrencyCode } from '../lib/types.ts'
 
@@ -34,6 +35,7 @@ export function DashboardPage() {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const [deletedNotice, setDeletedNotice] = useState<string | null>(null)
   const [confirmReset, setConfirmReset] = useState(false)
+  const [drafts, setDrafts] = useState(() => listDrafts(org.id))
 
   useEffect(() => {
     document.title = `Organizer — ${org.name}`
@@ -98,6 +100,43 @@ export function DashboardPage() {
           <Icon name="check" size={18} />
           {deletedNotice}
         </div>
+      ) : null}
+
+      {drafts.length > 0 ? (
+        <section className="panel drafts-panel" aria-labelledby="drafts-title">
+          <h2 id="drafts-title">Drafts on this device</h2>
+          <ul className="resume-list">
+            {drafts.map((draft) => (
+              <li key={draft.id}>
+                <div>
+                  <strong>{draftTitle(draft)}</strong>
+                  <span className="muted small">
+                    {draft.kind === 'assistant' ? 'Campaign assistant' : 'Campaign form'} · Last edited {formatDateTime(draft.updatedAt)}
+                  </span>
+                </div>
+                <div className="inline-actions">
+                  <Link
+                    to={draft.kind === 'assistant' ? `${base}/assistant?draftId=${draft.id}` : `${base}/create?draftId=${draft.id}`}
+                    className="btn btn-primary btn-sm"
+                  >
+                    Continue draft
+                  </Link>
+                  <button
+                    type="button"
+                    className="btn btn-outline btn-sm"
+                    onClick={() => {
+                      if (!window.confirm(`Discard “${draftTitle(draft)}”?`)) return
+                      deleteDraft(draft.id)
+                      setDrafts(listDrafts(org.id))
+                    }}
+                  >
+                    Discard
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
       ) : null}
 
       <div className="stat-cards">

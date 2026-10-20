@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Icon } from '../../components/illustrations.tsx'
 import { LivePreview } from '../../components/LivePreview.tsx'
 import { OrgLogoMark } from '../../components/org/OrgChrome.tsx'
@@ -9,34 +9,92 @@ import { useImagePicker } from '../../hooks/useImagePicker.tsx'
 import {
   activeSteps,
   answerSummary,
-  clearAssistantDraft,
   firstInvalidStep,
+  OPTIONAL_STEPS,
   goalIdeas,
   nextStep,
   previousStep,
   purposeIdeas,
-  readAssistantDraft,
   stepHint,
   stepQuestion,
   validateStep,
-  writeAssistantDraft,
   type AssistantStepId,
 } from '../../lib/assistant.ts'
-import { makeAccessCode, upsertCampaign } from '../../lib/campaigns.ts'
+import { makeAccessCode, publishCampaign } from '../../lib/campaigns.ts'
+import { RequiredProgress, ResumeDrafts, SaveIndicator } from '../../components/drafts/DraftUI.tsx'
+import { useAutosave } from '../../hooks/useAutosave.ts'
+import { deleteDraft, listDrafts, newDraftId, readDraft, saveDraft } from '../../lib/drafts.ts'
+import { applyTemplate, TEMPLATES, templateFor } from '../../lib/templates.ts'
 import { currencySymbol, formatDateTime, formatMoney, setDisplayCurrency, toDatetimeLocal } from '../../lib/format.ts'
 import { GAME_THUMBS, gameMeta } from '../../lib/games.ts'
 import { selectableGames } from '../../lib/organizations.ts'
 import { StorageFullError } from '../../lib/storage.ts'
 import type { CampaignForm, Organization } from '../../lib/types.ts'
-import { blankForm, formToCampaign, gameSettingsFields, validateAll, writeWizard, type FormErrors } from '../../lib/wizard.ts'
+import { blankForm, formToCampaign, gameSettingsFields, requiredChecklist, validateAll, type FormErrors } from '../../lib/wizard.ts'
 
 type Stage = AssistantStepId | 'review'
 
-export function AssistantPage() {
-  const { org } = useOrg()
-  if (!org.visibility.assistant) return <AssistantOff org={org} />
-  return <AssistantChat key={org.id} org={org} />
+interface ChatStart {
+  draftId: string
+  form: CampaignForm
+  stage: Stage
+  resumedAt?: string
 }
+
+export function AssistantPage() {
+  const { org, base } = useOrg()
+  const navigate = useNavigate()
+  const [params, setParams] = useSearchParams()
+  const allowedGames = selectableGames(org)
+  const [start, setStart] = useState<ChatStart | null>(() => {
+    const id = params.get('draftId')
+    if (id) {
+      const draft = readDraft(id, org.id)
+      if (draft) return { draftId: id, form: draft.form, stage: asStage(draft.step), resumedAt: draft.updatedAt }
+      return { draftId: id, form: blankForm(org), stage: 'purpose' }
+    }
+    if (params.get('new') === '1' || listDrafts(org.id).length === 0) return { draftId: newDraftId(), form: blankForm(org), stage: 'purpose' }
+    return null
+  })
+  const [drafts, setDrafts] = useState(() => listDrafts(org.id))
+
+  useEffect(() => {
+    if (start && params.get('draftId') !== start.draftId) setParams({ draftId: start.draftId }, { replace: true })
+  }, [start, params, setParams])
+
+  if (!org.visibility.assistant) return <AssistantOff org={org} />
+  if (!start) {
+    return (
+      <div className="container narrow page-pad">
+        <ResumeDrafts
+          drafts={drafts}
+          progress={(draft) => {
+            const items = requiredChecklist(draft.form, allowedGames)
+            return { done: items.filter((item) => item.done).length, total: items.length }
+          }}
+          onContinue={(draft) => {
+            if (draft.kind === 'form') navigate(`${base}/create?draftId=${draft.id}`)
+            else setStart({ draftId: draft.id, form: draft.form, stage: asStage(draft.step), resumedAt: draft.updatedAt })
+          }}
+          onStartAnother={() => setStart({ draftId: newDraftId(), form: blankForm(org), stage: 'purpose' })}
+          onDiscard={(draft) => {
+            deleteDraft(draft.id)
+            const next = listDrafts(org.id)
+            setDrafts(next)
+            if (next.length === 0) setStart({ draftId: newDraftId(), form: blankForm(org), stage: 'purpose' })
+          }}
+        />
+      </div>
+    )
+  }
+  return <AssistantChat key={start.draftId} org={org} start={start} />
+}
+
+function asStage(step: string): Stage {
+  return step === 'review' || (ASSISTANT_STEP_IDS as string[]).includes(step) ? (step as Stage) : 'purpose'
+}
+
+const ASSISTANT_STEP_IDS: AssistantStepId[] = ['purpose', 'category', 'story', 'title', 'goal', 'dates', 'access', 'participation', 'game', 'amounts', 'cover']
 
 function AssistantOff({ org }: { org: Organization }) {
   const { base } = useOrg()
@@ -60,18 +118,22 @@ function AssistantOff({ org }: { org: Organization }) {
   )
 }
 
-function AssistantChat({ org }: { org: Organization }) {
+function AssistantChat({ org, start }: { org: Organization; start: ChatStart }) {
   const { base } = useOrg()
   const navigate = useNavigate()
   const allowedGames = selectableGames(org)
-  const [initial] = useState(() => readAssistantDraft(org.id))
-  const [form, setForm] = useState<CampaignForm>(() => initial?.form ?? blankForm(org))
-  const [stage, setStage] = useState<Stage>(() => initial?.step ?? 'purpose')
+  const [form, setForm] = useState<CampaignForm>(start.form)
+  const [stage, setStage] = useState<Stage>(start.stage)
   const [returnToReview, setReturnToReview] = useState(false)
   const [errors, setErrors] = useState<FormErrors>({})
   const [notice, setNotice] = useState<{ tone: 'success' | 'error' | 'info'; text: string } | null>(() =>
-    initial ? { tone: 'info', text: `Resumed the draft you saved on ${formatDateTime(initial.savedAt)}.` } : null,
+    start.resumedAt ? { tone: 'info', text: `Continuing the draft you last edited on ${formatDateTime(start.resumedAt)}.` } : null,
   )
+  const snapshot = useMemo(() => ({ form, stage }), [form, stage])
+  const autosave = useAutosave(snapshot, (value) => {
+    saveDraft({ id: start.draftId, organizationId: org.id, kind: 'assistant', form: value.form, step: value.stage })
+  })
+  const checklist = requiredChecklist(form, allowedGames)
   const [showPreview, setShowPreview] = useState(false)
   const currentRef = useRef<HTMLDivElement>(null)
 
@@ -125,21 +187,19 @@ function AssistantChat({ org }: { org: Organization }) {
     if (previous) goTo(previous)
   }
 
-  function saveDraft() {
-    const ok = writeAssistantDraft(org.id, { form, step: stage, savedAt: new Date().toISOString() })
-    setNotice(
-      ok
-        ? { tone: 'success', text: `Draft saved in this browser for ${org.name}. Come back any time to continue.` }
-        : { tone: 'error', text: 'This browser’s storage is full, so the draft could not be saved.' },
-    )
+  function discard() {
+    if (!window.confirm('Discard this draft? Your answers on this device will be deleted.')) return
+    deleteDraft(start.draftId)
+    navigate(`${base}/dashboard`)
   }
 
-  function startOver() {
-    clearAssistantDraft(org.id)
-    setForm(blankForm(org))
-    setReturnToReview(false)
-    setNotice(null)
-    goTo('purpose')
+  function skip(step: AssistantStepId) {
+    if (returnToReview) {
+      setReturnToReview(false)
+      goTo('review')
+      return
+    }
+    goTo(nextStep(step, form))
   }
 
   function reviewCampaign() {
@@ -154,8 +214,13 @@ function AssistantChat({ org }: { org: Organization }) {
   }
 
   function openFullForm() {
-    writeWizard({ form, step: 3 })
-    navigate(`${base}/create`)
+    try {
+      saveDraft({ id: start.draftId, organizationId: org.id, kind: 'form', form, step: '3' })
+    } catch {
+      setNotice({ tone: 'error', text: 'This browser could not save the draft, so it was not moved to the form.' })
+      return
+    }
+    navigate(`${base}/create?draftId=${start.draftId}`)
   }
 
   function create() {
@@ -173,7 +238,7 @@ function AssistantChat({ org }: { org: Organization }) {
     }
     const campaign = formToCampaign({ ...form, organizationId: org.id }, { isDraft: false })
     try {
-      upsertCampaign(campaign)
+      publishCampaign(campaign, form.milestonePlan)
     } catch (error) {
       setNotice({
         tone: 'error',
@@ -181,7 +246,7 @@ function AssistantChat({ org }: { org: Organization }) {
       })
       return
     }
-    clearAssistantDraft(org.id)
+    deleteDraft(start.draftId)
     navigate(`${base}/dashboard?created=${campaign.id}`)
   }
 
@@ -215,14 +280,21 @@ function AssistantChat({ org }: { org: Organization }) {
           <strong>Create campaign</strong>.
         </span>
       </p>
+      <div className="draft-bar">
+        <SaveIndicator status={autosave.status} savedAt={autosave.savedAt} error={autosave.error} />
+        <span className="inline-actions">
+          <Link to={`${base}/assistant?new=1`} reloadDocument className="link-button">
+            Start another draft
+          </Link>
+          <button type="button" className="link-button danger" onClick={discard}>
+            Discard draft
+          </button>
+        </span>
+      </div>
+      <RequiredProgress items={checklist} />
       {notice ? (
         <div className={`notice ${notice.tone === 'info' ? 'warn' : notice.tone}`} role="status">
           <span>{notice.text}</span>
-          {notice.tone === 'info' ? (
-            <button type="button" className="link-button" onClick={startOver}>
-              Start over
-            </button>
-          ) : null}
         </div>
       ) : null}
 
@@ -274,6 +346,11 @@ function AssistantChat({ org }: { org: Organization }) {
                         Back
                       </button>
                     ) : null}
+                    {OPTIONAL_STEPS.includes(stage) ? (
+                      <button type="button" className="btn btn-outline" onClick={() => skip(stage)}>
+                        Skip for now
+                      </button>
+                    ) : null}
                     <button type="submit" className="btn btn-primary">
                       {returnToReview ? 'Save answer' : nextStep(stage, form) === 'review' ? 'Finish' : 'Continue'}
                     </button>
@@ -287,9 +364,6 @@ function AssistantChat({ org }: { org: Organization }) {
         <aside className="assistant-aside">
           <LivePreview form={form} />
           <div className="aside-actions">
-            <button type="button" className="btn btn-outline" onClick={saveDraft}>
-              Save draft
-            </button>
             {stage === 'review' ? (
               <button type="button" className="btn btn-primary" onClick={create}>
                 Create campaign
@@ -410,6 +484,46 @@ function StepInput({
           <ErrorText id="a-purpose-error" error={errors.description} />
         </>
       )
+    case 'category': {
+      const changes = applyTemplate(form, templateFor(form.category), { replaceLists: false, useGame: null }).changes.filter((change) => change.kind === 'add')
+      return (
+        <>
+          <ChipRow label="Campaign types">
+            {TEMPLATES.map((template, index) => (
+              <button
+                key={template.id}
+                type="button"
+                data-autofocus={index === 0 ? true : undefined}
+                className={form.category === template.id ? 'chip selected' : 'chip'}
+                aria-pressed={form.category === template.id}
+                onClick={() => onChange(applyTemplate(form, template, { replaceLists: false, useGame: null }).form)}
+              >
+                {template.label}
+              </button>
+            ))}
+          </ChipRow>
+          <p className="help">
+            {templateFor(form.category).blurb} Templates only fill empty milestone and budget lists — your answers are kept.
+            {changes.length === 0 && form.milestonePlan.length > 0 ? ` Milestone plan: ${form.milestonePlan.map((item) => item.title).join(', ')}.` : ''}
+          </p>
+        </>
+      )
+    }
+    case 'story': {
+      const template = templateFor(form.category)
+      return (
+        <>
+          <label className="field-label" htmlFor="a-who">
+            Who this helps
+          </label>
+          <textarea id="a-who" data-autofocus rows={2} maxLength={600} value={form.storyWho} placeholder={template.prompts.who} onChange={(event) => onChange({ storyWho: event.target.value })} />
+          <label className="field-label" htmlFor="a-next">
+            What happens next
+          </label>
+          <textarea id="a-next" rows={2} maxLength={600} value={form.storyNext} placeholder={template.prompts.next} onChange={(event) => onChange({ storyNext: event.target.value })} />
+        </>
+      )
+    }
     case 'title':
       return (
         <>
@@ -732,6 +846,8 @@ function ReviewCard({
 }) {
   const labels: Record<AssistantStepId, string> = {
     purpose: 'Purpose',
+    category: 'Campaign type',
+    story: 'Story details',
     title: 'Name',
     goal: 'Target',
     dates: 'Dates',

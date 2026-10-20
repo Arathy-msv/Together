@@ -1,6 +1,15 @@
 import { shiftLocal } from '../lib/format.ts'
 import type { Campaign, Contribution, DemoStore } from '../lib/types.ts'
 import { ORG_HARBOUR, ORG_LUMEN, ORG_MAPLE } from './organizations.ts'
+import {
+  seedDocuments,
+  seedExpenses,
+  seedMilestones,
+  seedReferralContributions,
+  seedReferrals,
+  seedStoryFields,
+  seedUpdates,
+} from './transparencySeed.ts'
 
 function contribution(
   id: string,
@@ -166,9 +175,20 @@ export function createSeed(): DemoStore {
       playerName: 'Meera Shah',
     },
     ...organizationContributions(),
+    ...seedReferralContributions(),
   ]
 
-  return { version: 2, campaigns, contributions }
+  const stories = seedStoryFields()
+  return {
+    version: 3,
+    campaigns: campaigns.map((campaign) => ({ ...campaign, ...stories[campaign.id] })),
+    contributions,
+    referrals: seedReferrals(),
+    milestones: seedMilestones(),
+    campaignUpdates: seedUpdates(),
+    expenses: seedExpenses(),
+    supportingDocuments: seedDocuments(),
+  }
 }
 
 type SampleInput = Pick<Campaign, 'id' | 'organizationId' | 'currency' | 'title' | 'description' | 'coverImageId' | 'organizerName' | 'goalAmount' | 'gameType'> &

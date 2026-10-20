@@ -184,7 +184,7 @@ test('hiding games switches supporters to direct giving but never leaves a campa
 test('assistant asks one question at a time and skips questions that do not apply', () => {
   const maple = byId(ORG_MAPLE)
   const form = { ...blankForm(maple), direct: true, game: false }
-  assert.deepEqual(activeSteps(form), ['purpose', 'title', 'goal', 'dates', 'access', 'participation', 'amounts', 'cover'])
+  assert.deepEqual(activeSteps(form), ['purpose', 'category', 'story', 'title', 'goal', 'dates', 'access', 'participation', 'amounts', 'cover'])
   assert.equal(nextStep('participation', form), 'amounts')
   assert.equal(nextStep('cover', form), 'review')
   assert.equal(stepQuestion('purpose', maple), 'Let’s create a campaign for Maple Grove Public School. What are you raising funds for?')

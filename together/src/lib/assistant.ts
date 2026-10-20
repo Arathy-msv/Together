@@ -1,16 +1,22 @@
 import { formatDateTime, formatMoney } from './format.ts'
 import { gameMeta } from './games.ts'
 import { coverTemplate } from '../data/covers.ts'
+import { templateFor } from './templates.ts'
 import type { CampaignForm, GameType, OrgType, Organization } from './types.ts'
 import { validateSettings, validateStory, type FormErrors } from './wizard.ts'
 
-export type AssistantStepId = 'purpose' | 'title' | 'goal' | 'dates' | 'access' | 'participation' | 'game' | 'amounts' | 'cover'
+export type AssistantStepId = 'purpose' | 'category' | 'story' | 'title' | 'goal' | 'dates' | 'access' | 'participation' | 'game' | 'amounts' | 'cover'
 
-export const ASSISTANT_STEPS: AssistantStepId[] = ['purpose', 'title', 'goal', 'dates', 'access', 'participation', 'game', 'amounts', 'cover']
+export const ASSISTANT_STEPS: AssistantStepId[] = ['purpose', 'category', 'story', 'title', 'goal', 'dates', 'access', 'participation', 'game', 'amounts', 'cover']
+
+/** Questions that can be skipped without blocking the campaign. */
+export const OPTIONAL_STEPS: AssistantStepId[] = ['category', 'story']
 
 /** Which form fields each question is responsible for, so errors from the shared validators map to one step. */
 const STEP_FIELDS: Record<AssistantStepId, Array<keyof FormErrors>> = {
   purpose: ['description'],
+  category: [],
+  story: [],
   title: ['title'],
   goal: ['goalAmount'],
   dates: ['opensAt', 'closesAt'],
@@ -66,6 +72,10 @@ export function stepQuestion(step: AssistantStepId, org: Pick<Organization, 'nam
   switch (step) {
     case 'purpose':
       return `Let’s create a campaign for ${org.name}${/[.!?]$/.test(org.name) ? '' : '.'} What are you raising funds for?`
+    case 'category':
+      return 'Which type of campaign is this closest to?'
+    case 'story':
+      return 'Who does it help, and what happens once the money arrives?'
     case 'title':
       return 'Lovely. What should the campaign be called?'
     case 'goal':
@@ -89,6 +99,10 @@ export function stepHint(step: AssistantStepId, org: Pick<Organization, 'content
   switch (step) {
     case 'purpose':
       return `A sentence or two for ${org.content.supporterNoun || 'supporters'}: who it helps and what the money buys.`
+    case 'category':
+      return 'Optional. A type suggests milestones, budget headings and a game. It never changes what you have written.'
+    case 'story':
+      return 'Optional — skip if you prefer. Describe groups, not individuals.'
     case 'title':
       return 'Short and specific works best — up to 80 characters.'
     case 'goal':
@@ -112,6 +126,10 @@ export function answerSummary(step: AssistantStepId, form: CampaignForm): string
   switch (step) {
     case 'purpose':
       return form.description.trim()
+    case 'category':
+      return templateFor(form.category).label
+    case 'story':
+      return [form.storyWho.trim(), form.storyNext.trim()].filter(Boolean).join(' · ') || 'Skipped for now'
     case 'title':
       return form.title.trim()
     case 'goal':
@@ -182,61 +200,4 @@ export function purposeIdeas(type: OrgType): PurposeIdea[] {
 export function goalIdeas(org: Pick<Organization, 'defaults'>): number[] {
   const base = org.defaults.suggestedAmounts[0] ?? 100
   return [base * 50, base * 100, base * 250]
-}
-
-/* ---------- Saved assistant drafts (one per organization) ---------- */
-
-export const ASSISTANT_DRAFTS_KEY = 'together.assistantDrafts.v1'
-
-export interface AssistantDraft {
-  form: CampaignForm
-  step: AssistantStepId | 'review'
-  savedAt: string
-}
-
-function readAll(): Record<string, AssistantDraft> {
-  try {
-    const raw = localStorage.getItem(ASSISTANT_DRAFTS_KEY)
-    if (!raw) return {}
-    const parsed: unknown = JSON.parse(raw)
-    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? (parsed as Record<string, AssistantDraft>) : {}
-  } catch {
-    return {}
-  }
-}
-
-export function readAssistantDraft(organizationId: string): AssistantDraft | null {
-  const draft = readAll()[organizationId]
-  if (!draft || !draft.form || typeof draft.form !== 'object') return null
-  if (draft.form.organizationId !== organizationId) return null
-  if (draft.step !== 'review' && !ASSISTANT_STEPS.includes(draft.step)) return null
-  return draft
-}
-
-/** Returns false if the browser could not store the draft even without images. */
-export function writeAssistantDraft(organizationId: string, draft: AssistantDraft): boolean {
-  const all = readAll()
-  all[organizationId] = draft
-  try {
-    localStorage.setItem(ASSISTANT_DRAFTS_KEY, JSON.stringify(all))
-    return true
-  } catch {
-    all[organizationId] = { ...draft, form: { ...draft.form, coverImageData: '', puzzleImageData: '', logoData: '' } }
-    try {
-      localStorage.setItem(ASSISTANT_DRAFTS_KEY, JSON.stringify(all))
-      return true
-    } catch {
-      return false
-    }
-  }
-}
-
-export function clearAssistantDraft(organizationId: string): void {
-  const all = readAll()
-  delete all[organizationId]
-  try {
-    localStorage.setItem(ASSISTANT_DRAFTS_KEY, JSON.stringify(all))
-  } catch {
-    // Nothing else to clear.
-  }
 }

@@ -52,7 +52,6 @@ export function formGameSettings(form: CampaignForm): GameContributionSettings {
   }
 }
 
-export const WIZARD_KEY = 'together.wizard.v1'
 
 export function blankForm(org: OrgFormContext = FALLBACK_CONTEXT): CampaignForm {
   const opened = new Date(Date.now() - 60 * 60 * 1000)
@@ -84,7 +83,30 @@ export function blankForm(org: OrgFormContext = FALLBACK_CONTEXT): CampaignForm 
     game,
     gameType,
     ...gameSettingsFields(gameType),
+    ...emptyStoryFields(),
   }
+}
+
+export function emptyStoryFields(): Pick<
+  CampaignForm,
+  'category' | 'storyWho' | 'storyNeed' | 'storySupports' | 'storyNext' | 'beneficiary' | 'budget' | 'milestonePlan'
+> {
+  return { category: 'other', storyWho: '', storyNeed: '', storySupports: '', storyNext: '', beneficiary: '', budget: [], milestonePlan: [] }
+}
+
+/** Fills fields added after a draft was saved, so old drafts keep working. */
+export function completeForm(form: Partial<CampaignForm> & Pick<CampaignForm, 'organizationId'>): CampaignForm {
+  const base = { ...blankForm(), ...emptyStoryFields() }
+  const merged = { ...base, ...form } as CampaignForm
+  if (!Array.isArray(merged.budget)) merged.budget = []
+  if (!Array.isArray(merged.milestonePlan)) merged.milestonePlan = []
+  if (!Array.isArray(merged.fixedAmounts)) merged.fixedAmounts = base.fixedAmounts
+  if (!isGameType(merged.gameType)) merged.gameType = 'garden'
+  if (!isCurrencyCode(merged.currency)) merged.currency = 'INR'
+  for (const key of ['title', 'description', 'storyWho', 'storyNeed', 'storySupports', 'storyNext', 'beneficiary', 'coverImageData', 'logoData', 'puzzleImageData'] as const) {
+    if (typeof merged[key] !== 'string') merged[key] = ''
+  }
+  return merged
 }
 
 export function campaignToForm(campaign: Campaign): CampaignForm {
@@ -111,7 +133,23 @@ export function campaignToForm(campaign: Campaign): CampaignForm {
     game: campaign.participation.game,
     gameType: isGameType(campaign.gameType) ? campaign.gameType : 'garden',
     ...gameSettingsFields(campaign.gameType, campaignGameSettings(campaign)),
+    category: campaign.category ?? 'other',
+    storyWho: campaign.story?.whoItHelps ?? '',
+    storyNeed: campaign.story?.whatTheyNeed ?? '',
+    storySupports: campaign.story?.whatItSupports ?? '',
+    storyNext: campaign.story?.whatHappensNext ?? '',
+    beneficiary: campaign.story?.beneficiary ?? '',
+    budget: (campaign.budget ?? []).map((line) => ({ id: line.id, label: line.label, amount: paiseToInput(line.amountMinor) })),
+    milestonePlan: [],
   }
+}
+
+/** Budget lines with a label and a valid amount, in minor units. */
+export function formBudget(form: CampaignForm) {
+  return form.budget
+    .filter((line) => line.label.trim())
+    .map((line) => ({ id: line.id, label: line.label.trim(), amountMinor: parseRupeesToPaise(line.amount) ?? 0 }))
+    .filter((line) => line.amountMinor > 0)
 }
 
 export function formToCampaign(form: CampaignForm, options: { isDraft: boolean; existing?: Campaign }): Campaign {
@@ -143,57 +181,22 @@ export function formToCampaign(form: CampaignForm, options: { isDraft: boolean; 
     createdAt: options.existing?.createdAt ?? new Date().toISOString(),
     manualClosedAt: options.isDraft ? undefined : options.existing?.manualClosedAt,
     isDraft: options.isDraft,
+    category: form.category,
+    story: {
+      whoItHelps: form.storyWho.trim(),
+      whatTheyNeed: form.storyNeed.trim(),
+      whatItSupports: form.storySupports.trim(),
+      whatHappensNext: form.storyNext.trim(),
+      beneficiary: form.beneficiary.trim(),
+      imageStory: options.existing?.story?.imageStory ?? [],
+      video: options.existing?.story?.video,
+    },
+    budget: formBudget(form),
+    impactExamples: options.existing?.impactExamples,
+    finalReport: options.existing?.finalReport,
+    fundingNote: options.existing?.fundingNote,
+    demoVerification: options.existing?.demoVerification,
   }
-}
-
-export interface WizardSnapshot {
-  form: CampaignForm
-  step: number
-}
-
-/** Restores the in-progress form, but only for the organization it was started in. */
-export function readWizard(organizationId: string): WizardSnapshot | null {
-  try {
-    const raw = sessionStorage.getItem(WIZARD_KEY)
-    if (!raw) return null
-    const parsed: unknown = JSON.parse(raw)
-    if (!parsed || typeof parsed !== 'object') return null
-    const snapshot = parsed as WizardSnapshot
-    if (!snapshot.form || typeof snapshot.form !== 'object') return null
-    if (snapshot.step !== 1 && snapshot.step !== 2 && snapshot.step !== 3) return null
-    if (snapshot.form.organizationId !== organizationId) return null
-    if (!isCurrencyCode(snapshot.form.currency)) snapshot.form.currency = 'INR'
-    if (!isGameType(snapshot.form.gameType)) snapshot.form.gameType = 'garden'
-    if (typeof snapshot.form.coverImageData !== 'string') snapshot.form.coverImageData = ''
-    if (typeof snapshot.form.logoData !== 'string') snapshot.form.logoData = ''
-    if (typeof snapshot.form.puzzleImageData !== 'string') snapshot.form.puzzleImageData = ''
-    if (typeof snapshot.form.gameRate !== 'string' || typeof snapshot.form.gameRoundSize !== 'string') {
-      Object.assign(snapshot.form, gameSettingsFields(snapshot.form.gameType))
-    }
-    if (typeof snapshot.form.gameAllowCustom !== 'boolean') snapshot.form.gameAllowCustom = true
-    if (typeof snapshot.form.gameCap !== 'string') snapshot.form.gameCap = ''
-    return snapshot
-  } catch {
-    return null
-  }
-}
-
-export function writeWizard(snapshot: WizardSnapshot): void {
-  try {
-    sessionStorage.setItem(WIZARD_KEY, JSON.stringify(snapshot))
-  } catch {
-    sessionStorage.setItem(
-      WIZARD_KEY,
-      JSON.stringify({
-        ...snapshot,
-        form: { ...snapshot.form, coverImageData: '', logoData: '', puzzleImageData: '' },
-      }),
-    )
-  }
-}
-
-export function clearWizard(): void {
-  sessionStorage.removeItem(WIZARD_KEY)
 }
 
 export type FormErrors = Partial<Record<keyof CampaignForm | 'form', string>>
@@ -224,6 +227,8 @@ export function validateStory(form: CampaignForm): FormErrors {
   if (form.access === 'closed' && form.accessCode.trim().length < 4) {
     errors.accessCode = 'Private campaigns need a demo access code of at least 4 characters.'
   }
+  const badLine = form.budget.find((line) => (line.label.trim() || line.amount.trim()) && (!line.label.trim() || parseRupeesToPaise(line.amount) == null))
+  if (badLine) errors.budget = 'Each budget line needs a label and an amount greater than zero, or leave it empty.'
   return errors
 }
 
@@ -271,4 +276,30 @@ export function validateSettings(form: CampaignForm, allowedGames?: GameType[]):
 
 export function validateAll(form: CampaignForm, allowedGames?: GameType[]): FormErrors {
   return { ...validateStory(form), ...validateSettings(form, allowedGames) }
+}
+
+export interface RequiredItem {
+  id: string
+  label: string
+  step: 1 | 2
+  done: boolean
+}
+
+/** Required fields only — optional story details never count against progress. */
+export function requiredChecklist(form: CampaignForm, allowedGames?: GameType[]): RequiredItem[] {
+  const errors = validateAll(form, allowedGames)
+  const items: RequiredItem[] = [
+    { id: 'title', label: 'Campaign title', step: 1, done: !errors.title },
+    { id: 'description', label: 'Short summary', step: 1, done: !errors.description },
+    { id: 'coverImageId', label: 'Cover image', step: 1, done: !errors.coverImageId },
+    { id: 'organizerName', label: 'Organiser name', step: 1, done: !errors.organizerName },
+    { id: 'goalAmount', label: 'Fundraising goal', step: 1, done: !errors.goalAmount },
+    { id: 'dates', label: 'Opening and closing dates', step: 2, done: !errors.opensAt && !errors.closesAt },
+    { id: 'participation', label: 'How supporters take part', step: 2, done: !errors.form && !errors.gameType },
+  ]
+  if (form.donationMode === 'fixed') items.push({ id: 'fixedAmounts', label: 'Suggested amounts', step: 1, done: !errors.fixedAmounts })
+  if (form.access === 'closed') items.push({ id: 'accessCode', label: 'Demo access code', step: 1, done: !errors.accessCode })
+  if (form.game) items.push({ id: 'gameRules', label: 'Game contribution rules', step: 2, done: !errors.gameRate && !errors.gameRoundSize && !errors.gameCap })
+  if (form.game && form.gameType === 'puzzle') items.push({ id: 'puzzleImageData', label: 'Puzzle image', step: 2, done: !errors.puzzleImageData })
+  return items
 }

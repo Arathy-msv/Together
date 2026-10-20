@@ -3,6 +3,15 @@ import { normalizeGameSettings } from './gameContribution.ts'
 import { clearPlayers, ensureSampleRoster } from './players.ts'
 import { isGameType } from './games.ts'
 import { isCurrencyCode } from './format.ts'
+import {
+  normalizeCampaignExtras,
+  normalizeContributionReferral,
+  normalizeDocument,
+  normalizeExpense,
+  normalizeMilestone,
+  normalizeReferral,
+  normalizeUpdate,
+} from './records.ts'
 import type { Campaign, Contribution, DemoStore } from './types.ts'
 
 export const STORAGE_KEY = 'together.demo.v1'
@@ -119,22 +128,33 @@ export function loadStore(): DemoStore {
     }
     const parsed: unknown = JSON.parse(raw)
     if (!parsed || typeof parsed !== 'object') return recover()
-    const record = parsed as Partial<DemoStore>
+    const record = parsed as Partial<Omit<DemoStore, 'version'>> & { version?: number }
     if (!Array.isArray(record.campaigns) || !Array.isArray(record.contributions)) return recover()
+    const version = typeof record.version === 'number' ? record.version : 1
     const saved = record.campaigns.filter(isCampaign)
     const retired = saved.some((campaign) => RETIRED_SAMPLE_IDS.includes(campaign.id))
-    const store = withDefaultCampaigns({
-      version: 2,
+    const list = (value: unknown): unknown[] => (Array.isArray(value) ? value : [])
+    let draft: RawStore = {
       campaigns: saved.filter((campaign) => !RETIRED_SAMPLE_IDS.includes(campaign.id)).map(normalizeCampaign),
       contributions: record.contributions
         .filter(isContribution)
         .filter((contribution) => !RETIRED_SAMPLE_IDS.includes(contribution.campaignId)),
-    })
-    if (retired || record.version !== 2) {
+      referrals: list(record.referrals),
+      milestones: list(record.milestones),
+      campaignUpdates: list(record.campaignUpdates),
+      expenses: list(record.expenses),
+      supportingDocuments: list(record.supportingDocuments),
+    }
+    const merged = withDefaultCampaigns(draft)
+    const changed = merged.changed || retired || version !== 3
+    draft = merged.store
+    if (version < 3) draft = withSeededTransparency(draft)
+    const store = withRelationships(draft)
+    if (changed) {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(store))
       } catch {
-        // Keep the filtered list in memory.
+        // Keep the migrated store in memory if the browser cannot save it.
       }
     }
     ensureSampleRoster(store.campaigns.map((campaign) => campaign.id))
@@ -144,11 +164,85 @@ export function loadStore(): DemoStore {
   }
 }
 
+/** Store contents before relationship checks. Unknown records are validated in withRelationships. */
+interface RawStore {
+  campaigns: Campaign[]
+  contributions: Contribution[]
+  referrals: unknown[]
+  milestones: unknown[]
+  campaignUpdates: unknown[]
+  expenses: unknown[]
+  supportingDocuments: unknown[]
+}
+
+/** Validates every record against the campaigns that actually exist. Orphans are dropped individually. */
+function withRelationships(raw: RawStore): DemoStore {
+  const campaigns = raw.campaigns.map(normalizeCampaignExtras)
+  const byId = new Map(campaigns.map((campaign) => [campaign.id, campaign]))
+  const ids = new Set(byId.keys())
+  const unique = <T extends { id: string }>(items: Array<T | null>): T[] => {
+    const seen = new Set<string>()
+    return items.filter((item): item is T => {
+      if (!item || seen.has(item.id)) return false
+      seen.add(item.id)
+      return true
+    })
+  }
+  const referrals = unique(raw.referrals.map((item) => normalizeReferral(item, byId)))
+  const codes = new Set<string>()
+  const uniqueReferrals = referrals.filter((referral) => (codes.has(referral.code) ? false : (codes.add(referral.code), true)))
+  const milestones = unique(raw.milestones.map((item) => normalizeMilestone(item, ids)))
+  const milestoneIds = new Set(milestones.map((item) => item.id))
+  const expenses = unique(raw.expenses.map((item) => normalizeExpense(item, ids, milestoneIds)))
+  const expenseMap = new Map(expenses.map((item) => [item.id, item]))
+  const referralMap = new Map(uniqueReferrals.map((item) => [item.id, item]))
+  return {
+    version: 3,
+    campaigns,
+    contributions: raw.contributions.map((contribution) => normalizeContributionReferral(contribution, referralMap)),
+    referrals: uniqueReferrals,
+    milestones,
+    campaignUpdates: unique(raw.campaignUpdates.map((item) => normalizeUpdate(item, ids, milestoneIds, expenseMap))),
+    expenses,
+    supportingDocuments: unique(raw.supportingDocuments.map((item) => normalizeDocument(item, byId))),
+  }
+}
+
+/** One-time v2 → v3 migration: adds sample stories, milestones, updates and referrals for sample campaigns. */
+function withSeededTransparency(store: RawStore): RawStore {
+  const seed = createSeed()
+  const sampleById = new Map(seed.campaigns.map((campaign) => [campaign.id, campaign]))
+  const campaigns = store.campaigns.map((campaign) => {
+    const sample = sampleById.get(campaign.id)
+    if (!sample || campaign.title !== sample.title || campaign.story) return campaign
+    const { category, story, budget, impactExamples, demoVerification, fundingNote } = sample
+    return { ...campaign, category, story, budget, impactExamples, demoVerification, fundingNote }
+  })
+  const present = new Set(campaigns.map((campaign) => campaign.id))
+  const add = (current: unknown[], seeded: Array<{ id: string; campaignId: string }>) => {
+    const known = new Set(current.map((item) => (item && typeof item === 'object' ? (item as { id?: unknown }).id : undefined)))
+    return [...current, ...seeded.filter((item) => present.has(item.campaignId) && !known.has(item.id))]
+  }
+  const knownGifts = new Set(store.contributions.map((contribution) => contribution.id))
+  return {
+    campaigns,
+    contributions: [
+      ...store.contributions,
+      ...seed.contributions.filter((gift) => gift.referralId && present.has(gift.campaignId) && !knownGifts.has(gift.id)),
+    ],
+    referrals: add(store.referrals, seed.referrals),
+    milestones: add(store.milestones, seed.milestones),
+    campaignUpdates: add(store.campaignUpdates, seed.campaignUpdates),
+    expenses: add(store.expenses, seed.expenses),
+    supportingDocuments: add(store.supportingDocuments, seed.supportingDocuments),
+  }
+}
+
 /** Sample campaigns for games that are no longer part of the demo. */
 const RETIRED_SAMPLE_IDS = ['cmp_access', 'cmp_page', 'cmp_pencil']
 
 /** Add any built-in sample campaigns that are not already saved in this browser. */
-function withDefaultCampaigns(store: DemoStore): DemoStore {
+function withDefaultCampaigns(store: RawStore): { store: RawStore; changed: boolean } {
   const seeded = createSeed()
   const byId = new Map(seeded.campaigns.map((campaign) => [campaign.id, campaign]))
   let changed = false
@@ -161,23 +255,26 @@ function withDefaultCampaigns(store: DemoStore): DemoStore {
   })
   const present = new Set(campaigns.map((campaign) => campaign.id))
   const missing = seeded.campaigns.filter((campaign) => !present.has(campaign.id))
-  if (!changed && missing.length === 0) return store
+  if (!changed && missing.length === 0) return { store, changed: false }
   const missingIds = new Set(missing.map((campaign) => campaign.id))
   const knownGifts = new Set(store.contributions.map((contribution) => contribution.id))
   const sampleGifts = seeded.contributions.filter(
     (contribution) => missingIds.has(contribution.campaignId) && !knownGifts.has(contribution.id),
   )
-  const next: DemoStore = {
-    ...store,
-    campaigns: [...campaigns, ...missing],
-    contributions: [...store.contributions, ...sampleGifts],
+  const sampleRecords = <T extends { campaignId: string }>(items: T[]) => items.filter((item) => missingIds.has(item.campaignId))
+  return {
+    changed: true,
+    store: {
+      ...store,
+      campaigns: [...campaigns, ...missing],
+      contributions: [...store.contributions, ...sampleGifts],
+      referrals: [...store.referrals, ...sampleRecords(seeded.referrals)],
+      milestones: [...store.milestones, ...sampleRecords(seeded.milestones)],
+      campaignUpdates: [...store.campaignUpdates, ...sampleRecords(seeded.campaignUpdates)],
+      expenses: [...store.expenses, ...sampleRecords(seeded.expenses)],
+      supportingDocuments: [...store.supportingDocuments, ...sampleRecords(seeded.supportingDocuments)],
+    },
   }
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
-  } catch {
-    // Keep the merged list in memory if the browser cannot store it.
-  }
-  return next
 }
 
 function recover(): DemoStore {

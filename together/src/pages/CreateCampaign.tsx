@@ -1,13 +1,16 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useImagePicker } from '../hooks/useImagePicker.tsx'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { CampaignCover, OrgLogo } from '../components/CampaignImage.tsx'
+import { RequiredProgress, ResumeDrafts, SaveIndicator } from '../components/drafts/DraftUI.tsx'
 import { GamePreviewModal, GameThumb } from '../components/GamePreview.tsx'
 import { useOrg } from '../components/org/OrgContext.tsx'
 import { Icon } from '../components/illustrations.tsx'
 import { LivePreview } from '../components/LivePreview.tsx'
 import { COVERS, UPLOADED_COVER_ID } from '../data/covers.ts'
-import { getCampaign, upsertCampaign } from '../lib/campaigns.ts'
+import { useAutosave } from '../hooks/useAutosave.ts'
+import { getCampaign, publishCampaign } from '../lib/campaigns.ts'
+import { deleteDraft, listDrafts, newDraftId, readDraft, saveDraft } from '../lib/drafts.ts'
 import { currencySymbol, formatDateTime, formatINR, setDisplayCurrency } from '../lib/format.ts'
 import { formatPaise, gameConfig } from '../lib/gameContribution.ts'
 import { GAMES, gameMeta } from '../lib/games.ts'
@@ -17,17 +20,16 @@ import type { CampaignForm, GameType, Organization } from '../lib/types.ts'
 import {
   blankForm,
   campaignToForm,
-  clearWizard,
   formGameSettings,
   formToCampaign,
   gameSettingsFields,
-  readWizard,
+  requiredChecklist,
   validateAll,
   validateSettings,
   validateStory,
-  writeWizard,
   type FormErrors,
 } from '../lib/wizard.ts'
+import { StoryDetails, TemplatePicker } from '../components/story/StoryDetails.tsx'
 
 const STEP_COPY: Record<number, { title: string; sub: string }> = {
   1: { title: 'Create a campaign', sub: 'Start with your story.' },
@@ -35,71 +37,100 @@ const STEP_COPY: Record<number, { title: string; sub: string }> = {
   3: { title: 'Review your campaign', sub: 'Check the details, then publish it in this browser.' },
 }
 
-export function CreateCampaignPage() {
-  const [params] = useSearchParams()
-  const fresh = params.get('new')
-  const draft = params.get('draft')
-  const { org } = useOrg()
-  const key = `${org.id}-${fresh ? `new-${fresh}` : draft ? `draft-${draft}` : 'resume'}`
-  return <CreateCampaignEditor key={key} />
+interface EditorStart {
+  draftId: string
+  form: CampaignForm
+  step: number
 }
 
-function CreateCampaignEditor() {
+export function CreateCampaignPage() {
   const [params, setParams] = useSearchParams()
   const navigate = useNavigate()
   const { org, base } = useOrg()
   const allowedGames = selectableGames(org)
-  const [snapshot] = useState(() => initialSnapshot(params, org))
-  const [form, setForm] = useState<CampaignForm>(snapshot.form)
-  const [step, setStep] = useState(snapshot.step)
-  const [errors, setErrors] = useState<FormErrors>({})
-  const [notice, setNotice] = useState<{ tone: 'success' | 'error'; text: string } | null>(null)
+  const [start, setStart] = useState<EditorStart | null>(() => initialStart(params, org))
+  const [drafts, setDrafts] = useState(() => listDrafts(org.id))
 
   useEffect(() => {
     document.title = `Create a campaign — ${org.name}`
   }, [org.name])
 
   useEffect(() => {
-    writeWizard({ form, step })
-  }, [form, step])
+    if (!start || params.get('draftId') === start.draftId) return
+    setParams({ draftId: start.draftId }, { replace: true })
+  }, [start, params, setParams])
 
-  useEffect(() => {
-    if (params.get('new') !== '1') return
-    const next = new URLSearchParams(params)
-    next.delete('new')
-    setParams(next, { replace: true })
-  }, [params, setParams])
+  if (!start) {
+    return (
+      <div className="container narrow page-pad">
+        <ResumeDrafts
+          drafts={drafts}
+          progress={(draft) => {
+            const items = requiredChecklist(draft.form, allowedGames)
+            return { done: items.filter((item) => item.done).length, total: items.length }
+          }}
+          onContinue={(draft) => {
+            if (draft.kind === 'assistant') navigate(`${base}/assistant?draftId=${draft.id}`)
+            else setStart({ draftId: draft.id, form: draft.form, step: Number(draft.step) || 1 })
+          }}
+          onStartAnother={() => setStart({ draftId: newDraftId(), form: blankForm(org), step: 1 })}
+          onDiscard={(draft) => {
+            deleteDraft(draft.id)
+            const next = listDrafts(org.id)
+            setDrafts(next)
+            if (next.length === 0) setStart({ draftId: newDraftId(), form: blankForm(org), step: 1 })
+          }}
+        />
+      </div>
+    )
+  }
+  return <CreateCampaignEditor key={start.draftId} start={start} />
+}
+
+/** Decides what the create page opens: a specific draft, a fresh draft, or the resume prompt. */
+function initialStart(params: URLSearchParams, org: Organization): EditorStart | null {
+  const draftId = params.get('draftId')
+  if (draftId) {
+    const draft = readDraft(draftId, org.id)
+    if (draft && draft.kind === 'form') return { draftId, form: draft.form, step: Number(draft.step) || 1 }
+    if (!draft) return { draftId, form: blankForm(org), step: 1 }
+  }
+  const campaignId = params.get('draft')
+  if (campaignId) {
+    const existing = getCampaign(campaignId)
+    if (existing && existing.organizationId === org.id) {
+      const id = `draft_from_${campaignId}`
+      const saved = readDraft(id, org.id)
+      return saved ? { draftId: id, form: saved.form, step: Number(saved.step) || 1 } : { draftId: id, form: campaignToForm(existing), step: 1 }
+    }
+  }
+  if (params.get('new') === '1') return { draftId: newDraftId(), form: blankForm(org), step: 1 }
+  return listDrafts(org.id).length > 0 ? null : { draftId: newDraftId(), form: blankForm(org), step: 1 }
+}
+
+function CreateCampaignEditor({ start }: { start: EditorStart }) {
+  const navigate = useNavigate()
+  const { org, base } = useOrg()
+  const allowedGames = selectableGames(org)
+  const [form, setForm] = useState<CampaignForm>(start.form)
+  const [step, setStep] = useState(start.step)
+  const [errors, setErrors] = useState<FormErrors>({})
+  const [notice, setNotice] = useState<{ tone: 'success' | 'error'; text: string } | null>(null)
+  const snapshot = useMemo(() => ({ form, step }), [form, step])
+  const autosave = useAutosave(snapshot, (value) => {
+    saveDraft({ id: start.draftId, organizationId: org.id, kind: 'form', form: value.form, step: String(value.step) })
+  })
+  const checklist = requiredChecklist(form, allowedGames)
 
   function update(patch: Partial<CampaignForm>) {
     setForm((current) => ({ ...current, ...patch }))
     setNotice(null)
   }
 
-  function persist(isDraft: boolean): string | null {
-    const existing = form.id ? getCampaign(form.id) : undefined
-    const campaign = formToCampaign(form, { isDraft, existing })
-    try {
-      upsertCampaign(campaign)
-      return campaign.id
-    } catch (error) {
-      setNotice({
-        tone: 'error',
-        text: error instanceof StorageFullError ? error.message : 'The campaign could not be saved in this browser.',
-      })
-      return null
-    }
-  }
-
-  function saveDraft() {
-    if (form.title.trim().length < 3) {
-      setErrors({ title: 'Add a title of at least 3 characters before saving a draft.' })
-      setStep(1)
-      return
-    }
-    const id = persist(true)
-    if (!id) return
-    setForm((current) => ({ ...current, id }))
-    setNotice({ tone: 'success', text: 'Draft saved in this browser.' })
+  function discard() {
+    if (!window.confirm('Discard this draft? Your answers on this device will be deleted.')) return
+    deleteDraft(start.draftId)
+    navigate(`${base}/dashboard`)
   }
 
   function continueNext() {
@@ -116,10 +147,19 @@ function CreateCampaignEditor() {
       setStep(Object.keys(validateStory(form)).length > 0 ? 1 : 2)
       return
     }
-    const id = persist(false)
-    if (!id) return
-    clearWizard()
-    navigate(`${base}/dashboard?created=${id}`)
+    const existing = form.id ? getCampaign(form.id) : undefined
+    const campaign = formToCampaign(form, { isDraft: false, existing })
+    try {
+      publishCampaign(campaign, form.milestonePlan)
+    } catch (error) {
+      setNotice({
+        tone: 'error',
+        text: error instanceof StorageFullError ? error.message : 'The campaign could not be saved in this browser.',
+      })
+      return
+    }
+    deleteDraft(start.draftId)
+    navigate(`${base}/dashboard?created=${campaign.id}`)
   }
 
   const copy = STEP_COPY[step]
@@ -134,6 +174,13 @@ function CreateCampaignEditor() {
         </div>
         <Stepper step={step} onStep={setStep} />
       </div>
+      <div className="draft-bar">
+        <SaveIndicator status={autosave.status} savedAt={autosave.savedAt} error={autosave.error} />
+        <button type="button" className="link-button danger" onClick={discard}>
+          Discard draft
+        </button>
+      </div>
+      <RequiredProgress items={checklist} onJump={step === 3 ? (item) => setStep(item.step) : undefined} />
       {notice ? (
         <div className={`notice ${notice.tone}`} role="status">
           {notice.text}
@@ -155,9 +202,6 @@ function CreateCampaignEditor() {
                   Back
                 </button>
               ) : null}
-              <button type="button" className="btn btn-outline" onClick={saveDraft}>
-                Save draft
-              </button>
               <button type="button" className="btn btn-primary" onClick={continueNext}>
                 Continue
               </button>
@@ -168,10 +212,7 @@ function CreateCampaignEditor() {
             <button type="button" className="btn btn-outline" onClick={() => setStep(2)}>
               Back
             </button>
-            <button type="button" className="btn btn-outline" onClick={saveDraft}>
-              Save draft
-            </button>
-            <button type="button" className="btn btn-primary" onClick={publish}>
+            <button type="button" className="btn btn-primary" onClick={publish} disabled={checklist.some((item) => !item.done)}>
               Create campaign
             </button>
           </div>
@@ -179,19 +220,6 @@ function CreateCampaignEditor() {
       </div>
     </div>
   )
-}
-
-function initialSnapshot(params: URLSearchParams, org: Organization): { form: CampaignForm; step: number } {
-  const draftId = params.get('draft')
-  if (draftId) {
-    const existing = getCampaign(draftId)
-    if (existing && existing.organizationId === org.id) return { form: campaignToForm(existing), step: 1 }
-  }
-  if (params.get('new') === '1') {
-    clearWizard()
-    return { form: blankForm(org), step: 1 }
-  }
-  return readWizard(org.id) ?? { form: blankForm(org), step: 1 }
 }
 
 function Stepper({ step, onStep }: { step: number; onStep: (step: number) => void }) {
@@ -264,6 +292,7 @@ function StoryStep({
 
   return (
     <div className="panel form-panel">
+      <TemplatePicker form={form} allowedGames={selectableGames(org)} onChange={onChange} />
       <Field label="Campaign title" htmlFor="title" error={errors.title} counter={`${form.title.trim().length}/80`}>
         <input
           id="title"
@@ -275,7 +304,7 @@ function StoryStep({
         />
       </Field>
 
-      <Field label="Description" htmlFor="purpose" error={errors.description} counter={`${form.description.trim().length}/1,000`}>
+      <Field label="Short summary" htmlFor="purpose" error={errors.description} counter={`${form.description.trim().length}/1,000`}>
         <textarea
           id="purpose"
           maxLength={1000}
@@ -283,9 +312,11 @@ function StoryStep({
           value={form.description}
           aria-invalid={Boolean(errors.description)}
           onChange={(event) => onChange({ description: event.target.value })}
-          placeholder="Explain what you are raising money for and who it helps."
+          placeholder="One or two sentences: what you are raising money for and who it helps."
         />
       </Field>
+
+      <StoryDetails form={form} errors={errors} onChange={onChange} />
 
       <div className="field">
         <span className="field-label">Campaign cover</span>

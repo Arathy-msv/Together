@@ -71,6 +71,11 @@ export function removeCampaign(id: string): void {
   const store = loadStore()
   store.campaigns = store.campaigns.filter((campaign) => campaign.id !== id)
   store.contributions = store.contributions.filter((contribution) => contribution.campaignId !== id)
+  store.referrals = store.referrals.filter((item) => item.campaignId !== id)
+  store.milestones = store.milestones.filter((item) => item.campaignId !== id)
+  store.campaignUpdates = store.campaignUpdates.filter((item) => item.campaignId !== id)
+  store.expenses = store.expenses.filter((item) => item.campaignId !== id)
+  store.supportingDocuments = store.supportingDocuments.filter((item) => item.campaignId !== id)
   saveStore(store)
 }
 
@@ -97,6 +102,7 @@ export interface NewContribution {
   playerId?: string
   playerName?: string
   referralCode?: string
+  referralId?: string
 }
 
 function nextReference(contributions: Contribution[]): string {
@@ -121,6 +127,7 @@ export function addContribution(input: NewContribution): Contribution {
     playerId: input.playerId,
     playerName: input.playerName,
     referralCode: input.referralCode,
+    referralId: input.referralId && store.referrals.some((item) => item.id === input.referralId && item.campaignId === input.campaignId) ? input.referralId : undefined,
     reference: nextReference(store.contributions),
     createdAt: new Date().toISOString(),
     status: 'success',
@@ -160,4 +167,37 @@ export function campaignPlayPath(id: string, game: string, base = ''): string {
 /** Campaigns that belong to one organization. */
 export function campaignsForOrganization(campaigns: Campaign[], organizationId: string): Campaign[] {
   return campaigns.filter((campaign) => campaign.organizationId === organizationId)
+}
+
+/**
+ * Publishes a campaign and creates its planned milestones in one write. Planned milestones are
+ * organizer intentions; nothing is marked complete.
+ */
+export function publishCampaign(campaign: Campaign, plan: { title: string; due: string }[] = []): void {
+  const store = loadStore()
+  const index = store.campaigns.findIndex((item) => item.id === campaign.id)
+  if (index >= 0) store.campaigns[index] = campaign
+  else store.campaigns.unshift(campaign)
+  const now = new Date().toISOString()
+  const hasMilestones = store.milestones.some((milestone) => milestone.campaignId === campaign.id)
+  if (!hasMilestones) {
+    plan
+      .filter((item) => item.title.trim())
+      .forEach((item, order) => {
+        const due = item.due && !Number.isNaN(Date.parse(item.due)) ? new Date(item.due).toISOString() : campaign.closesAt
+        store.milestones.push({
+          id: `ms_${crypto.randomUUID()}`,
+          campaignId: campaign.id,
+          title: item.title.trim().slice(0, 120),
+          description: '',
+          dueDate: due,
+          status: 'planned',
+          progressNote: '',
+          order: order + 1,
+          createdAt: now,
+          updatedAt: now,
+        })
+      })
+  }
+  saveStore(store)
 }
