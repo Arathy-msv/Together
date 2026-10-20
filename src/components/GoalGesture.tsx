@@ -51,11 +51,9 @@ export function GoalGesture({
           </h2>
           <p className="goal-lead">
             <strong>{campaignTitle}</strong> has grown to {formatINR(goal)}.
+            {gift != null && gift > 0 ? ` Your ${formatINR(gift)} carried it there.` : ''}
           </p>
-          {gift != null && gift > 0 ? (
-            <p>Your {formatINR(gift)} carried it there.</p>
-          ) : null}
-          <p>{resting}</p>
+          {variant === 'scene' ? null : <p>{resting}</p>}
         </div>
         {backTo ? (
           <Link className="goal-back" to={backTo}>
