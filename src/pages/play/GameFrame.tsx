@@ -1,11 +1,12 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { ContributionBar } from '../../components/ContributionBar.tsx'
+import { GoalGesture } from '../../components/GoalGesture.tsx'
 import { Leaderboard, RankBanner } from '../../components/Leaderboard.tsx'
 import { ContributionLayer } from '../../components/ContributionDialogs.tsx'
 import { LeafMark } from '../../components/illustrations.tsx'
 import type { GameContribution } from '../../hooks/useGameContribution.ts'
-import { campaignDetailsPath } from '../../lib/campaigns.ts'
+import { campaignDetailsPath, goalReached } from '../../lib/campaigns.ts'
 import { gameMeta } from '../../lib/games.ts'
 import type { CampaignView, GameType } from '../../lib/types.ts'
 
@@ -27,6 +28,7 @@ export function GameFrame({
   preview?: boolean
 }) {
   const { campaign } = view
+  const finished = !preview && goalReached(view.raised, campaign.goalAmount)
 
   return (
     <>
@@ -68,18 +70,28 @@ export function GameFrame({
           </div>
         ) : null}
         <div className="play-stage">
-          {children}
-          <div className="play-side">
-            {side}
-            {campaign.access === 'closed' ? <Leaderboard campaignId={campaign.id} compact /> : null}
+          <div className="play-live" inert={finished || undefined}>
+            {children}
+            <div className="play-side">
+              {side}
+              {campaign.access === 'closed' ? <Leaderboard campaignId={campaign.id} compact /> : null}
+            </div>
           </div>
+          {finished ? (
+            <GoalGesture
+              campaignTitle={campaign.title}
+              goal={campaign.goalAmount}
+              backTo={campaignDetailsPath(campaign.id)}
+              resting="This game rests here. Thank you for helping the campaign grow."
+            />
+          ) : null}
         </div>
-        {view.canGive || preview ? null : (
+        {finished || view.canGive || preview ? null : (
           <p className="play-closed-note">
             This campaign is not accepting contributions right now. You can still play; any suggestion stays saved here.
           </p>
         )}
-        <ContributionBar contribution={contribution} />
+        {finished ? null : <ContributionBar contribution={contribution} />}
       </div>
       <ContributionLayer contribution={contribution} onNextRound={onNextRound} />
     </>

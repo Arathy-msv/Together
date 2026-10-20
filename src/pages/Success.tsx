@@ -4,7 +4,8 @@ import { CampaignCover } from '../components/CampaignImage.tsx'
 import { Icon } from '../components/illustrations.tsx'
 import { ProgressBar } from '../components/ProgressBar.tsx'
 import { useCampaignView, useDemoStore } from '../hooks/useDemoStore.ts'
-import { campaignDetailsPath } from '../lib/campaigns.ts'
+import { campaignDetailsPath, goalReached } from '../lib/campaigns.ts'
+import { GoalGesture } from '../components/GoalGesture.tsx'
 import { formatINR } from '../lib/format.ts'
 import { NotFoundPage } from './NotFound.tsx'
 
@@ -34,9 +35,19 @@ export function SuccessPage() {
   }
 
   const exactPercent = view.campaign.goalAmount > 0 ? Math.min(100, (view.raised / view.campaign.goalAmount) * 100) : 0
+  const finished = goalReached(view.raised, view.campaign.goalAmount)
 
   return (
     <div className="container narrow page-pad success">
+      {finished ? (
+        <GoalGesture
+          variant="banner"
+          campaignTitle={view.campaign.title}
+          goal={view.campaign.goalAmount}
+          gift={contribution.amount}
+          resting="The game rests here. Thank you for helping it grow."
+        />
+      ) : null}
       <div className="success-check">
         <Icon name="check" size={40} />
       </div>
@@ -74,7 +85,7 @@ export function SuccessPage() {
         <p className="muted small">{view.supporters === 1 ? '1 simulated contribution' : `${view.supporters} simulated contributions`}</p>
       </section>
       <div className="center-actions">
-        {contribution.method === 'game' && view.campaign.participation.game ? (
+        {contribution.method === 'game' && view.campaign.participation.game && !finished ? (
           <Link to={`/campaigns/${view.campaign.id}/play/${view.campaign.gameType}`} className="btn btn-primary btn-lg">
             Keep playing
           </Link>

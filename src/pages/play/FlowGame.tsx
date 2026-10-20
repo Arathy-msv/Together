@@ -8,10 +8,11 @@ import {
 } from 'react'
 import { Link } from 'react-router-dom'
 import { ContributionBar } from '../../components/ContributionBar.tsx'
+import { GoalGesture } from '../../components/GoalGesture.tsx'
 import { Leaderboard, RankBanner } from '../../components/Leaderboard.tsx'
 import { ContributionLayer } from '../../components/ContributionDialogs.tsx'
 import { useGameContribution } from '../../hooks/useGameContribution.ts'
-import { campaignDetailsPath } from '../../lib/campaigns.ts'
+import { campaignDetailsPath, goalReached } from '../../lib/campaigns.ts'
 import { newRoundId, readProgress, writeProgress } from '../../lib/gameLedger.ts'
 import { clampToNextStage, settledProgress } from '../../lib/stages.ts'
 import type { CampaignView, GameType } from '../../lib/types.ts'
@@ -199,6 +200,7 @@ export function StagedFlowGame({
   footnote?: ReactNode
 }) {
   const campaignId = view.campaign.id
+  const finished = !preview && goalReached(view.raised, view.campaign.goalAmount)
   const stages = boundaries.length
   const contribution = useGameContribution({ view, game, preview })
   const [round, setRound] = useState<StagedProgress>(
@@ -268,7 +270,7 @@ export function StagedFlowGame({
             <RankBanner campaignId={campaignId} />
           </div>
         ) : null}
-        <div className="flow-main">
+        <div className="flow-main" inert={finished || undefined}>
           <div className="flow-stage">
             <div className="flow-copy">
               <h1>{title}</h1>
@@ -319,7 +321,16 @@ export function StagedFlowGame({
           </div>
         </div>
         {view.campaign.access === 'closed' ? <Leaderboard campaignId={campaignId} compact /> : null}
-        <ContributionBar contribution={contribution} />
+        {finished ? (
+          <GoalGesture
+            campaignTitle={view.campaign.title}
+            goal={view.campaign.goalAmount}
+            backTo={campaignDetailsPath(campaignId)}
+            resting="This game rests here. Thank you for helping the campaign grow."
+          />
+        ) : (
+          <ContributionBar contribution={contribution} />
+        )}
       </div>
       <ContributionLayer contribution={contribution} onNextRound={nextRound} />
     </>

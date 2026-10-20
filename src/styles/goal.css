@@ -1,0 +1,180 @@
+.goal-gesture {
+  position: absolute;
+  z-index: 12;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.goal-scene {
+  inset: 0;
+  padding: 0 3% 4.5%;
+  background:
+    radial-gradient(50% 45% at 50% 18%, rgba(255, 236, 170, 0.28), transparent 70%),
+    linear-gradient(180deg, rgba(255, 248, 230, 0) 0%, rgba(255, 244, 214, 0.08) 42%, rgba(32, 48, 36, 0.28) 100%);
+}
+
+.goal-stage {
+  inset: 0;
+  align-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(40% 40% at 50% 30%, rgba(255, 232, 160, 0.45), transparent 70%),
+    rgba(249, 246, 238, 0.82);
+  backdrop-filter: blur(3px);
+}
+
+.goal-banner {
+  position: relative;
+  margin: 0 0 18px;
+  padding: 0;
+  overflow: visible;
+  pointer-events: auto;
+}
+
+.goal-petals { position: absolute; inset: 0; overflow: hidden; }
+
+.goal-petals i {
+  position: absolute;
+  top: -12%;
+  border-radius: 70% 10% 70% 10%;
+  background: #f2c14e;
+  opacity: 0;
+  animation: goal-fall linear infinite;
+}
+
+.goal-petals i[data-tone="1"] { background: #7ea36a; }
+.goal-petals i[data-tone="2"] { background: #fff4d2; }
+
+@keyframes goal-fall {
+  0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+  12% { opacity: 0.9; }
+  100% { transform: translateY(120vh) rotate(220deg); opacity: 0.15; }
+}
+
+.goal-card {
+  position: relative;
+  pointer-events: auto;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 22px;
+  width: min(920px, 100%);
+  padding: 18px 22px;
+  border-radius: 20px;
+  background:
+    radial-gradient(140px 90px at 0% 100%, rgba(126, 163, 106, 0.2), transparent 70%),
+    linear-gradient(180deg, rgba(255, 252, 244, 0.98), rgba(255, 247, 226, 0.96));
+  border: 1px solid #ead7a2;
+  box-shadow: 0 18px 44px rgba(40, 32, 12, 0.22);
+  animation: goal-arrive 560ms cubic-bezier(0.2, 0.9, 0.3, 1.05) both;
+}
+
+.goal-banner .goal-card { width: 100%; box-shadow: 0 10px 28px rgba(40, 32, 12, 0.08); }
+
+@keyframes goal-arrive {
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+.goal-medallion {
+  position: relative;
+  width: 76px;
+  height: 76px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff8e4, #f3d48a 55%, #e6b84b);
+  box-shadow: inset 0 -4px 0 rgba(120, 80, 10, 0.18), 0 8px 18px rgba(180, 130, 30, 0.28);
+}
+
+.goal-ring {
+  position: absolute;
+  inset: 5px;
+  border-radius: 50%;
+  border: 2px solid rgba(30, 75, 59, 0.55);
+  animation: goal-ring 1.4s ease-out both;
+}
+
+@keyframes goal-ring {
+  from { transform: scale(0.6); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+
+.goal-kicker {
+  margin: 0 0 2px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #8a6a24;
+}
+
+.goal-copy h2 {
+  margin: 0;
+  font-family: Fraunces, Georgia, serif;
+  font-size: clamp(1.4rem, 2vw, 2rem);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  color: #183a2f;
+  outline: none;
+}
+
+.goal-copy p { margin: 4px 0 0; color: #3f5a4f; line-height: 1.4; }
+.goal-lead { font-size: 1.02rem; }
+.goal-lead strong { color: #183a2f; }
+
+.goal-back {
+  justify-self: end;
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 0 18px;
+  border-radius: 12px;
+  background: #1e4b3b;
+  color: #fff;
+  font-weight: 750;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.goal-back:hover { background: #163b2e; }
+.goal-back:focus-visible { outline: 3px solid #e6b84b; outline-offset: 2px; }
+.goal-resting-note { margin: 0; color: #6f7d74; font-size: 0.9rem; }
+
+.play-stage { position: relative; }
+.flow-shell { position: relative; }
+.gt-shell.is-resting .gt-toolbar,
+.gt-shell.is-resting .gt-cart { opacity: 0.55; }
+.gt-shell.is-resting .gt-review { display: none; }
+.gt-scene.is-goal {
+  --tree-w: 34%;
+  --tree-b: 6%;
+}
+.gt-scene.is-goal .gt-tree.is-current {
+  filter: saturate(1.12) brightness(1.06) drop-shadow(0 10px 16px rgba(80, 60, 10, 0.2));
+}
+.gt-scene.is-goal .gt-sun-glow {
+  opacity: 1;
+  background: radial-gradient(55% 70% at 50% 0%, rgba(255, 228, 150, 0.72), transparent 72%);
+}
+
+@media (max-width: 760px) {
+  .gt-scene.is-goal { --tree-w: 64%; --tree-b: 2%; }
+  .goal-banner { margin-top: 12px; }
+  .goal-card {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 12px 14px;
+    padding: 14px;
+  }
+  .goal-back { grid-column: 1 / -1; justify-self: stretch; justify-content: center; }
+  .goal-medallion { width: 58px; height: 58px; }
+  .goal-medallion svg { width: 32px; height: 32px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .goal-petals { display: none; }
+  .goal-card, .goal-ring { animation: none; }
+}

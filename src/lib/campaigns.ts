@@ -11,6 +11,11 @@ import type {
   ContributionMethod,
 } from './types.ts'
 
+/** True once confirmed contributions have met the campaign target. */
+export function goalReached(raised: number, goal: number): boolean {
+  return Number.isFinite(raised) && Number.isFinite(goal) && goal > 0 && raised >= goal
+}
+
 export function raisedOf(campaignId: string, contributions: Contribution[]): number {
   return contributions
     .filter((contribution) => contribution.campaignId === campaignId && contribution.status === 'success')

@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { GoalGesture } from '../../../components/GoalGesture.tsx'
 import { Leaderboard, RankBanner } from '../../../components/Leaderboard.tsx'
 import { contributionAvailability } from '../../../lib/availability.ts'
-import { addContribution, campaignDetailsPath, findContribution } from '../../../lib/campaigns.ts'
+import { addContribution, campaignDetailsPath, findContribution, goalReached } from '../../../lib/campaigns.ts'
 import { PAISE_PER_RUPEE, campaignGameSettings, formatPaise } from '../../../lib/gameContribution.ts'
 import { readProgress, writeProgress } from '../../../lib/gameLedger.ts'
 import {
@@ -135,6 +136,7 @@ export function GivingTreeGame({ view, preview = false }: { view: CampaignView; 
 
   const raised = view.raised
   const goal = campaign.goalAmount
+  const finished = goalReached(raised, goal)
   const percent = campaignPercent(raised, goal)
   const sharedStage = treeStage(raised, goal)
   sharedStageRef.current = sharedStage
@@ -172,7 +174,7 @@ export function GivingTreeGame({ view, preview = false }: { view: CampaignView; 
   }
 
   function care(kind: CareKind) {
-    if (busy || panel || !canCare(stateRef.current, kind)) return
+    if (busy || panel || finished || !canCare(stateRef.current, kind)) return
     const actionId = nextActionId(stateRef.current, kind)
     setSuccess(null)
     setToast(null)
@@ -223,7 +225,7 @@ export function GivingTreeGame({ view, preview = false }: { view: CampaignView; 
   }, [])
 
   function openCart() {
-    if (busy) return
+    if (busy || finished) return
     setPanel('cart')
   }
 
@@ -236,6 +238,7 @@ export function GivingTreeGame({ view, preview = false }: { view: CampaignView; 
 
   function confirm(amountPaise: number): string | null {
     if (confirming.current) return 'Your contribution is already being confirmed.'
+    if (finished) return 'This campaign has reached its goal. The game is resting.'
     if (blockedReason) return blockedReason
     const current = stateRef.current
     if (current.cart.length === 0) return 'Care for the shared tree to start a suggestion first.'
@@ -271,9 +274,17 @@ export function GivingTreeGame({ view, preview = false }: { view: CampaignView; 
   }
 
   useEffect(() => {
-    if (success == null) return
+    if (finished || success == null) return
     document.getElementById('gt-success-title')?.focus()
-  }, [success])
+  }, [success, finished])
+
+  useEffect(() => {
+    if (!finished) return
+    setPanel(null)
+    setBusy(null)
+    setFlying(null)
+    setAnnouncement(`${campaign.title} has reached ${formatINR(goal)}. The shared tree is fully grown, and play is resting.`)
+  }, [finished, campaign.title, goal])
 
   useEffect(() => {
     if (!toast) return
@@ -288,15 +299,17 @@ export function GivingTreeGame({ view, preview = false }: { view: CampaignView; 
         ? 'Choose final amount'
         : panel === 'growth'
           ? 'Shared campaign growth'
-          : success != null
-            ? 'Contribution confirmed'
-            : (caption ?? (state.seedPlanted ? `Next: ${CARE_ACTIONS[recommended].next}` : 'Plant a seed'))
+          : finished
+            ? 'Goal reached'
+            : success != null
+              ? 'Contribution confirmed'
+              : (caption ?? (state.seedPlanted ? `Next: ${CARE_ACTIONS[recommended].next}` : 'Plant a seed'))
 
   const careCount = state.cart.length
 
   return (
     <>
-      <div className={`gt-shell${preview ? ' gt-preview' : ''}`} inert={panel ? true : undefined}>
+      <div className={`gt-shell${preview ? ' gt-preview' : ''}${finished ? ' is-resting' : ''}`} inert={panel ? true : undefined}>
         <header className="gt-header">
           <div className="gt-header-left">
             {preview ? (
@@ -356,6 +369,7 @@ export function GivingTreeGame({ view, preview = false }: { view: CampaignView; 
             ref={cartRef}
             onAnimationEnd={(event) => event.target === event.currentTarget && event.currentTarget.classList.remove('is-pulse')}
             onClick={openCart}
+            disabled={finished}
             aria-haspopup="dialog"
             aria-label={`Suggested contribution ${formatPaise(shownPaise)}, ${plural(shownCart.length, 'care action')}. Open cart.`}
           >
@@ -382,7 +396,8 @@ export function GivingTreeGame({ view, preview = false }: { view: CampaignView; 
           ref={treeRef}
           treeStage={sharedStage}
           effect={effect}
-          treeCaption={`${formatPercent(percent)} complete`}
+          treeCaption={finished ? 'Goal reached' : `${formatPercent(percent)} complete`}
+          celebrating={finished}
           onTreeSign={() => setPanel('growth')}
           toast={
             toast ? (
@@ -401,7 +416,18 @@ export function GivingTreeGame({ view, preview = false }: { view: CampaignView; 
             ) : null
           }
           overlay={
-            success != null ? (
+            finished ? (
+              compact ? null : (
+                <GoalGesture
+                  variant="scene"
+                  campaignTitle={campaign.title}
+                  goal={goal}
+                  gift={success != null ? success / PAISE_PER_RUPEE : undefined}
+                  backTo={backTo}
+                  resting="The shared tree is fully grown, so this game rests here."
+                />
+              )
+            ) : success != null ? (
               compact ? null : (
                 <SuccessBanner amountPaise={success} backTo={backTo} onContinue={() => setSuccess(null)} />
               )
@@ -413,11 +439,21 @@ export function GivingTreeGame({ view, preview = false }: { view: CampaignView; 
             ) : null
           }
         />
-        {success != null && compact ? (
+        {finished && compact ? (
+          <GoalGesture
+            variant="banner"
+            campaignTitle={campaign.title}
+            goal={goal}
+            gift={success != null ? success / PAISE_PER_RUPEE : undefined}
+            backTo={backTo}
+            resting="The shared tree is fully grown, so this game rests here."
+          />
+        ) : null}
+        {success != null && compact && !finished ? (
           <SuccessBanner amountPaise={success} backTo={backTo} onContinue={() => setSuccess(null)} />
         ) : null}
 
-        <div className="gt-toolbar">
+        <div className="gt-toolbar" inert={finished || undefined}>
           <div className="gt-actions" role="group" aria-label="Care actions">
             {CARE_ORDER.map((kind) => {
               const action = CARE_ACTIONS[kind]
@@ -425,15 +461,15 @@ export function GivingTreeGame({ view, preview = false }: { view: CampaignView; 
               const done = kind === 'seed' && state.seedPlanted
               const working = busy === kind
               const just = !busy && lastKind === kind && !done
-              const next = !busy && allowed && kind === recommended
-              const status = working ? 'working' : done ? 'done' : just ? 'just' : next ? 'next' : allowed ? 'ready' : 'locked'
+              const next = !finished && !busy && allowed && kind === recommended
+              const status = finished ? 'locked' : working ? 'working' : done ? 'done' : just ? 'just' : next ? 'next' : allowed ? 'ready' : 'locked'
               return (
                 <button
                   key={kind}
                   type="button"
                   className="gt-action"
                   data-status={status}
-                  disabled={!allowed || Boolean(busy)}
+                  disabled={finished || !allowed || Boolean(busy)}
                   aria-label={
                     done
                       ? `${action.label}: completed`
@@ -471,7 +507,7 @@ export function GivingTreeGame({ view, preview = false }: { view: CampaignView; 
               <strong className="gt-points-value">{state.carePoints}</strong>
             </span>
           </div>
-          <button type="button" className="gt-review" onClick={openCart} disabled={Boolean(busy)} aria-haspopup="dialog">
+          <button type="button" className="gt-review" onClick={openCart} disabled={finished || Boolean(busy)} aria-haspopup="dialog">
             Review &amp; contribute <ArrowRight size={22} />
           </button>
         </div>

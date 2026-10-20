@@ -14,6 +14,7 @@ interface GardenSceneProps {
   effect: SceneEffect | null
   treeCaption: string
   onTreeSign: () => void
+  celebrating?: boolean
   overlay?: ReactNode
   toast?: ReactNode
 }
@@ -23,13 +24,13 @@ interface GardenSceneProps {
  * Its growth stage follows confirmed campaign progress only.
  */
 export const GardenScene = forwardRef<HTMLDivElement, GardenSceneProps>(function GardenScene(
-  { treeStage, effect, treeCaption, onTreeSign, overlay, toast },
+  { treeStage, effect, treeCaption, onTreeSign, celebrating = false, overlay, toast },
   treeRef,
 ) {
   const milestone = TREE_MILESTONES[treeStage]
 
   return (
-    <section className={`gt-scene${effect ? ` is-${effect.kind}` : ''}`} aria-label="Garden">
+    <section className={`gt-scene${effect ? ` is-${effect.kind}` : ''}${celebrating ? ' is-goal' : ''}`} aria-label="Garden">
       <p className="gt-visually-hidden">
         The shared campaign tree is at the {milestone.name.toLowerCase()} stage.
       </p>
