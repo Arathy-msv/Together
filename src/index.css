@@ -526,15 +526,16 @@ legend { font-weight: 800; }
 .bed-shape {
   fill: transparent;
   stroke: transparent;
-  stroke-width: 0.45;
-  stroke-dasharray: 1.1 0.7;
+  stroke-width: 10;
+  vector-effect: non-scaling-stroke;
   stroke-linejoin: round;
+  stroke-linecap: round;
   cursor: pointer;
   pointer-events: auto;
 }
 .bed-shape.active {
   stroke: #f6c445;
-  fill: rgba(246, 196, 69, 0.16);
+  fill: rgba(246, 196, 69, 0.14);
 }
 .garden-plant {
   position: absolute;

@@ -9,32 +9,38 @@ const PLANTS: Record<FlowerKind, string> = {
   lavender: '/games/plant-lavender.png',
 }
 
-/** Perspective corners of the three dashed beds, as percentages of the 16:9 artwork. */
+/**
+ * Corners of the three dashed beds painted into the garden artwork,
+ * as percentages of that 16:9 image. The yellow highlighter strokes
+ * these same points, so it sits on the white outline.
+ */
 const BEDS: [number, number][][] = [
   [
-    [30.4, 63.5],
-    [41.0, 63.9],
-    [44.2, 71.2],
-    [25.6, 70.8],
+    [30.2, 63.2],
+    [41.9, 63.2],
+    [40.3, 71.8],
+    [26.5, 71.8],
   ],
   [
-    [46.8, 65.8],
-    [57.0, 66.2],
-    [60.2, 73.6],
-    [43.2, 73.2],
+    [45.6, 62.8],
+    [58.4, 62.8],
+    [59.2, 71.8],
+    [44.2, 71.8],
   ],
   [
-    [64.8, 66.0],
-    [75.5, 66.4],
-    [78.9, 73.8],
-    [61.0, 73.4],
+    [61.6, 63.2],
+    [74.6, 63.2],
+    [76.6, 67.6],
+    [77.8, 71.2],
+    [77.3, 71.8],
+    [62.7, 71.8],
   ],
 ]
 
 function bedBase(index: number) {
   const bed = BEDS[index]
-  const left = bed[3]
-  const right = bed[2]
+  const left = bed[bed.length - 1]
+  const right = bed[bed.length - 2]
   return {
     x: (left[0] + right[0]) / 2,
     y: (left[1] + right[1]) / 2,
