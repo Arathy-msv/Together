@@ -137,7 +137,7 @@ function CheckpointDialog({ contribution, onNextRound }: { contribution: GameCon
   const choice = canEdit && (dirty || custom) && parsed != null ? parsed : null
   const chosenPaise = choice ?? session.suggestedPaise
   const finished = dialog.roundComplete && Boolean(onNextRound)
-  const secondaryLabel = finished ? config.roundCompleteLabel : dialog.mode === 'review' ? 'Keep playing' : config.continueLabel
+  const secondaryLabel = finished ? config.roundCompleteLabel : 'Keep playing'
 
   function keepPlaying() {
     if (canEdit && dirty && parsed != null && fieldError == null) contribution.saveChoice(parsed)
@@ -203,9 +203,9 @@ function CheckpointDialog({ contribution, onNextRound }: { contribution: GameCon
           <p className="gc-latest">
             {dialog.outcome === 'capped'
               ? dialog.latestPaise > 0
-                ? `Added ${formatPaise(dialog.latestPaise)} — the suggestion cap is now reached`
-                : `Suggestion cap reached — this action added ${formatMoney(0)}`
-              : `Added ${formatPaise(dialog.latestPaise)}`}
+                ? `${formatPaise(dialog.latestPaise)} added to your suggestion. The suggestion limit is now reached.`
+                : `Suggestion limit reached — this action added ${formatMoney(0)}.`
+              : `${formatPaise(dialog.latestPaise)} added to your suggestion.`}
           </p>
         ) : null}
 
@@ -215,12 +215,12 @@ function CheckpointDialog({ contribution, onNextRound }: { contribution: GameCon
             <dd>{actionBreakdown(session, config)}</dd>
           </div>
           <div>
-            <dt>{custom ? 'Game suggestion' : 'Game-based suggestion'}</dt>
+            <dt>Suggested contribution</dt>
             <dd>{formatPaise(session.suggestedPaise)}</dd>
           </div>
           {custom ? (
             <div className="gc-summary-strong">
-              <dt>Your chosen contribution</dt>
+              <dt>Your chosen amount</dt>
               <dd>{formatPaise(session.customPaise!)}</dd>
             </div>
           ) : null}
@@ -233,7 +233,7 @@ function CheckpointDialog({ contribution, onNextRound }: { contribution: GameCon
         {custom ? <p className="gc-note">Your custom amount stays fixed unless you edit it.</p> : null}
 
         <div className="gc-field">
-          <label htmlFor={fieldId}>Your contribution total</label>
+          <label htmlFor={fieldId}>Your final amount</label>
           <div className={fieldError && dirty ? 'gc-input invalid' : 'gc-input'}>
             <span aria-hidden="true">{currencySymbol()}</span>
             <input
@@ -283,18 +283,18 @@ function CheckpointDialog({ contribution, onNextRound }: { contribution: GameCon
             onClick={donate}
             disabled={preview || Boolean(fieldError) || !availability.ok}
           >
-            Donate now{fieldError ? '' : ` — ${formatPaise(chosenPaise)}`}
+            Review & contribute{fieldError ? '' : ` — ${formatPaise(chosenPaise)}`}
           </button>
           <button type="button" className="gc-btn gc-btn-outline" onClick={secondary}>
             {secondaryLabel}
           </button>
         </div>
         <button type="button" className="gc-text-btn" onClick={() => setConfirmCancel(true)}>
-          Cancel contribution
+          Discard suggestion
         </button>
         <div id={helperId} className="gc-helper">
-          <p>Nothing donated yet. You choose the final amount.</p>
-          <p>{preview ? 'Preview only — contributions are disabled.' : 'Demo payment only — no real money collected.'}</p>
+          <p>No payment is taken while you play. You confirm the final amount on the next screen.</p>
+          <p>{preview ? 'Preview only — contributions are disabled.' : 'Simulated payment — no real money is collected.'}</p>
         </div>
       </div>
     </Modal>
@@ -322,7 +322,7 @@ function RestartDialog({ contribution }: { contribution: GameContribution }) {
         </p>
         <div className="gc-actions">
           <button type="button" className="gc-btn gc-btn-primary" onClick={() => contribution.resolveRestart('keep')}>
-            Keep pending contribution
+            Keep my suggestion
           </button>
           <button type="button" className="gc-btn gc-btn-outline" onClick={() => contribution.resolveRestart('discard')}>
             Discard and restart

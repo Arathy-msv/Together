@@ -49,6 +49,28 @@ function readUnlocked(): string[] {
   }
 }
 
+const INTRO_KEY = 'together.game-intro.v1'
+
+export function hasSeenGameIntro(campaignId: string): boolean {
+  try {
+    const parsed: unknown = JSON.parse(sessionStorage.getItem(INTRO_KEY) ?? '[]')
+    return Array.isArray(parsed) && parsed.includes(campaignId)
+  } catch {
+    return false
+  }
+}
+
+export function markGameIntroSeen(campaignId: string): void {
+  try {
+    const parsed: unknown = JSON.parse(sessionStorage.getItem(INTRO_KEY) ?? '[]')
+    const seen = new Set(Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === 'string') : [])
+    seen.add(campaignId)
+    sessionStorage.setItem(INTRO_KEY, JSON.stringify([...seen]))
+  } catch {
+    // The intro simply shows again next time.
+  }
+}
+
 export function isUnlocked(campaignId: string): boolean {
   return readUnlocked().includes(campaignId)
 }

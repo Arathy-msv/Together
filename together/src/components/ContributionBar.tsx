@@ -1,5 +1,5 @@
 import type { GameContribution } from '../hooks/useGameContribution.ts'
-import { formatPaise, gameIntroSentence, selectedPaise, shortNoun } from '../lib/gameContribution.ts'
+import { formatPaise, gameActionAmounts, selectedPaise, shortNoun } from '../lib/gameContribution.ts'
 
 export function ContributionBar({ contribution }: { contribution: GameContribution }) {
   const { session, config, settings } = contribution
@@ -19,12 +19,12 @@ export function ContributionBar({ contribution }: { contribution: GameContributi
             {count} {count === 1 ? config.noun : config.nounPlural}
           </span>
           <span className="gc-pending" aria-live="polite">
-            <span>{custom ? 'Game suggestion' : 'Pending contribution'}</span>
+            <span>Suggested contribution</span>
             <strong>{formatPaise(pending)}</strong>
           </span>
           {custom ? (
             <span className="gc-pending gc-chosen">
-              <span>Your chosen contribution</span>
+              <span>Your chosen amount</span>
               <strong>{formatPaise(selectedPaise(session))}</strong>
             </span>
           ) : null}
@@ -35,15 +35,15 @@ export function ContributionBar({ contribution }: { contribution: GameContributi
           onClick={() => contribution.openReview()}
           disabled={!session || contribution.paused}
         >
-          Review contribution
+          Review & contribute
         </button>
       </div>
       <p className="gc-bar-note">
         {session
           ? session.capReached && session.capPaise != null
-            ? `Suggestion cap of ${formatPaise(session.capPaise)} reached. Further actions will not increase it.`
-            : 'Nothing is charged while playing. Totals are local demo data in this browser.'
-          : gameIntroSentence(contribution.game, settings.ratePaise)}
+            ? `Suggestion limit of ${formatPaise(session.capPaise)} reached. More actions won’t increase it.`
+            : 'No payment is taken while you play. You can review the amount before confirming.'
+          : `${gameActionAmounts(contribution.game, settings.ratePaise)} No payment is taken while you play.`}
       </p>
     </section>
   )

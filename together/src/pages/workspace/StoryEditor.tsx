@@ -99,7 +99,7 @@ export function StoryEditor({ campaign, view }: WorkspaceProps) {
           value={story.beneficiary}
           placeholder={template.prompts.beneficiary}
           maxLength={400}
-          help="Shown on Trust & documents. Describe the group, not individuals."
+          help="Shown under “How funds are used”. Describe the group, not individuals."
           onChange={(beneficiary) => setStory({ ...story, beneficiary })}
         />
         <MediaEditor items={story.imageStory} error={errors.media} onChange={(imageStory) => setStory({ ...story, imageStory })} />

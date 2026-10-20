@@ -131,8 +131,8 @@ export function WarmthGame({ view, preview = false }: { view: CampaignView; prev
       quiet: true,
     })
     if (!added) return
-    setAnnounce(`${formatPaise(action.pricePaise)} added to your suggested contribution.`)
-    setToast(`${formatPaise(action.pricePaise)} added to your suggested contribution.`)
+    setAnnounce(`${formatPaise(action.pricePaise)} added to your suggestion.`)
+    setToast(`${formatPaise(action.pricePaise)} added to your suggestion.`)
     cartRef.current?.classList.remove('is-pulse')
     if (reduced) {
       cartRef.current?.classList.add('is-pulse')
@@ -424,7 +424,7 @@ export function WarmthGame({ view, preview = false }: { view: CampaignView; prev
               Continue with {allowCustom && amountText ? `${currencySymbol()}${amountText}` : formatPaise(suggestion)}
             </button>
             <button type="button" className="wm-text" onClick={() => setReview(false)}>
-              Keep preparing
+              Keep playing
             </button>
             <p className="wm-muted">Demo contribution. No real payment will be taken.</p>
           </aside>
@@ -435,7 +435,7 @@ export function WarmthGame({ view, preview = false }: { view: CampaignView; prev
         <div className="wm-toast" role="status">
           <p>{toast}</p>
           <button type="button" onClick={() => setToast(null)}>
-            Keep going
+            Keep playing
           </button>
           <button type="button" onClick={openReview}>
             Review & contribute

@@ -162,8 +162,8 @@ function GameConfirm({ view, sessionId }: { view: CampaignView; sessionId: strin
       </div>
       <div className="container narrow">
         <header className="center-head">
-          <h1>Review your game contribution</h1>
-          <p className="muted">Check the details, then confirm. No real money will be collected.</p>
+          <h1>Review your contribution</h1>
+          <p className="muted">Check the amount, then confirm. This is a simulated payment — no real money is collected.</p>
         </header>
         <ReferralCredit referralId={checkoutReferral(sessionId, campaign.id)} />
         <section className="panel confirm-summary-card">
@@ -181,7 +181,7 @@ function GameConfirm({ view, sessionId }: { view: CampaignView; sessionId: strin
               <span className="sim-pill">Simulated payment</span>
             </div>
             <strong className="amount-big">{formatPaise(amountPaise)}</strong>
-            <p className="muted small">{custom ? 'Custom amount you chose' : 'Game-calculated amount'}</p>
+            <p className="muted small">{custom ? 'The amount you chose' : 'Your suggested contribution from the game'}</p>
           </div>
         </section>
         <section className="panel gc-checkout">
@@ -206,8 +206,8 @@ function GameConfirm({ view, sessionId }: { view: CampaignView; sessionId: strin
               <span className="gc-suggest-label">{actionBreakdown(session, config)}</span>
               <span className="gc-suggest-value">
                 {amountPaise === session.suggestedPaise
-                  ? 'Game suggestion'
-                  : `Game suggestion ${formatPaise(session.suggestedPaise)}`}
+                  ? 'Suggested contribution'
+                  : `Suggested contribution ${formatPaise(session.suggestedPaise)}`}
               </span>
             </div>
             <div className="gc-total-row">
@@ -386,7 +386,7 @@ function DirectConfirm({ view }: { view: CampaignView }) {
               </div>
             ) : null}
             <button type="button" className="btn btn-primary btn-block btn-xl" disabled={submitting} onClick={confirm}>
-              {submitting ? 'Saving…' : `Confirm demo contribution — ${formatINR(pending.amount)}`}
+              {submitting ? 'Saving…' : `Confirm simulated contribution — ${formatINR(pending.amount)}`}
             </button>
             <button type="button" className="link-button center-block" onClick={() => navigate(backPath)}>
               Cancel

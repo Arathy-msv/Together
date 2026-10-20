@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { AmountPicker } from '../components/AmountPicker.tsx'
 import { CampaignCover, OrgLogo } from '../components/CampaignImage.tsx'
 import { Leaderboard, RankBanner } from '../components/Leaderboard.tsx'
@@ -17,9 +17,9 @@ import { canHaveSharingPages, shareWorkspacePath } from '../lib/referrals.ts'
 import { campaignMilestones, deliverySummary, latestUpdateDate } from '../lib/transparency.ts'
 import { OrgNotFound } from './org/OrgNotFound.tsx'
 import { formatDate, formatDateRange, formatINR, parseWholeRupees } from '../lib/format.ts'
-import { campaignGameSettings, gameIntroSentence } from '../lib/gameContribution.ts'
-import { GAME_THUMBS, gameMeta } from '../lib/games.ts'
-import { getPending, isUnlocked, newToken, setPending, unlockCampaign } from '../lib/pending.ts'
+import { GAME_EXPLANATION, campaignGameSettings, gameActionAmounts } from '../lib/gameContribution.ts'
+import { gameMeta } from '../lib/games.ts'
+import { getPending, isUnlocked, markGameIntroSeen, newToken, setPending, unlockCampaign } from '../lib/pending.ts'
 import { snapshotReferral } from '../lib/attribution.ts'
 import { activeReferral, currentPlayer, joinPlayer, rememberReferral } from '../lib/players.ts'
 import type { Campaign, CampaignView, DemoStore, Referral } from '../lib/types.ts'
@@ -42,13 +42,19 @@ export function ReferralCampaignPage() {
   return <CampaignDetails key={referral.id} view={view} referral={referral} />
 }
 
-type SectionTab = 'story' | 'updates' | 'fund' | 'trust'
+type SectionTab = 'story' | 'updates' | 'fund'
 const SECTION_TABS: Array<{ id: SectionTab; label: string }> = [
   { id: 'story', label: 'Story' },
   { id: 'updates', label: 'Updates' },
-  { id: 'fund', label: 'Fund use' },
-  { id: 'trust', label: 'Trust & documents' },
+  { id: 'fund', label: 'How funds are used' },
 ]
+
+/** The first sentence of the description, kept short enough to read at a glance. */
+function shortPurpose(text: string): string {
+  const trimmed = text.trim()
+  const sentence = trimmed.match(/^.+?[.!?](\s|$)/)?.[0].trim() ?? trimmed
+  return sentence.length > 180 ? `${sentence.slice(0, 177).trimEnd()}…` : sentence
+}
 
 function CampaignDetails({ view, referral }: { view: CampaignView; referral?: Referral }) {
   const { campaign } = view
@@ -59,7 +65,8 @@ function CampaignDetails({ view, referral }: { view: CampaignView; referral?: Re
   const [params, setParams] = useSearchParams()
   const [unlocked, setUnlocked] = useState(() => isUnlocked(id))
   const [tab, setTab] = useState<'direct' | 'game'>('direct')
-  const section = (SECTION_TABS.find((item) => item.id === params.get('tab'))?.id ?? 'story') as SectionTab
+  const requested = params.get('tab') === 'trust' ? 'fund' : params.get('tab')
+  const section = (SECTION_TABS.find((item) => item.id === requested)?.id ?? 'story') as SectionTab
 
   useEffect(() => {
     document.title = referral ? `${referral.displayName} is supporting ${campaign.title}` : `${campaign.title} — ${campaign.organizerName}`
@@ -75,41 +82,40 @@ function CampaignDetails({ view, referral }: { view: CampaignView; referral?: Re
   }, [id, params])
 
   const needsCode = campaign.access === 'closed' && !campaign.isDraft && !unlocked
-  const game = gameMeta(campaign.gameType)
   const playPath = campaignPlayPath(campaign.id, campaign.gameType, base)
-  const contribution = campaignGameSettings(campaign)
-  const gameIntro = gameIntroSentence(campaign.gameType, contribution.ratePaise)
   const player = campaign.access === 'closed' ? currentPlayer(campaign.id) : null
   const needsName = campaign.access === 'closed' && !campaign.isDraft && !needsCode && !player
 
-  if (!referral && campaign.participation.game && !campaign.isDraft && !needsCode && !needsName && params.get('view') !== 'details') {
-    return <Navigate to={playPath} replace />
-  }
-
-  function showSection(next: SectionTab) {
+  function showSection(next: SectionTab | 'trust') {
     const nextParams = new URLSearchParams(params)
-    if (!referral) nextParams.set('view', 'details')
-    nextParams.set('tab', next)
+    nextParams.set('tab', next === 'trust' ? 'fund' : next)
     setParams(nextParams, { replace: true })
   }
+
+  function openSection(next: SectionTab | 'trust') {
+    showSection(next)
+    const tabId = next === 'trust' ? 'fund' : next
+    requestAnimationFrame(() => {
+      document.getElementById(`tab-${tabId}`)?.scrollIntoView({ block: 'start' })
+      document.getElementById(`tab-${tabId}`)?.focus()
+    })
+  }
+
+  const purpose = shortPurpose(campaign.description)
 
   const followButton = <FollowButton campaignId={campaign.id} />
 
   return (
     <div className="container page-pad campaign">
-      <nav className="crumbs" aria-label="Breadcrumb">
-        <Link to={`${base}/campaigns`}>Campaigns</Link>
-        <span>/</span>
-        {referral ? (
-          <>
-            <Link to={campaignDetailsPath(campaign.id, base)}>{campaign.title}</Link>
-            <span>/</span>
-            <span>Shared by {referral.displayName}</span>
-          </>
-        ) : (
-          <span>{campaign.title}</span>
-        )}
-      </nav>
+      {referral ? (
+        <Link to={campaignDetailsPath(campaign.id, base)} className="back-link page-back">
+          ← Back to campaign
+        </Link>
+      ) : (
+        <Link to={`${base}/campaigns`} className="back-link page-back">
+          ← Back to campaigns
+        </Link>
+      )}
       {referral ? <ReferralIntro referral={referral} view={view} /> : null}
       {campaign.access === 'closed' && !needsCode ? <RankBanner campaignId={campaign.id} contributeHref="#support" /> : null}
       <div className="campaign-grid">
@@ -127,6 +133,26 @@ function CampaignDetails({ view, referral }: { view: CampaignView; referral?: Re
               </span>
             </div>
             <span className="muted small">{formatDateRange(campaign.opensAt, campaign.closesAt)}</span>
+          </div>
+          {purpose ? (
+            <p className="campaign-purpose">
+              {purpose}{' '}
+              <button type="button" className="link-button" onClick={() => openSection('story')}>
+                Read the full story
+              </button>
+            </p>
+          ) : null}
+          <div className="mobile-support" aria-label="Campaign progress">
+            <div className="money-row">
+              <span>
+                <strong>{formatINR(view.raised)}</strong> of {formatINR(campaign.goalAmount)}
+              </span>
+              <strong>{view.percent}%</strong>
+            </div>
+            <ProgressBar value={view.percent} muted={!view.canGive} />
+            <a href="#support" className="btn btn-primary btn-block">
+              Support this campaign
+            </a>
           </div>
           {campaign.access === 'closed' && !needsCode ? <Leaderboard campaignId={campaign.id} /> : null}
           <div className="section-tabs" role="tablist" aria-label="Campaign information">
@@ -158,17 +184,17 @@ function CampaignDetails({ view, referral }: { view: CampaignView; referral?: Re
           <div role="tabpanel" id={`panel-${section}`} aria-labelledby={`tab-${section}`} className="section-panel">
             {section === 'story' ? <StoryTab campaign={campaign} store={store} onShowUpdates={() => showSection('updates')} /> : null}
             {section === 'updates' ? <UpdatesTab campaign={campaign} store={store} follow={followButton} /> : null}
-            {section === 'fund' ? <FundUseTab campaign={campaign} store={store} /> : null}
-            {section === 'trust' ? <TrustTab campaign={campaign} store={store} org={org} /> : null}
+            {section === 'fund' ? (
+              <>
+                <FundUseTab campaign={campaign} store={store} />
+                <section className="organizer-info" aria-labelledby="organizer-info-title">
+                  <h3 id="organizer-info-title">Who is running this campaign</h3>
+                  <TrustTab campaign={campaign} store={store} org={org} />
+                </section>
+              </>
+            ) : null}
           </div>
-          <CampaignQuestions
-            campaign={campaign}
-            store={store}
-            onOpenTab={(tab) => {
-              showSection(tab)
-              document.getElementById(`tab-${tab}`)?.focus()
-            }}
-          />
+          <CampaignQuestions campaign={campaign} store={store} onOpenTab={openSection} />
         </div>
 
         <aside className="support-column">
@@ -233,9 +259,9 @@ function CampaignDetails({ view, referral }: { view: CampaignView; referral?: Re
                 }}
               />
             )}
-            {referral ? <p className="muted small">Contributions go to the original campaign. {referral.displayName}’s page receives credit.</p> : null}
+            {referral ? <p className="muted small">Your contribution goes to the original campaign. {referral.displayName}’s page is credited for sharing it.</p> : null}
           </div>
-          <DeliverySnapshot campaign={campaign} store={store} onOpen={() => showSection('updates')} />
+          <DeliverySnapshot campaign={campaign} store={store} onOpen={() => openSection('updates')} />
           <div className="panel aside-card">
             {followButton}
             {canHaveSharingPages(view) ? (
@@ -247,37 +273,6 @@ function CampaignDetails({ view, referral }: { view: CampaignView; referral?: Re
         </aside>
       </div>
 
-      <section className="panel game-strip">
-        {campaign.participation.game ? (
-          <>
-            <img
-              src={
-                campaign.gameType === 'puzzle' && campaign.puzzleImageData
-                  ? campaign.puzzleImageData
-                  : GAME_THUMBS[campaign.gameType]
-              }
-              alt=""
-            />
-            <div>
-              <h3>{game.name}</h3>
-              <p className="muted small">{gameIntro}</p>
-            </div>
-            {needsCode ? null : (
-              <Link to={playPath} className="btn btn-primary">
-                Play {game.name}
-              </Link>
-            )}
-          </>
-        ) : (
-          <div>
-            <h3>Direct giving</h3>
-            <p className="muted small">This campaign accepts direct simulated contributions.</p>
-          </div>
-        )}
-        <button type="button" className="btn btn-disabled" disabled>
-          Rewards coming soon
-        </button>
-      </section>
     </div>
   )
 }
@@ -288,7 +283,7 @@ function DeliverySnapshot({ campaign, store, onOpen }: { campaign: Campaign; sto
   const last = latestUpdateDate(store, campaign.id)
   return (
     <div className="panel aside-card delivery-snapshot">
-      <span className="eyebrow-label">Delivery progress · organizer-reported</span>
+      <span className="eyebrow-label">Progress reported by the organizer</span>
       {delivery.total > 0 ? (
         <>
           <strong>
@@ -368,12 +363,12 @@ function GivePanel({
   return (
     <div>
       {campaign.participation.direct && campaign.participation.game ? (
-        <div className="underline-tabs" role="group" aria-label="Ways to support">
+        <div className="underline-tabs" role="group" aria-label="How do you want to help?">
           <button type="button" aria-pressed={tab === 'direct'} className={tab === 'direct' ? 'active' : ''} onClick={() => onTab('direct')}>
-            Donate
+            Give directly
           </button>
           <button type="button" aria-pressed={tab === 'game'} className={tab === 'game' ? 'active' : ''} onClick={() => onTab('game')}>
-            Play & give
+            Play a game
           </button>
         </div>
       ) : null}
@@ -387,12 +382,21 @@ function GivePanel({
         </div>
       ) : tab === 'game' && campaign.participation.game ? (
         <div className="play-cta">
-          <p className="muted small">
-            {gameMeta(campaign.gameType).blurb} {gameIntroSentence(campaign.gameType, campaignGameSettings(campaign).ratePaise)}
-          </p>
-          <Link to={campaignPlayPath(campaign.id, campaign.gameType, base)} className="btn btn-primary btn-block">
-            Play {gameMeta(campaign.gameType).name}
+          <strong>{gameMeta(campaign.gameType).name}</strong>
+          <p className="small">{GAME_EXPLANATION}</p>
+          <p className="muted small">{gameActionAmounts(campaign.gameType, campaignGameSettings(campaign).ratePaise)}</p>
+          <Link
+            to={campaignPlayPath(campaign.id, campaign.gameType, base)}
+            className="btn btn-primary btn-block btn-lg"
+            onClick={() => markGameIntroSeen(campaign.id)}
+          >
+            Start playing
           </Link>
+          {campaign.participation.direct ? (
+            <button type="button" className="link-button center-block" onClick={() => onTab('direct')}>
+              Give directly instead
+            </button>
+          ) : null}
         </div>
       ) : campaign.participation.direct ? (
         <>
@@ -425,9 +429,9 @@ function GivePanel({
               onContinue(amount)
             }}
           >
-            Continue to demo payment
+            Continue to review
           </button>
-          <p className="muted small center">No real payment collected.</p>
+          <p className="muted small center">Simulated payment — no real money is collected.</p>
         </>
       ) : (
         <p className="muted">This campaign has no open participation options.</p>

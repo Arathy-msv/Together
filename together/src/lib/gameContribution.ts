@@ -64,6 +64,17 @@ export function shortNoun(game: GameType): string {
   return gameConfig(game).noun.replace(/^(completed|correct|matched) /, '')
 }
 
+export const GAME_EXPLANATION =
+  'Play to build a suggested contribution. You can stop anytime and review your amount before confirming. No payment is taken while you play.'
+
+/** What each game action adds, in one short sentence. */
+export function gameActionAmounts(game: GameType, ratePaise: number): string {
+  if (game === 'jacket') {
+    return `Adding a lining or zipping the jacket adds ${formatMoney(50)} each. A kindness tag adds ${formatMoney(25)}.`
+  }
+  return `Each completed ${shortNoun(game)} adds ${formatPaise(ratePaise)}.`
+}
+
 export function gameIntroSentence(game: GameType, ratePaise: number): string {
   if (game === 'jacket') {
     return `Add a warm lining and zip the jacket for ${formatMoney(50)} each, then attach a kindness tag for ${formatMoney(25)}. You can edit the total before confirming. Nothing is charged while playing.`

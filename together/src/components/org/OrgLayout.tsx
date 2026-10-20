@@ -44,7 +44,7 @@ export function OrgLayout() {
       <span>
         Previewing <strong>unpublished website settings</strong> on this device. {websiteStatusLabel(org)}.
       </span>
-      <Link to={workspacePath(org, 'website')}>Back to website editor</Link>
+      <Link to={workspacePath(org, 'website')}>Back to your website</Link>
       <button
         type="button"
         className="link-button"

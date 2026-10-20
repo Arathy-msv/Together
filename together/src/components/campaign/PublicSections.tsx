@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { formatDate, formatDateTime } from '../../lib/format.ts'
 import { gameMeta } from '../../lib/games.ts'
+import { GAME_EXPLANATION } from '../../lib/gameContribution.ts'
 import {
   campaignMilestones,
   deliverySummary,
@@ -166,7 +167,7 @@ export function StoryTab({ campaign, store, onShowUpdates }: { campaign: Campaig
       {budget.length > 0 ? (
         <section className="budget-card">
           <h3>Planned budget</h3>
-          <p className="muted small">The organizer’s plan. Planned amounts are not spending — see Fund use for reported expenses.</p>
+          <p className="muted small">The organizer’s plan. Planned amounts are not spending — see “How funds are used” for reported expenses.</p>
           <table className="budget-table">
             <tbody>
               {budget.map((line) => (
@@ -208,10 +209,8 @@ export function StoryTab({ campaign, store, onShowUpdates }: { campaign: Campaig
       ) : null}
       {campaign.participation.game ? (
         <section className="story-game">
-          <h3>Play to build a suggestion</h3>
-          <p className="muted">
-            {gameMeta(campaign.gameType).name}: each game action adds to a suggested amount you review before confirming. Playing never collects money.
-          </p>
+          <h3>Giving through {gameMeta(campaign.gameType).name}</h3>
+          <p className="muted">{GAME_EXPLANATION}</p>
         </section>
       ) : null}
       {milestones.length > 0 ? (
@@ -262,7 +261,7 @@ function UpdateCard({ update, store, campaign }: { update: CampaignUpdate; store
           {milestone ? <span className="muted small">Milestone: {milestone.title}</span> : null}
           {expenses.length ? (
             <span className="muted small">
-              Related organizer-reported expenses: {expenses.map((item) => `${item.description} (${formatMinor(item.amountMinor, campaign.currency)})`).join('; ')}. Counted once in Fund use.
+              Related organizer-reported expenses: {expenses.map((item) => `${item.description} (${formatMinor(item.amountMinor, campaign.currency)})`).join('; ')}. Counted once under “How funds are used”.
             </span>
           ) : null}
         </footer>
@@ -376,15 +375,15 @@ export function FundUseTab({ campaign, store }: { campaign: Campaign; store: Dem
     <div className="tab-body">
       <div className="fund-cards">
         <div className="fund-card">
-          <span>Confirmed simulated contributions</span>
+          <span>Raised (simulated)</span>
           <strong>{formatMinor(summary.contributedMinor, campaign.currency)}</strong>
         </div>
         <div className="fund-card">
-          <span>Published organizer-reported expenses</span>
+          <span>Organizer-reported expenses</span>
           <strong>{formatMinor(summary.spentMinor, campaign.currency)}</strong>
         </div>
         <div className={summary.balanceMinor < 0 ? 'fund-card negative' : 'fund-card'}>
-          <span>Unallocated balance (demo calculation)</span>
+          <span>Not yet spent (demo calculation)</span>
           <strong>{formatMinor(summary.balanceMinor, campaign.currency)}</strong>
         </div>
         <div className="fund-card planned">
@@ -409,7 +408,7 @@ export function FundUseTab({ campaign, store }: { campaign: Campaign; store: Dem
 
       <section>
         <div className="section-head-row">
-          <h3>Organizer-reported spending</h3>
+          <h3>Organizer-reported expenses</h3>
           <span className="muted small">{expenses.length} published</span>
         </div>
         {expenses.length > 0 ? (
@@ -441,7 +440,7 @@ export function FundUseTab({ campaign, store }: { campaign: Campaign; store: Dem
           </div>
         ) : null}
         {expenses.length === 0 ? (
-          <p className="awaiting">No organizer-reported spending has been published yet.</p>
+          <p className="awaiting">No expenses reported yet.</p>
         ) : visible.length === 0 ? (
           <p className="muted">No expenses match these filters.</p>
         ) : (
@@ -459,7 +458,7 @@ export function FundUseTab({ campaign, store }: { campaign: Campaign; store: Dem
                     </span>
                     <span className="expense-side">
                       <strong>{formatMinor(expense.amountMinor, campaign.currency)}</strong>
-                      {expense.publicReceipt ? <StatusPill tone="progress">Evidence attached</StatusPill> : <StatusPill tone="neutral">No supporting evidence uploaded</StatusPill>}
+                      {expense.publicReceipt ? <StatusPill tone="progress">Supporting document attached</StatusPill> : <StatusPill tone="neutral">No supporting evidence uploaded</StatusPill>}
                     </span>
                   </summary>
                   <div className="expense-detail">
@@ -501,31 +500,30 @@ export function TrustTab({ campaign, store, org }: { campaign: Campaign; store: 
   const documents = publicDocuments(store, campaign.id)
   const lastUpdate = latestUpdateDate(store, campaign.id)
   const rows: Array<{ label: string; value: string; state: ReactNode }> = [
-    { label: 'Organizer', value: `${campaign.organizerName} · ${org.name}`, state: <StatusPill tone="neutral">Information provided</StatusPill> },
+    { label: 'Organizer', value: `${campaign.organizerName} · ${org.name}`, state: null },
     {
       label: 'Organizer-provided contact',
       value: org.content.contactEmail || 'Not provided',
-      state: org.content.contactEmail ? <StatusPill tone="neutral">Information provided</StatusPill> : <StatusPill tone="neutral">Not provided</StatusPill>,
+      state: null,
     },
     {
       label: 'Who benefits',
       value: campaign.story?.beneficiary?.trim() || 'Not provided',
-      state: campaign.story?.beneficiary?.trim() ? <StatusPill tone="neutral">Information provided</StatusPill> : <StatusPill tone="neutral">Not provided</StatusPill>,
+      state: null,
     },
-    { label: 'Campaign purpose', value: campaign.description, state: <StatusPill tone="neutral">Information provided</StatusPill> },
     {
       label: 'Supporting documents',
       value: documents.length ? `${documents.length} public document${documents.length === 1 ? '' : 's'}` : 'None yet',
-      state: documents.length ? <StatusPill tone="progress">Supporting document attached</StatusPill> : <StatusPill tone="neutral">No supporting evidence uploaded</StatusPill>,
+      state: documents.length ? <StatusPill tone="progress">Supporting document attached</StatusPill> : null,
     },
     {
       label: 'Last public update',
       value: lastUpdate ? formatDateTime(lastUpdate) : 'No updates yet',
-      state: lastUpdate ? <StatusPill tone="neutral">Information provided</StatusPill> : <StatusPill tone="neutral">Awaiting update</StatusPill>,
+      state: null,
     },
     {
       label: 'Independent verification',
-      value: 'This prototype has no independent review service.',
+      value: 'No one outside the organizer has checked this information.',
       state: <StatusPill tone="warn">Not independently verified</StatusPill>,
     },
   ]

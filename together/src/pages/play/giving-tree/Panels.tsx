@@ -89,15 +89,15 @@ export function CartReview({
           <p className="gt-note">
             <InfoIcon />
             <span>
-              <strong>Nothing donated yet.</strong> This is just a suggestion. You can review and contribute next.
+              <strong>No payment is taken while you play.</strong> This is a suggestion. You can review the amount before confirming.
             </span>
           </p>
           <div className="gt-panel-actions">
             <button type="button" className="gt-btn gt-btn-primary" onClick={onReview}>
-              Review contribution <ArrowRight />
+              Review & contribute <ArrowRight />
             </button>
             <button type="button" className="gt-btn gt-btn-outline" onClick={onContinue}>
-              Continue growing
+              Keep playing
             </button>
             {confirmClear ? (
               <div className="gt-clear-confirm" role="group" aria-label="Clear suggestion">
@@ -184,13 +184,13 @@ export function AmountChooser({
       </h2>
       <div className="gt-total-row">
         <span className="gt-with-icon">
-          <CareIcon kind="fertilizer" size={22} /> Game suggestion
+          <CareIcon kind="fertilizer" size={22} /> Suggested contribution
         </span>
         <strong>{formatPaise(suggestion)}</strong>
       </div>
 
       <div className="gt-field">
-        <label htmlFor="gt-amount">Your contribution amount</label>
+        <label htmlFor="gt-amount">Your final amount</label>
         <div className="gt-field-row">
           <div className={error ? 'gt-input has-error' : 'gt-input'}>
             <span aria-hidden="true">{currencySymbol()}</span>

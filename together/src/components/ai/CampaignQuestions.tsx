@@ -8,7 +8,7 @@ import type { Campaign, DemoStore } from '../../lib/types.ts'
 import { AiBadge, SparkIcon } from './AiUI.tsx'
 
 type Tab = NonNullable<PublicAnswer['tab']>
-const TAB_LABEL: Record<Tab, string> = { story: 'Story', updates: 'Updates', fund: 'Fund use', trust: 'Trust & documents' }
+const TAB_LABEL: Record<Tab, string> = { story: 'Story', updates: 'Updates', fund: 'How funds are used', trust: 'How funds are used' }
 
 interface Exchange {
   id: number

@@ -82,7 +82,7 @@ export function TrustEditor({ campaign, store }: WorkspaceProps) {
             + Add document
           </button>
         </div>
-        <p className="muted small">Shown on the public Trust & documents tab as “Supporting document attached”. Uploading a document never creates a verified badge.</p>
+        <p className="muted small">Shown on the public “How funds are used” tab as “Supporting document attached”. Uploading a document never creates a verified badge.</p>
         {publicDocs.length === 0 ? <p className="awaiting">No supporting evidence uploaded.</p> : null}
         <ul className="ws-list">
           {publicDocs.map((doc) => (
