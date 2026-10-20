@@ -466,24 +466,14 @@ legend { font-weight: 800; }
   transform: translateY(-50%);
   width: 232px;
 }
-.play-shell.play-preview.play-puzzle {
+.game-preview-body .play-shell.play-preview {
   min-height: 0;
-  max-height: none;
-  overflow: visible;
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+  border-radius: 0;
 }
-.play-preview .jigsaw-board { width: min(460px, 100%); }
-.play-preview.play-puzzle .scene-puzzle { padding-top: 6px; padding-bottom: 8px; gap: 4px; }
-.play-preview .puzzle-tray { min-height: 100px; padding-top: 8px; padding-bottom: 8px; }
-.play-preview.play-puzzle .play-copy h1 { font-size: 1.7rem; }
-.game-preview-modal:has(.play-puzzle) {
-  width: min(1080px, 100%);
-}
-.play-shell.play-preview {
-  min-height: 560px;
-  max-height: min(80vh, 720px);
-  overflow: auto;
-  border-radius: 12px;
-}
+.game-preview-body .play-stage { min-height: 0; flex: 1; }
 .play-copy { position: absolute; z-index: 2; color: #14352c; }
 .scene-garden .play-copy { left: 3.5%; top: 5%; max-width: 440px; }
 .scene-memory .play-copy, .scene-puzzle .play-copy {

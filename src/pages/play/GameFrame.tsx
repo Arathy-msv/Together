@@ -50,19 +50,13 @@ export function GameFrame({
               <span>Together</span>
             </Link>
           )}
-          {preview ? (
-            <span className="demo-pill sun">Preview</span>
-          ) : (
-            <>
-              <p className="play-nav single" aria-current="page">
-                {gameMeta(game).name}
-              </p>
-              <div className="play-header-actions">
-                <Link to={campaignDetailsPath(campaign.id)}>About this campaign</Link>
-                <span className="demo-pill sun">Demo</span>
-              </div>
-            </>
-          )}
+          <p className="play-nav single" aria-current="page">
+            {gameMeta(game).name}
+          </p>
+          <div className="play-header-actions">
+            {preview ? null : <Link to={campaignDetailsPath(campaign.id)}>About this campaign</Link>}
+            <span className="demo-pill sun">{preview ? 'Preview' : 'Demo'}</span>
+          </div>
         </header>
         {campaign.access === 'closed' && !preview ? (
           <div className="play-rank">

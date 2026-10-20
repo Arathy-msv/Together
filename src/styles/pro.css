@@ -418,13 +418,14 @@ html { scroll-padding-top: 84px; }
   padding: 20px;
 }
 .game-preview-modal {
-  width: min(980px, 100%);
-  max-height: min(90vh, 860px);
+  width: min(1440px, calc(100vw - 24px));
+  height: calc(100vh - 24px);
+  max-height: none;
   background: #fff;
   border-radius: 16px;
   box-shadow: 0 24px 60px rgba(19, 51, 42, 0.28);
   display: grid;
-  grid-template-rows: auto 1fr;
+  grid-template-rows: auto minmax(0, 1fr);
   overflow: hidden;
 }
 .game-preview-head {
@@ -435,8 +436,15 @@ html { scroll-padding-top: 84px; }
   padding: 14px 16px;
   border-bottom: 1px solid var(--p-line);
 }
-.game-preview-body { overflow: auto; background: #f3efe6; min-height: 480px; }
-.game-preview-body.flow { background: #f3efe6; }
+.game-preview-body {
+  overflow: hidden;
+  min-height: 0;
+  height: 100%;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+}
+.game-preview-body > * { flex: 1; min-height: 0; min-width: 0; }
 .menu-confirm { display: grid; gap: 4px; }
 .menu-confirm .menu-note { line-height: 1.4; }
 
