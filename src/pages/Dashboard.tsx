@@ -7,6 +7,7 @@ import { StatusBadge } from '../components/StatusBadge.tsx'
 import { useCampaignViews } from '../hooks/useDemoStore.ts'
 import { closeCampaign, deleteCampaign } from '../lib/campaigns.ts'
 import { formatDate, formatINR } from '../lib/format.ts'
+import { gameMeta } from '../lib/games.ts'
 import { resetStore } from '../lib/storage.ts'
 import type { CampaignView } from '../lib/types.ts'
 
@@ -237,11 +238,10 @@ function Row({
           <CampaignCover campaign={campaign} />
           <div>
             <strong>{campaign.title}</strong>
-            {campaign.access === 'closed' && campaign.accessCode ? (
-              <span className="muted small">Access code {campaign.accessCode}</span>
-            ) : (
-              <span className="muted small">{campaign.organizerName}</span>
-            )}
+            <span className="muted small">
+              {campaign.participation.game ? gameMeta(campaign.gameType).name : 'Direct giving'}
+              {campaign.access === 'closed' && campaign.accessCode ? ` · Code ${campaign.accessCode}` : ''}
+            </span>
           </div>
         </div>
       </td>

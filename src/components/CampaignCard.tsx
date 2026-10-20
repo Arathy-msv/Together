@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { formatINR } from '../lib/format.ts'
+import { gameMeta } from '../lib/games.ts'
 import type { CampaignView } from '../lib/types.ts'
 import { CampaignCover } from './CampaignImage.tsx'
 import { ProgressBar } from './ProgressBar.tsx'
@@ -37,7 +38,10 @@ export function CampaignCard({ view, compact = false }: { view: CampaignView; co
         <StatusBadge status={status} />
       </div>
       <div className="campaign-tile-body">
-        <p className="muted small">{campaign.organizerName}</p>
+        <p className="muted small">
+          {campaign.organizerName}
+          {campaign.participation.game ? ` · ${gameMeta(campaign.gameType).name}` : ''}
+        </p>
         <h3>{campaign.title}</h3>
         <div className="money-row">
           <span>

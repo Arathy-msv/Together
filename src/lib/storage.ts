@@ -104,14 +104,37 @@ export function loadStore(): DemoStore {
     if (!parsed || typeof parsed !== 'object') return recover()
     const record = parsed as Partial<DemoStore>
     if (!Array.isArray(record.campaigns) || !Array.isArray(record.contributions)) return recover()
-    return {
+    return withDefaultCampaigns({
       version: 1,
       campaigns: record.campaigns.filter(isCampaign).map(normalizeCampaign),
       contributions: record.contributions.filter(isContribution),
-    }
+    })
   } catch {
     return recover()
   }
+}
+
+/** Add any built-in sample campaigns that are not already saved in this browser. */
+function withDefaultCampaigns(store: DemoStore): DemoStore {
+  const seeded = createSeed()
+  const byId = new Map(seeded.campaigns.map((campaign) => [campaign.id, campaign]))
+  let changed = false
+  const campaigns = store.campaigns.map((campaign) => {
+    const sample = byId.get(campaign.id)
+    if (!sample || sample.gameType === campaign.gameType || campaign.title !== sample.title) return campaign
+    changed = true
+    return { ...campaign, gameType: sample.gameType }
+  })
+  const present = new Set(campaigns.map((campaign) => campaign.id))
+  const missing = seeded.campaigns.filter((campaign) => !present.has(campaign.id))
+  if (!changed && missing.length === 0) return store
+  const next: DemoStore = { ...store, campaigns: [...campaigns, ...missing] }
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+  } catch {
+    // Keep the merged list in memory if the browser cannot store it.
+  }
+  return next
 }
 
 function recover(): DemoStore {
