@@ -54,7 +54,8 @@ export async function renderCards(dir, logoFile) {
     }
   } finally {
     await r.finish()
-    fs.rmSync(path.join(dir, '.chrome'), { recursive: true, force: true })
+    await new Promise((done) => setTimeout(done, 800))
+    try { fs.rmSync(path.join(dir, '.chrome'), { recursive: true, force: true, maxRetries: 5, retryDelay: 300 }) } catch { /* Chrome may still be closing; the folder is ignored */ }
   }
   return files
 }

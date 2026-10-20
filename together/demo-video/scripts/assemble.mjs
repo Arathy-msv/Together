@@ -26,7 +26,7 @@ const CARD_LEAD = 0.6
 const CARD_TAIL = 1.2
 // Long, mostly silent stretches (typing, page loads) may play back faster, never more than this.
 // Narration audio is never sped up.
-const MAX_SPEEDUP = 1.8
+const MAX_SPEEDUP = 1.6
 const QUIET_TAIL = 2.2
 
 const ffmpeg = (args) => execFileSync('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-y', ...args], { stdio: ['ignore', 'inherit', 'inherit'] })
@@ -71,6 +71,7 @@ function sceneClip(id, index) {
   const scene = recorded[id]
   if (!scene || !scene.end) throw new Error(`Scene ${id} was not recorded; run record.mjs`)
   const real = scene.end - scene.start
+  if (real < durations[id] + LEAD + 0.5) throw new Error(`Scene ${id} (${real.toFixed(1)} s) is shorter than its narration; run record.mjs again after narrate.mjs`)
   const need = durations[id] + LEAD + QUIET_TAIL
   const speed = real > need + 3 ? Math.min(MAX_SPEEDUP, real / need) : 1
   const seconds = Math.round((real / speed) * FPS) / FPS
@@ -136,12 +137,20 @@ function chunks(cue) {
   const limit = 84
   if (cue.text.length <= limit) return [cue]
   const words = cue.text.split(' ')
+  const target = cue.text.length / Math.ceil(cue.text.length / limit)
   const parts = []
   let current = ''
-  for (const word of words) {
-    if (current && (current + ' ' + word).length > limit) { parts.push(current); current = word } else current = current ? `${current} ${word}` : word
-  }
+  words.forEach((word, i) => {
+    current = current ? `${current} ${word}` : word
+    const left = words.length - i - 1
+    const pause = /[,;:.—]$/.test(word) && current.length >= target * 0.6
+    if (left > 1 && (pause || current.length >= target)) { parts.push(current); current = '' }
+  })
   if (current) parts.push(current)
+  if (parts.length > 1 && parts.at(-1).length < 28) {
+    const tail = parts.pop()
+    parts.push(`${parts.pop()} ${tail}`)
+  }
   const total = parts.reduce((n, p) => n + p.length, 0)
   let t = cue.start
   return parts.map((text) => {
@@ -163,14 +172,13 @@ function writeOutputs(selection, name) {
   const srt = []
   const chaptersMeta = [';FFMETADATA1', `title=Together — Greenwood School demo${name === 'together-demo' ? '' : ` (${selection[0].chapter.title})`}`]
   const timings = []
+  const marks = []
   let t = 0
   let n = 0
-  let currentChapter = null
   for (const clip of selection) {
-    if (clip.chapter !== currentChapter) {
-      if (currentChapter) chaptersMeta.push(`END=${Math.round(t * 1000)}`)
-      currentChapter = clip.chapter
-      chaptersMeta.push('[CHAPTER]', 'TIMEBASE=1/1000', `START=${Math.round(t * 1000)}`, `title=${clip.chapter.title}`)
+    if (clip.chapter !== marks.at(-1)?.chapter) {
+      if (marks.length) marks.at(-1).end = t
+      marks.push({ chapter: clip.chapter, start: t })
     }
     for (const cue of cues[clip.id]) {
       for (const piece of chunks(cue)) {
@@ -181,7 +189,8 @@ function writeOutputs(selection, name) {
     timings.push({ clip, start: t, end: t + clip.seconds })
     t += clip.seconds
   }
-  chaptersMeta.push(`END=${Math.round(t * 1000)}`)
+  marks.at(-1).end = t
+  for (const mark of marks) chaptersMeta.push('[CHAPTER]', 'TIMEBASE=1/1000', `START=${Math.round(mark.start * 1000)}`, `END=${Math.round(mark.end * 1000)}`, `title=${mark.chapter.title}`)
   const srtFile = name === 'together-demo' ? path.join(output, 'together-demo.en.srt') : path.join(output, 'chapters', `${name}.en.srt`)
   fs.writeFileSync(srtFile, srt.join('\n'))
   const meta = path.join(build, `${name}.ffmeta`)
@@ -217,6 +226,7 @@ for (const { clip, start, end } of main.timings) {
   doc.push('')
 }
 fs.writeFileSync(path.join(output, 'scene-timings.md'), doc.join('\n'))
+fs.writeFileSync(path.join(root, 'narration', 'scene-timings.md'), doc.join('\n'))
 
 const report = {
   main: { file: main.mp4, seconds: Number(main.seconds.toFixed(2)), measured: probe(main.mp4) },

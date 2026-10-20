@@ -71,6 +71,7 @@ Next, she chooses the features the school needs: sponsor-funded play, review bef
 ## oa-look
 She sets the school's green, picks a homepage image, and writes a headline and introduction.
 She uploads the school logo, and leaves the campaign creation assistant switched on.
+All of this can be changed later from the workspace.
 
 ## oa-review
 A review step summarises every choice, including partner vouchers.
@@ -82,6 +83,7 @@ The website is live, in this browser only.
 
 ## oa-members
 In Members, Grace adds Daniel as a second organization admin, and Olivia as a campaign organizer.
+Roles decide what each person can do. A campaign organizer works only on the campaigns assigned to her.
 
 ## oa-offers
 Under Partner offers, she adds Corner Stationery, a shop near the school.
@@ -103,9 +105,10 @@ She starts a new campaign with the guided assistant.
 
 ## og-assistant
 She describes the campaign in her own words.
-The assistant is simulated. It follows fixed rules and is not connected to an A I service.
+The assistant is simulated. It follows fixed rules and is not connected to an {AI|A I} service.
 It suggests a setup, and Olivia adds who the campaign helps, what it pays for, and what happens next.
 Then she confirms the target, the dates, who can take part, both ways to contribute, the Memory Match game, and a cover image.
+Every answer can still be changed in the full form.
 
 ## og-ai-suggest
 Draft suggestions appear for her to review. Nothing is applied automatically, and text in square brackets must be replaced before use.
@@ -136,8 +139,9 @@ She can also reuse last term's campaign.
 The copy is a clean draft with nothing raised. Past contributions stay with the original campaign.
 
 ## og-milestone-update
-Olivia marks the first milestone as reported complete.
+Olivia marks the first milestone as reported complete, with a progress note supporters can read.
 Then she publishes an update: the supply list is ready.
+The update is linked to that milestone, so supporters can see what it refers to.
 
 # chapter supporter | Supporter
 
@@ -150,6 +154,7 @@ She opens the campaign.
 
 ## sp-trust
 Before giving, she can read the updates, see how funds will be used, and check the partner offer.
+The offer lists the store, the reward and its terms.
 
 ## sp-direct
 Mia gives {₹500|five hundred rupees} directly.
@@ -160,6 +165,7 @@ Her contribution qualifies for the partner reward, so she claims the voucher.
 
 ## sp-game
 She also plays Memory Match. Each matched pair adds to a suggested amount, but nothing is charged during play.
+She matches three pairs, and can stop and review whenever she likes.
 
 ## sp-game-confirm
 At the end, the suggestion is only a starting point. She changes it to {₹200|two hundred rupees}, reviews it, and confirms.
@@ -167,6 +173,7 @@ The campaign total now shows {₹700|seven hundred rupees}.
 
 ## sp-share
 Mia creates her own sharing page, with a personal goal.
+Her page shows her own story alongside the campaign.
 The sharing kit includes ready-made poster text. The QR code shown is a placeholder in this prototype.
 
 ## sp-vouchers
@@ -175,6 +182,7 @@ Her impact history lists the campaigns she has supported.
 
 ## sp-lowdata
 For slow connections, a low-data page removes large images and animations.
+She switches it back off when she's done.
 
 # chapter merchant | Merchant
 
@@ -208,6 +216,7 @@ She links it to the Purchase materials milestone and publishes it as organizer-r
 
 ## fn-milestone
 She sets that milestone to in progress, with a note about what has arrived.
+Supporters see this on the public delivery timeline.
 
 ## fn-report
 Grace opens the final report. The figures come from the app's own records, and three milestones are still unfinished.

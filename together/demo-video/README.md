@@ -19,6 +19,7 @@ All media goes to ignored folders (`work/` and `output/`); only scripts and docs
 | `output/scene-timings.md` | The narration script with the final start and end time of every scene |
 | `output/assembly-report.json` | Durations, any scenes played faster, and console errors found during recording |
 | `narration/script.md` | Editable narration (one line = one subtitle cue) |
+| `narration/scene-timings.md` | Committed copy of the timed script from the last assembly |
 | `FEATURE-STATUS.md` | What works, and what is missing, limited or simulated |
 
 ## Requirements
@@ -83,7 +84,7 @@ DRY=1 UNTIL=oa-publish node record.mjs    # stop after a scene
 * Each scene holds the live screen until its narration has finished (narration length + 1.2 s),
   so narration is never cut or sped up.
 * Where a scene is much longer than its narration (typing into forms), the screen part plays up
-  to 1.8× faster. The audio is never sped up. Affected scenes are listed in
+  to 1.6× faster. The audio is never sped up. Affected scenes are listed in
   `output/scene-timings.md`.
 * No background music is used.
 
