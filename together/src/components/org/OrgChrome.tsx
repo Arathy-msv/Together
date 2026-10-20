@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { useDemoStore } from '../../hooks/useDemoStore.ts'
-import { useSupporterProfile, useVoucherStore } from '../../hooks/useVoucherStore.ts'
+import { useCurrentUser, useSupporterId } from '../../hooks/useIdentity.ts'
+import { useVoucherStore } from '../../hooks/useVoucherStore.ts'
+import { can } from '../../lib/permissions.ts'
 import { canUseFeature } from '../../lib/features.ts'
 import { holderVouchers, publicOffers } from '../../lib/vouchers.ts'
 import { orgInitials } from '../../lib/organizations.ts'
@@ -50,6 +52,9 @@ export function OrgHeader({ org, base, workspace }: { org: Organization; base: s
   const vouchers = useVoucherStore()
   const demo = useDemoStore()
   const hasOffers = publicOffers(org, vouchers, demo).length > 0
+  const user = useCurrentUser()
+  const canCreate = can(user, 'campaign.create', { organizationId: org.id })
+  const canManageSite = can(user, 'org.manageWebsite', { organizationId: org.id })
 
   useEffect(() => {
     if (!open) return
@@ -81,7 +86,7 @@ export function OrgHeader({ org, base, workspace }: { org: Organization; base: s
           <NavLink to={`${base}/campaigns`}>Campaigns</NavLink>
           <NavLink to={`${base}/about`}>About</NavLink>
           {hasOffers ? <NavLink to={`${base}/offers`}>Partner offers</NavLink> : null}
-          {workspace ? (
+          {workspace && canCreate ? (
             <div className="oh-nav-organizer">
               <span className="oh-nav-organizer-label">
                 Organizer tools <span className="demo-badge small-badge">Demo</span>
@@ -92,9 +97,11 @@ export function OrgHeader({ org, base, workspace }: { org: Organization; base: s
               <Link to={`${workspace}/campaigns`} className="oh-nav-manage">
                 Manage campaigns
               </Link>
-              <Link to={`${workspace}/overview`} className="oh-nav-manage">
-                Manage this website
-              </Link>
+              {canManageSite ? (
+                <Link to={`${workspace}/overview`} className="oh-nav-manage">
+                  Manage this website
+                </Link>
+              ) : null}
             </div>
           ) : null}
         </nav>
@@ -131,8 +138,10 @@ export function OrgHeaderPreview({ org }: { org: Organization }) {
 export function OrgFooter({ org, base, workspace, preview = false }: { org: Organization; base: string; workspace?: string; preview?: boolean }) {
   const { content } = org
   const vouchers = useVoucherStore()
-  const profile = useSupporterProfile()
-  const holdsVouchers = holderVouchers(vouchers, org.id, profile?.id).length > 0
+  const supporterId = useSupporterId()
+  const user = useCurrentUser()
+  const holdsVouchers = holderVouchers(vouchers, org.id, supporterId).length > 0
+  const canManage = Boolean(workspace) && can(user, 'workspace.view', { organizationId: org.id })
   const links = [
     ...(content.website ? [{ label: 'Website', url: content.website }] : []),
     ...content.socialLinks.filter((link) => link.label.trim() && link.url.trim()),
@@ -190,7 +199,7 @@ export function OrgFooter({ org, base, workspace, preview = false }: { org: Orga
               </Link>
             )
           ) : null}
-          {workspace && !preview ? (
+          {canManage && !preview ? (
             <Link to={`${workspace}/overview`} className="manage-link">
               Manage this website <span className="demo-badge small-badge">Demo</span>
             </Link>

@@ -123,9 +123,32 @@ export interface FeatureChange {
   key: FeatureKey | `voucher:${VoucherCapability}`
   enabled: boolean
   at: string
+  actorId?: string
 }
 
 export type ApprovalStatus = 'draft' | 'pending_review' | 'approved' | 'rejected'
+
+/** Campaign fields as submitted for review (everything except review bookkeeping). */
+export type CampaignSnapshot = Omit<Campaign, 'pendingRevision' | 'revisionHistory'>
+
+export interface CampaignRevision {
+  id: string
+  /** Demo identity that authored this revision, or 'legacy' for earlier demo data. */
+  authorId: string
+  submittedAt: string
+  status: 'pending' | 'rejected'
+  reviewNote?: string
+  reviewedBy?: string
+  snapshot: CampaignSnapshot
+}
+
+export interface RevisionEvent {
+  revisionId: string
+  action: 'submitted' | 'superseded' | 'approved' | 'rejected' | 'published'
+  actorId: string
+  at: string
+  note?: string
+}
 
 /** setup: onboarding unfinished · draft: set up but never published · published: live in this browser. */
 export type WebsiteStatus = 'setup' | 'draft' | 'published'
@@ -184,6 +207,16 @@ export interface Campaign {
   approvalNote?: string
   /** Partner offers this campaign chose to show. Usable only while the organization allows them. */
   partnerOfferIds?: string[]
+  /** Demo identity that created the campaign. */
+  createdBy?: string
+  /**
+   * A change waiting for an Organization Admin’s review. The campaign’s top-level fields stay the
+   * last published version, so supporters keep seeing it during review.
+   */
+  pendingRevision?: CampaignRevision
+  /** The revision an admin approved most recently. Approval applies only to that revision. */
+  approvedRevisionId?: string
+  revisionHistory?: RevisionEvent[]
 
   createdAt: string
   manualClosedAt?: string
@@ -273,6 +306,8 @@ export interface Referral {
   personalTarget?: number
   coverImage?: string
   translations?: Translations<'headline' | 'message'>
+  /** Local supporter profile that may edit this page. Missing on earlier demo data. */
+  ownerId?: string
   createdAt: string
   updatedAt: string
 }
@@ -377,6 +412,8 @@ export interface Contribution {
   referralCode?: string
   /** Personalized sharing page credited with this contribution. Totals still count once, in the campaign. */
   referralId?: string
+  /** Local supporter profile that owns this receipt. Missing on earlier demo data. */
+  supporterId?: string
 }
 
 export interface DemoStore {

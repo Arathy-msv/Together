@@ -19,7 +19,8 @@ import {
   slugify,
   validateOrganization,
 } from '../../lib/organizations.ts'
-import { saveOrganization } from '../../lib/orgStorage.ts'
+import { saveOrganizationAs } from '../../lib/orgActions.ts'
+import { PermissionError } from '../../lib/permissions.ts'
 import { hasUnpublishedChanges, previewOrganization, setWebsitePreview, websiteConfigOf, withDraftDiscarded, withPublishedWebsite, withWebsiteDraft } from '../../lib/website.ts'
 import { StorageFullError } from '../../lib/storage.ts'
 import { BUTTON_STYLES, contrastChecks, DEFAULT_BRANDING, FONT_CHOICES, isHexColor } from '../../lib/theme.ts'
@@ -138,14 +139,16 @@ function SettingsEditor({ stored, variant }: { stored: Organization; variant: Va
 
   function persist(next: Organization, message: string): boolean {
     try {
-      saveOrganization(next)
+      saveOrganizationAs(isWebsite ? 'org.manageWebsite' : 'org.manageSettings', next)
     } catch (error) {
       setNotice({
         tone: 'error',
         text:
           error instanceof StorageFullError
             ? 'Browser storage is full, so nothing was saved. Use a gallery image or a smaller upload, then try again.'
-            : 'Settings could not be saved in this browser.',
+            : error instanceof PermissionError
+              ? error.message
+              : 'Settings could not be saved in this browser.',
       })
       return false
     }

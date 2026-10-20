@@ -7,6 +7,7 @@ import { useCampaignView, useDemoStore } from '../hooks/useDemoStore.ts'
 import { campaignPlayPath, goalReached } from '../lib/campaigns.ts'
 import { useOrg, useOrgBase } from '../components/org/OrgContext.tsx'
 import { rememberContribution } from './org/SupporterHistory.tsx'
+import { useSupporterId } from '../hooks/useIdentity.ts'
 import { ContributionRewards } from './org/PartnerOffersPublic.tsx'
 import { GoalGesture } from '../components/GoalGesture.tsx'
 import { formatDate, formatDateTime, formatINR } from '../lib/format.ts'
@@ -24,7 +25,10 @@ export function SuccessPage() {
   const store = useDemoStore()
   const backPath = useCampaignBackPath(id)
   const [following, setFollowingState] = useState(() => Boolean(followedAt(id)))
-  const contribution = store.contributions.find((item) => item.id === contributionId && item.campaignId === id)
+  const supporterId = useSupporterId()
+  const found = store.contributions.find((item) => item.id === contributionId && item.campaignId === id)
+  // Receipts are private: only the supporter who made the contribution may open it. Earlier demo data has no owner.
+  const contribution = found && (!found.supporterId || found.supporterId === supporterId) ? found : undefined
 
   useEffect(() => {
     document.title = 'Contribution successful — Together'
@@ -40,7 +44,9 @@ export function SuccessPage() {
       <div className="container narrow page-pad">
         <div className="panel empty">
           <h1>We couldn’t find that contribution</h1>
-          <p className="muted">It may belong to another browser, or the demo data was reset.</p>
+          <p className="muted">
+            {found ? 'This receipt belongs to another demo supporter. Switch back to the identity that made it to view it.' : 'It may belong to another browser, or the demo data was reset.'}
+          </p>
           <Link to={backPath} className="btn btn-primary">
             Back to campaign
           </Link>

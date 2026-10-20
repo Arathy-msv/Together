@@ -3,6 +3,11 @@ import { Link, NavLink, Outlet, useLocation, useNavigate, useParams } from 'reac
 import { OrgLogoMark } from '../../components/org/OrgChrome.tsx'
 import { OrgContext, orgContextValue } from '../../components/org/OrgContext.tsx'
 import { OrgSwitcher } from '../../components/org/OrgSwitcher.tsx'
+import { AccessDenied } from '../../components/identity/AccessDenied.tsx'
+import { DemoIdentitySwitcher } from '../../components/identity/DemoIdentitySwitcher.tsx'
+import { useCurrentUser } from '../../hooks/useIdentity.ts'
+import { membership, ROLE_LABEL } from '../../lib/identity.ts'
+import { can, SECTION_PERMISSION } from '../../lib/permissions.ts'
 import { useVoucherStore } from '../../hooks/useVoucherStore.ts'
 import { canUseFeature } from '../../lib/features.ts'
 import { orgVouchers } from '../../lib/vouchers.ts'
@@ -14,8 +19,9 @@ import { DEFAULT_BRANDING } from '../../lib/theme.ts'
 import { isPubliclyAvailable, previewOrganization, publicWebsiteUrl, setWebsitePreview, websiteStatusLabel } from '../../lib/website.ts'
 
 /**
- * Management workspace for one organization (/workspace/:organizationId). Demo controls only —
- * anyone using this browser can open any workspace.
+ * Management workspace for one organization (/workspace/:organizationId). Only members of the
+ * organization can open it, and each section checks the member’s role. Demo identities are
+ * simulated; this is not production access control.
  */
 export function WorkspaceLayout() {
   const { organizationId = '' } = useParams()
@@ -25,12 +31,14 @@ export function WorkspaceLayout() {
   const org = useMemo(() => (stored ? previewOrganization(stored) : null), [stored])
   const value = useMemo(() => (org ? orgContextValue(org) : null), [org])
   const voucherStore = useVoucherStore()
+  const user = useCurrentUser()
   useDocumentTheme(org?.branding ?? DEFAULT_BRANDING)
   useScrollOnNavigate(pathname, hash)
 
+  const member = stored && user ? membership(user.id, stored.id) : undefined
   useEffect(() => {
-    if (stored) setActiveOrgId(stored.id)
-  }, [stored])
+    if (stored && member) setActiveOrgId(stored.id)
+  }, [stored, member])
 
   if (!stored || !org || !value) {
     return (
@@ -49,6 +57,28 @@ export function WorkspaceLayout() {
   }
 
   const root = `/workspace/${org.id}`
+  if (!member) {
+    return (
+      <div className="app-shell pro workspace-shell">
+        <header className="ws-top">
+          <div className="ws-top-inner">
+            <Link to="/" className="ws-platform-link" aria-label="Together platform home">
+              Together
+            </Link>
+            <DemoIdentitySwitcher compact />
+          </div>
+        </header>
+        <main id="main">
+          <AccessDenied reason="Only members of this organization can open its workspace. A Platform Admin manages organizations from the platform admin page, without access to their supporter records." />
+        </main>
+      </div>
+    )
+  }
+  const section = pathname.slice(root.length + 1).split('/')[0] || 'overview'
+  const sectionPermission = SECTION_PERMISSION[section]
+  const allowed = (key: string) => can(user, SECTION_PERMISSION[key], { organization: stored })
+  const sectionAllowed = !sectionPermission || allowed(section)
+  const offersVisible = allowed('offers') && (canUseFeature(org, 'partnerVouchers') || orgVouchers(voucherStore, org.id).length > 0)
   return (
     <OrgContext.Provider value={value}>
       <div className="app-shell pro workspace-shell">
@@ -61,7 +91,9 @@ export function WorkspaceLayout() {
               Together
             </Link>
             <span className="demo-badge">Demo workspace</span>
+            <span className="ws-role">{ROLE_LABEL[member.role]}</span>
             <OrgSwitcher currentId={org.id} />
+            <DemoIdentitySwitcher compact />
           </div>
         </header>
         <div className="ws-org-head">
@@ -77,31 +109,38 @@ export function WorkspaceLayout() {
               <span className={`status-pill ${stored.website.status}`}>{websiteStatusLabel(stored)}</span>
               <code>{publicWebsiteUrl(org)}</code>
             </div>
-            <WebsiteActions stored={stored} />
+            {allowed('website') ? <WebsiteActions stored={stored} /> : null}
           </div>
           <nav className="ws-nav" aria-label="Workspace">
             <NavLink to={`${root}/overview`}>Overview</NavLink>
-            <NavLink to={`${root}/website`}>My website</NavLink>
+            {allowed('website') ? <NavLink to={`${root}/website`}>My website</NavLink> : null}
             <NavLink to={`${root}/campaigns`} end={false} className={({ isActive }) => (isActive || pathname.startsWith(`${root}/assistant`) ? 'active' : '')}>
               Campaigns
             </NavLink>
-            {canUseFeature(org, 'partnerVouchers') || orgVouchers(voucherStore, org.id).length > 0 ? <NavLink to={`${root}/offers`}>Partner offers</NavLink> : null}
-            <NavLink to={`${root}/settings`} className={({ isActive }) => (isActive || pathname.startsWith(`${root}/plan`) ? 'active' : '')}>
-              Settings
-            </NavLink>
+            {offersVisible ? <NavLink to={`${root}/offers`}>Partner offers</NavLink> : null}
+            {allowed('members') ? <NavLink to={`${root}/members`}>Members</NavLink> : null}
+            {allowed('settings') ? (
+              <NavLink to={`${root}/settings`} className={({ isActive }) => (isActive || pathname.startsWith(`${root}/plan`) ? 'active' : '')}>
+                Settings
+              </NavLink>
+            ) : null}
             <details className="ws-help">
               <summary>Help</summary>
               <div className="ws-help-menu">
-                <Link to={`${root}/overview?checklist=1`}>Setup checklist</Link>
-                <Link to={`${root}/plan`}>Your demo plan</Link>
-                <Link to={`${root}/features`}>Website features</Link>
+                {allowed('settings') ? (
+                  <>
+                    <Link to={`${root}/overview?checklist=1`}>Setup checklist</Link>
+                    <Link to={`${root}/plan`}>Your demo plan</Link>
+                    <Link to={`${root}/features`}>Website features</Link>
+                  </>
+                ) : null}
                 <Link to={`/o/${org.slug}/how-it-works`}>How giving works for supporters</Link>
                 <p className="muted small">Everything is saved on this device only.</p>
               </div>
             </details>
           </nav>
         </div>
-        {stored.website.status === 'setup' ? (
+        {stored.website.status === 'setup' && member.role === 'org_admin' ? (
           <div className="container">
             <div className="notice warn">
               <div>
@@ -114,9 +153,7 @@ export function WorkspaceLayout() {
             </div>
           </div>
         ) : null}
-        <main id="main">
-          <Outlet />
-        </main>
+        <main id="main">{sectionAllowed ? <Outlet /> : <AccessDenied reason={`${ROLE_LABEL[member.role]}s can’t open this section. Organization branding, plans, features and memberships are managed by an Organization Admin.`} />}</main>
       </div>
     </OrgContext.Provider>
   )

@@ -25,6 +25,20 @@ npm test
 
 `npm test` runs the contribution rules, stage gating, checkout, organization, theming, storage migration, assistant, referral attribution, fund summary, trust, draft and AI-preview tests with Node’s built-in test runner.
 
+## Roles and demo identities
+
+The prototype has five roles, played through **simulated demo identities** (pick one from the labelled switcher on the platform pages or at `/demo-identities`). There is no real sign-in: anyone using the browser can choose any identity, and the checks below demonstrate the product rules — they are not production security.
+
+| Role | Can do |
+| --- | --- |
+| Platform Admin | Organizations, demo plans and platform feature availability (`/admin`). No supporter records. |
+| Organization Admin | Their organization only: website, features, members, campaigns, reviews, expenses, sponsors, partner offers, reports. |
+| Campaign Organizer | Create campaigns; edit own drafts and explicitly assigned campaigns; submit for review when required. |
+| Merchant | Look up and redeem vouchers at assigned stores and branches (`/merchant`). |
+| Supporter | Everyone, including guests: browse, contribute, play, own sharing pages, own receipts and vouchers. |
+
+All checks go through `can` / `assertCan` in `src/lib/permissions.ts` and are enforced in the library functions that write data, not only by hiding buttons. When review is required, revisions are approved by an Organization Admin who did not author them; the last published version stays public during review, and nothing is approved automatically when no other admin exists.
+
 ## Optional website features
 
 Organizations choose which optional features to activate during setup (and later under **Settings → Website features**). A feature is usable only when it is implemented on the platform, included in the selected demo plan, and turned on for that organization. Checks go through `canUseFeature` in `src/lib/features.ts` — hiding a button alone is not enough.

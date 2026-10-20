@@ -2,6 +2,8 @@ import { canUseVoucherCapability, capabilityName, VOUCHER_CAPABILITIES } from '.
 import { formatMoney, isCurrencyCode } from './format.ts'
 import { loadStore, notifyChange, saveStore, StorageFullError } from './storage.ts'
 import { statusOf } from './campaigns.ts'
+import { currentActorId, currentSupporterId, merchantAccessFor, currentUser } from './identity.ts'
+import { assertCan, PermissionError } from './permissions.ts'
 import type { Campaign, CurrencyCode, DemoStore, Organization, VoucherCapability } from './types.ts'
 
 /*
@@ -22,7 +24,14 @@ export interface Merchant {
   location: string
   /** Organizations this fictional store has an explicit relationship with. */
   organizationIds: string[]
+  /** Branches where vouchers can be redeemed. Every store has at least one. */
+  branches: MerchantBranch[]
   createdAt: string
+}
+
+export interface MerchantBranch {
+  id: string
+  name: string
 }
 
 export type OfferStatus = 'draft' | 'active' | 'paused'
@@ -66,6 +75,9 @@ export interface VoucherRedemption {
   at: string
   amount?: number
   note: string
+  /** Demo identity that confirmed the redemption. */
+  actorId?: string
+  branchId?: string
 }
 
 export interface IssuedVoucher {
@@ -126,7 +138,13 @@ export function loadVoucherStore(): VoucherStore {
     const parsed = JSON.parse(raw) as Partial<VoucherStore>
     return {
       version: 1,
-      merchants: asArray<Merchant>(parsed.merchants, (item) => typeof item.id === 'string' && Array.isArray(item.organizationIds)),
+      merchants: asArray<Merchant>(parsed.merchants, (item) => typeof item.id === 'string' && Array.isArray(item.organizationIds)).map((merchant) => ({
+        ...merchant,
+        branches:
+          Array.isArray(merchant.branches) && merchant.branches.length > 0
+            ? merchant.branches.filter((branch) => typeof branch?.id === 'string' && typeof branch?.name === 'string')
+            : [{ id: `${merchant.id}_main`, name: merchant.location || 'Main branch' }],
+      })),
       offers: asArray<PartnerOffer>(
         parsed.offers,
         (item) => typeof item.id === 'string' && typeof item.organizationId === 'string' && CAPABILITY_KEYS.includes(item.capability as VoucherCapability),
@@ -287,13 +305,20 @@ export function offerValueLine(offer: PartnerOffer): string {
 
 /* ---------- Management actions (organization admin demo role) ---------- */
 
+/** Organization Admins of this organization manage its partner offers. */
+function assertManager(org: Organization): void {
+  assertCan('org.managePartnerOffers', { organization: org }, 'Only an Organization Admin of this organization can manage partner offers.')
+}
+
 function assertModule(org: Organization): void {
+  assertManager(org)
   if (!VOUCHER_CAPABILITIES.some((capability) => canUseVoucherCapability(org, capability.key))) {
     throw new Error('Give & Get Local is not enabled for this organization. Turn it on in Settings → Website features.')
   }
 }
 
 function assertCapability(org: Organization, capability: VoucherCapability): void {
+  assertManager(org)
   if (!canUseVoucherCapability(org, capability)) {
     throw new Error(`${capabilityName(capability)} is not enabled for this organization.`)
   }
@@ -328,6 +353,7 @@ export function addMerchant(org: Organization, input: MerchantInput): Merchant {
     description: input.description.trim().slice(0, 240),
     location: input.location.trim().slice(0, 120),
     organizationIds: [org.id],
+    branches: [{ id: `br_${crypto.randomUUID().slice(0, 10)}`, name: input.location.trim().slice(0, 80) || 'Main branch' }],
     createdAt: new Date().toISOString(),
   }
   store.merchants.push(merchant)
@@ -411,6 +437,7 @@ export function createOffer(org: Organization, input: OfferInput): PartnerOffer 
 }
 
 function updateOffer(org: Organization, offerId: string, change: (offer: PartnerOffer) => void): PartnerOffer {
+  assertManager(org)
   const store = loadVoucherStore()
   const offer = ownOffer(store, org, offerId)
   change(offer)
@@ -444,6 +471,7 @@ export function pauseOffer(org: Organization, offerId: string): PartnerOffer {
 
 /** Adds or removes an offer on a campaign. Removing is always allowed; adding requires eligibility. */
 export function assignOfferToCampaign(org: Organization, offerId: string, campaignId: string, assigned: boolean): void {
+  assertManager(org)
   const store = loadVoucherStore()
   const offer = ownOffer(store, org, offerId)
   const demo = loadStore()
@@ -463,8 +491,15 @@ export function assignOfferToCampaign(org: Organization, offerId: string, campai
 
 /** Redemption stays available after deactivation so issued vouchers are never silently cancelled. */
 export function redeemVoucher(org: Organization, voucherId: string, amount?: number): IssuedVoucher {
+  assertManager(org)
   const store = loadVoucherStore()
   const voucher = ownVoucher(store, org, voucherId)
+  applyRedemption(voucher, amount, undefined)
+  saveVoucherStore(store)
+  return voucher
+}
+
+function applyRedemption(voucher: IssuedVoucher, amount: number | undefined, branchId: string | undefined): void {
   if (voucher.status === 'redeemed') throw new Error('This voucher has already been fully used.')
   if (isExpired(voucher)) throw new Error('This voucher has expired under its terms.')
   const now = new Date().toISOString()
@@ -472,18 +507,17 @@ export function redeemVoucher(org: Organization, voucherId: string, amount?: num
     const balance = voucher.balance ?? 0
     if (!positive(amount) || amount > balance) throw new Error(`Enter a whole amount up to the remaining balance of ${balance}.`)
     voucher.balance = balance - amount
-    voucher.redemptions.push({ id: crypto.randomUUID(), at: now, amount, note: 'Store credit used at partner store (demo)' })
+    voucher.redemptions.push({ id: crypto.randomUUID(), at: now, amount, note: 'Store credit used at partner store (demo)', actorId: currentActorId(), branchId })
     if (voucher.balance === 0) voucher.status = 'redeemed'
   } else {
-    voucher.redemptions.push({ id: crypto.randomUUID(), at: now, note: 'Offer used at partner store (demo)' })
+    voucher.redemptions.push({ id: crypto.randomUUID(), at: now, note: 'Offer used at partner store (demo)', actorId: currentActorId(), branchId })
     voucher.status = 'redeemed'
   }
-  saveVoucherStore(store)
-  return voucher
 }
 
 /** Marks a store-value campaign share as passed on by the merchant. Allowed after deactivation. */
 export function settleMerchantBenefit(org: Organization, voucherId: string): IssuedVoucher {
+  assertManager(org)
   const store = loadVoucherStore()
   const voucher = ownVoucher(store, org, voucherId)
   if (voucher.benefitStatus !== 'pending') throw new Error('There is no pending benefit on this voucher.')
@@ -500,7 +534,7 @@ function voucherCode(): string {
 }
 
 function liveCampaignOffer(org: Organization, store: VoucherStore, demo: DemoStore, offerId: string, campaignId: string, capability: VoucherCapability) {
-  assertCapability(org, capability)
+  if (!canUseVoucherCapability(org, capability)) throw new Error(`${capabilityName(capability)} is not enabled for this organization.`)
   const campaign = demo.campaigns.find((item) => item.id === campaignId)
   if (!campaign || campaign.organizationId !== org.id) throw new Error('Choose a campaign from this organization.')
   const offer = campaignOffers(org, store, campaign).find((item) => item.id === offerId)
@@ -535,11 +569,13 @@ function issue(store: VoucherStore, offer: PartnerOffer, campaign: Campaign, hol
 }
 
 /** Contribution reward for a confirmed contribution that meets the offer threshold. One per contribution and offer. */
-export function claimContributionReward(org: Organization, offerId: string, contributionId: string, holderId: string): IssuedVoucher {
+export function claimContributionReward(org: Organization, offerId: string, contributionId: string): IssuedVoucher {
+  const holderId = currentSupporterId()
   const store = loadVoucherStore()
   const demo = loadStore()
   const contribution = demo.contributions.find((item) => item.id === contributionId && item.status === 'success')
   if (!contribution) throw new Error('This reward needs a confirmed contribution.')
+  if (contribution.supporterId && contribution.supporterId !== holderId) throw new PermissionError('Only the supporter who made this contribution can claim its reward.')
   const existing = store.vouchers.find((item) => item.offerId === offerId && item.contributionId === contributionId)
   if (existing) return existing
   const { campaign, offer } = liveCampaignOffer(org, store, demo, offerId, contribution.campaignId, 'contributionRewards')
@@ -550,7 +586,8 @@ export function claimContributionReward(org: Organization, offerId: string, cont
 }
 
 /** Simulated store-credit purchase. The beneficiary campaign is always explicit. */
-export function purchaseStoreValue(org: Organization, offerId: string, campaignId: string, holderId: string): IssuedVoucher {
+export function purchaseStoreValue(org: Organization, offerId: string, campaignId: string): IssuedVoucher {
+  const holderId = currentSupporterId()
   if (!campaignId) throw new Error('Choose which campaign this purchase supports.')
   const store = loadVoucherStore()
   const demo = loadStore()
@@ -567,7 +604,8 @@ export function purchaseStoreValue(org: Organization, offerId: string, campaignI
 }
 
 /** Reveals an online partner offer and keeps it in the holder’s wallet. One per holder and offer. */
-export function claimOnlineOffer(org: Organization, offerId: string, campaignId: string, holderId: string): IssuedVoucher {
+export function claimOnlineOffer(org: Organization, offerId: string, campaignId: string): IssuedVoucher {
+  const holderId = currentSupporterId()
   const store = loadVoucherStore()
   const existing = store.vouchers.find((item) => item.offerId === offerId && item.holderId === holderId && item.organizationId === org.id)
   if (existing) return existing
@@ -627,4 +665,110 @@ export function pauseOffersForCapabilities(organizationId: string, capabilities:
   }
   if (paused > 0) saveVoucherStore(store)
   return paused
+}
+
+/* ---------- Merchant portal (assigned stores and branches only) ---------- */
+
+/** Stores the current demo identity may act for. */
+export function merchantStores(store: VoucherStore = loadVoucherStore()): { merchant: Merchant; branches: MerchantBranch[] }[] {
+  const access = merchantAccessFor(currentUser()?.id)
+  return access
+    .map((item) => {
+      const merchant = store.merchants.find((m) => m.id === item.merchantId)
+      if (!merchant) return null
+      const branches = item.branchIds === 'all' ? merchant.branches : merchant.branches.filter((branch) => (item.branchIds as string[]).includes(branch.id))
+      return { merchant, branches }
+    })
+    .filter((item): item is { merchant: Merchant; branches: MerchantBranch[] } => item !== null && item.branches.length > 0)
+}
+
+/**
+ * What a merchant may see about a voucher: offer, terms, balance and validity. Never the holder,
+ * the contribution, or any organization record.
+ */
+export interface MerchantVoucherView {
+  id: string
+  code: string
+  merchantId: string
+  title: string
+  terms: string
+  capability: VoucherCapability
+  currency: CurrencyCode
+  validUntil: string
+  status: 'active' | 'redeemed'
+  expired: boolean
+  balance?: number
+  rewardText?: string
+  redemptions: VoucherRedemption[]
+}
+
+function merchantView(voucher: IssuedVoucher): MerchantVoucherView {
+  return {
+    id: voucher.id,
+    code: voucher.code,
+    merchantId: voucher.merchantId,
+    title: voucher.title,
+    terms: voucher.terms,
+    capability: voucher.capability,
+    currency: voucher.currency,
+    validUntil: voucher.validUntil,
+    status: voucher.status,
+    expired: isExpired(voucher),
+    balance: voucher.balance,
+    rewardText: voucher.rewardText,
+    redemptions: voucher.redemptions.map((item) => ({ ...item, actorId: undefined })),
+  }
+}
+
+/** Finds a voucher by code, only among stores this merchant identity is assigned to. */
+export function merchantLookupVoucher(code: string): MerchantVoucherView | null {
+  const store = loadVoucherStore()
+  const allowed = new Set(merchantStores(store).map((item) => item.merchant.id))
+  if (allowed.size === 0) throw new PermissionError('This demo identity is not assigned to any partner store.')
+  const voucher = store.vouchers.find((item) => item.code === code.trim().toUpperCase())
+  if (!voucher || !allowed.has(voucher.merchantId)) return null
+  return merchantView(voucher)
+}
+
+/** Simulated redemption at one assigned branch. Allowed after the organization stops new offers. */
+export function merchantRedeem(code: string, branchId: string, amount?: number): MerchantVoucherView {
+  const store = loadVoucherStore()
+  const voucher = store.vouchers.find((item) => item.code === code.trim().toUpperCase())
+  if (!voucher) throw new Error('No voucher with that code at your store.')
+  assertCan('merchant.redeem', { merchantId: voucher.merchantId, branchId }, 'This voucher can’t be redeemed at your assigned store or branch.')
+  applyRedemption(voucher, amount, branchId)
+  saveVoucherStore(store)
+  return merchantView(voucher)
+}
+
+/** Redemptions at the stores and branches this merchant identity is assigned to. */
+export function merchantRedemptionHistory(): { voucher: MerchantVoucherView; redemption: VoucherRedemption; branchName: string }[] {
+  const store = loadVoucherStore()
+  const scoped = merchantStores(store)
+  const rows: { voucher: MerchantVoucherView; redemption: VoucherRedemption; branchName: string }[] = []
+  for (const voucher of store.vouchers) {
+    const scope = scoped.find((item) => item.merchant.id === voucher.merchantId)
+    if (!scope) continue
+    for (const redemption of voucher.redemptions) {
+      const branch = scope.branches.find((item) => item.id === redemption.branchId)
+      if (redemption.branchId && !branch) continue
+      if (!redemption.branchId && scope.branches.length !== scope.merchant.branches.length) continue
+      rows.push({ voucher: merchantView(voucher), redemption: { ...redemption, actorId: undefined }, branchName: branch?.name ?? 'Recorded by the organization' })
+    }
+  }
+  return rows.sort((a, b) => Date.parse(b.redemption.at) - Date.parse(a.redemption.at))
+}
+
+/** Adds a branch to one of this organization’s partner stores. */
+export function addMerchantBranch(org: Organization, merchantId: string, name: string): MerchantBranch {
+  assertManager(org)
+  const store = loadVoucherStore()
+  const merchant = merchantFor(store, org.id, merchantId)
+  if (!merchant) throw new Error('That partner store is not connected to this organization.')
+  const clean = name.trim().slice(0, 80)
+  if (clean.length < 2) throw new Error('Give the branch a name.')
+  const branch: MerchantBranch = { id: `br_${crypto.randomUUID().slice(0, 10)}`, name: clean }
+  store.merchants.find((item) => item.id === merchant.id)!.branches.push(branch)
+  saveVoucherStore(store)
+  return branch
 }

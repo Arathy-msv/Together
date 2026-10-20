@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useOrganizations } from '../../hooks/useOrganizations.ts'
+import { useCurrentUser } from '../../hooks/useIdentity.ts'
+import { ownsSetup } from '../../lib/permissions.ts'
 import { FEATURE_CARDS } from '../../lib/features.ts'
 import { DEMO_PLANS, demoPlan } from '../../lib/plans.ts'
 import { createOrganization } from '../../lib/orgStorage.ts'
@@ -9,8 +11,9 @@ import type { PlanId } from '../../lib/types.ts'
 
 /** Simulated plan selection. No prices, no billing, no enforcement. */
 export function PlansPage() {
+  const user = useCurrentUser()
   const navigate = useNavigate()
-  const unfinished = useOrganizations().filter((org) => org.website.status === 'setup')
+  const unfinished = useOrganizations().filter((org) => org.website.status === 'setup' && ownsSetup(user, org.id))
   const [selected, setSelected] = useState<PlanId | null>(null)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)

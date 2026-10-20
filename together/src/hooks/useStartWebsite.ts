@@ -1,6 +1,8 @@
 import { useNavigate } from 'react-router-dom'
 import { seededOrganization } from '../data/organizations.ts'
 import { createOrganization, loadOrganizations } from '../lib/orgStorage.ts'
+import { currentUser } from '../lib/identity.ts'
+import { ownsSetup } from '../lib/permissions.ts'
 import type { PlanId } from '../lib/types.ts'
 
 /**
@@ -11,7 +13,7 @@ import type { PlanId } from '../lib/types.ts'
 export function useStartWebsite() {
   const navigate = useNavigate()
   return (plan: PlanId = 'community', { forceNew = false } = {}) => {
-    const unfinished = loadOrganizations().filter((org) => org.website.status === 'setup' && !seededOrganization(org.id))
+    const unfinished = loadOrganizations().filter((org) => org.website.status === 'setup' && !seededOrganization(org.id) && ownsSetup(currentUser(), org.id))
     if (!forceNew && unfinished.length === 1) {
       navigate(`/start/${unfinished[0].id}`)
       return

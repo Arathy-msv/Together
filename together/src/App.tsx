@@ -30,11 +30,25 @@ import { PartnerOffersPage } from './pages/workspace/PartnerOffersPage.tsx'
 import { PublicOffersPage, StoreValuePurchasePage, VoucherWalletPage } from './pages/org/PartnerOffersPublic.tsx'
 import { WorkspaceLayout } from './pages/workspace/WorkspaceLayout.tsx'
 import { WorkspaceOverviewPage } from './pages/workspace/WorkspaceOverview.tsx'
+import { MembersPage } from './pages/workspace/MembersPage.tsx'
+import { DemoIdentitiesPage } from './pages/platform/DemoIdentities.tsx'
+import { MerchantPortalPage } from './pages/platform/MerchantPortal.tsx'
+import { PlatformAdminPage } from './pages/platform/PlatformAdmin.tsx'
+import { useCurrentUser } from './hooks/useIdentity.ts'
 
 export default function App() {
   return (
     <BrowserRouter>
-      <Routes>
+      <AppRoutes />
+    </BrowserRouter>
+  )
+}
+
+/** Remounting on identity change clears any private in-memory views from the previous identity. */
+function AppRoutes() {
+  const user = useCurrentUser()
+  return (
+      <Routes key={user?.id ?? 'guest'}>
         {/* 1. Together platform website */}
         <Route element={<PlatformLayout />}>
           <Route path="/" element={<PlatformHomePage />} />
@@ -42,6 +56,9 @@ export default function App() {
           <Route path="/start" element={<StartPage />} />
           <Route path="/start/:organizationId" element={<OnboardingPage />} />
           <Route path="/workspace" element={<WorkspaceEntryPage />} />
+          <Route path="/demo-identities" element={<DemoIdentitiesPage />} />
+          <Route path="/merchant" element={<MerchantPortalPage />} />
+          <Route path="/admin" element={<PlatformAdminPage />} />
           <Route path="*" element={<OrgNotFound kind="page" />} />
         </Route>
 
@@ -88,6 +105,7 @@ export default function App() {
           <Route path="plan" element={<PlanPage />} />
           <Route path="features" element={<WebsiteFeaturesPage />} />
           <Route path="offers" element={<PartnerOffersPage />} />
+          <Route path="members" element={<MembersPage />} />
           <Route path="*" element={<OrgNotFound kind="page" />} />
         </Route>
 
@@ -98,6 +116,5 @@ export default function App() {
         <Route path="/create" element={<LegacyWorkspaceRedirect section="campaigns/new" />} />
         <Route path="/campaigns/:id/*" element={<LegacyCampaignRedirect />} />
       </Routes>
-    </BrowserRouter>
   )
 }

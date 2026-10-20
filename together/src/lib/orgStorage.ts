@@ -1,5 +1,6 @@
 import { createOrganizationSeed } from '../data/organizations.ts'
 import { emptyVoucherSettings, recommendedFeatures } from './features.ts'
+import { currentUser, ensureOrganizationAdmins, grantCreatorAdmin, membership } from './identity.ts'
 import { DEFAULT_ORG_ID, normalizeOrganization } from './organizations.ts'
 import { notifyChange, StorageFullError } from './storage.ts'
 import type { Organization, PlanId } from './types.ts'
@@ -59,6 +60,7 @@ export function loadOrganizations(): Organization[] {
   const present = new Set(saved.map((org) => org.id))
   const missing = seeds.filter((seed) => !present.has(seed.id))
   const organizations = dedupeSlugs([...saved, ...missing])
+  ensureOrganizationAdmins(organizations)
   const outdated = Boolean(raw) && !raw!.includes('"version":2')
   if (!raw || missing.length > 0 || outdated) {
     try {
@@ -113,7 +115,9 @@ export function createOrganization(planId: PlanId): Organization {
     onboarding: { step: 1, updatedAt: now, flow: 5 },
   }
   org.website.draft = websiteConfigOf(org)
-  return saveOrganization(org)
+  const saved = saveOrganization(org)
+  grantCreatorAdmin(saved.id)
+  return saved
 }
 
 /** Removes an organization whose setup was never finished. Published organizations are kept. */
@@ -121,6 +125,8 @@ export function discardUnfinishedOrganization(id: string): void {
   const organizations = loadOrganizations()
   const org = organizations.find((item) => item.id === id)
   if (!org || org.website.status !== 'setup') return
+  const user = currentUser()
+  if (!user || membership(user.id, id)?.role !== 'org_admin') throw new Error('Only an Organization Admin of this setup can discard it.')
   try {
     persist(organizations.filter((item) => item.id !== id))
   } catch {

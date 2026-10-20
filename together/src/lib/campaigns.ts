@@ -2,6 +2,8 @@ import { progressPercent } from './format.ts'
 import { clearGameData } from './gameLedger.ts'
 import { clearCampaignSession } from './pending.ts'
 import { clearPlayers } from './players.ts'
+import { currentSupporterId, recordAudit } from './identity.ts'
+import { assertCan } from './permissions.ts'
 import { loadStore, saveStore } from './storage.ts'
 import type {
   Campaign,
@@ -29,7 +31,7 @@ export function supporterCount(campaignId: string, contributions: Contribution[]
 }
 
 export function statusOf(campaign: Campaign, contributions: Contribution[], now = Date.now()): CampaignStatus {
-  if (campaign.isDraft && campaign.approvalStatus === 'pending_review') return 'pending_review'
+  if (campaign.isDraft && campaign.pendingRevision?.status === 'pending') return 'pending_review'
   if (campaign.isDraft) return 'draft'
   if (campaign.manualClosedAt) return 'closed'
   const open = Date.parse(campaign.opensAt)
@@ -82,7 +84,11 @@ export function removeCampaign(id: string): void {
 
 /** Removes a campaign and its contributions, then clears related session data. */
 export function deleteCampaign(id: string): void {
+  const campaign = getCampaign(id)
+  if (!campaign) return
+  assertCan('campaign.delete', { campaign }, 'Only an Organization Admin, or the organizer who created this draft, can delete it.')
   removeCampaign(id)
+  recordAudit(campaign.isDraft ? 'campaign.draft.discarded' : 'campaign.deleted', { organizationId: campaign.organizationId, targetId: id, detail: campaign.title })
   clearCampaignSession(id)
   clearGameData(id)
   clearPlayers(id)
@@ -91,7 +97,9 @@ export function deleteCampaign(id: string): void {
 export function closeCampaign(id: string): void {
   const campaign = getCampaign(id)
   if (!campaign || campaign.isDraft || campaign.manualClosedAt) return
+  assertCan('campaign.close', { campaign }, 'Only an Organization Admin can close fundraising.')
   upsertCampaign({ ...campaign, manualClosedAt: new Date().toISOString(), isDraft: false })
+  recordAudit('campaign.closed', { organizationId: campaign.organizationId, targetId: id })
 }
 
 export interface NewContribution {
@@ -132,6 +140,7 @@ export function addContribution(input: NewContribution): Contribution {
     reference: nextReference(store.contributions),
     createdAt: new Date().toISOString(),
     status: 'success',
+    supporterId: currentSupporterId(),
   }
   store.contributions.push(contribution)
   saveStore(store)

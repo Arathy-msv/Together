@@ -1,7 +1,9 @@
 import { canUseFeature, campaignNeedsApproval } from './features.ts'
 import { loadOrganizations } from './orgStorage.ts'
 import { loadStore, saveStore } from './storage.ts'
-import type { Campaign, CampaignForm, Organization } from './types.ts'
+import { addCampaignToScope, membership, orgAdmins, recordAudit } from './identity.ts'
+import { assertCan, canCurrent, PermissionError } from './permissions.ts'
+import type { Campaign, CampaignForm, CampaignRevision, CampaignSnapshot, Organization } from './types.ts'
 import { eligibleOffersForCampaign, loadVoucherStore } from './vouchers.ts'
 import { formToCampaign } from './wizard.ts'
 
@@ -16,22 +18,134 @@ export function organizationForCampaign(campaign: Pick<Campaign, 'organizationId
   return loadOrganizations().find((item) => item.id === campaign.organizationId) ?? null
 }
 
-/** Publish, or submit for review when reviewApproval is on. */
-export function publishWithPolicy(campaign: Campaign, plan: { title: string; due: string }[] = []): { mode: 'published' | 'pending_review' } {
+export interface PublishResult {
+  mode: 'published' | 'pending_review'
+  /** False when no Organization Admin other than the author can review this revision. */
+  reviewerAvailable: boolean
+}
+
+function revisionId(): string {
+  return `rev_${crypto.randomUUID().slice(0, 12)}`
+}
+
+/** Campaign fields that make up a reviewable revision. */
+export function snapshotOf(campaign: Campaign): CampaignSnapshot {
+  const { pendingRevision: _pending, revisionHistory: _history, ...snapshot } = campaign
+  void _pending
+  void _history
+  return snapshot
+}
+
+/** Admins other than the author who could review a revision. */
+export function eligibleReviewers(organizationId: string, authorId: string): string[] {
+  return orgAdmins(organizationId).filter((id) => id !== authorId)
+}
+
+export const NO_REVIEWER_MESSAGE =
+  'No other Organization Admin can review this revision. Ask an Organization Admin to assign another admin under Members — revisions are never approved automatically.'
+
+/**
+ * Publish, or submit a revision for review when the organization requires approval. When a
+ * published campaign is revised, supporters keep seeing the last published version until an
+ * admin who did not author the revision approves it.
+ */
+export function publishWithPolicy(campaign: Campaign, plan: { title: string; due: string }[] = []): PublishResult {
   const org = organizationForCampaign(campaign)
   if (!org) throw new Error('Organization not found.')
   if (campaign.sponsorEnabled) assertCanUseFeature(org, 'sponsorPlay')
   if (campaign.nextUpdateAt) assertCanUseFeature(org, 'updateCommitments')
 
-  let next = { ...campaign, isDraft: false as boolean | undefined }
-  if (campaignNeedsApproval(org) && campaign.approvalStatus !== 'approved') {
-    next = { ...next, approvalStatus: 'pending_review', isDraft: true }
-    writeCampaign(next, plan)
-    return { mode: 'pending_review' }
+  const existing = loadStore().campaigns.find((item) => item.id === campaign.id)
+  if (existing && existing.organizationId !== org.id) throw new PermissionError('This campaign belongs to another organization.')
+  const actor = existing
+    ? assertCan('campaign.edit', { campaign: existing, organization: org }, 'You can only edit campaigns assigned to you.')
+    : assertCan('campaign.create', { organization: org }, 'Only members of this organization can create campaigns.')
+  if (!existing && membership(actor.id, org.id)?.role === 'campaign_organizer') addCampaignToScope(actor.id, org.id, campaign.id)
+
+  const now = new Date().toISOString()
+  const history = [...(existing?.revisionHistory ?? [])]
+  const base: Campaign = {
+    ...campaign,
+    organizationId: org.id,
+    createdBy: existing?.createdBy ?? actor.id,
+    approvedRevisionId: existing?.approvedRevisionId,
   }
-  next = { ...next, approvalStatus: campaignNeedsApproval(org) ? 'approved' : campaign.approvalStatus, isDraft: false }
-  writeCampaign(next, plan)
-  return { mode: 'published' }
+
+  if (campaignNeedsApproval(org)) {
+    const id = revisionId()
+    if (existing?.pendingRevision?.status === 'pending') history.push({ revisionId: existing.pendingRevision.id, action: 'superseded', actorId: actor.id, at: now })
+    history.push({ revisionId: id, action: 'submitted', actorId: actor.id, at: now })
+    const pendingRevision: CampaignRevision = { id, authorId: actor.id, submittedAt: now, status: 'pending', snapshot: snapshotOf({ ...base, isDraft: false }) }
+    const livePublished = existing && !existing.isDraft
+    const record: Campaign = livePublished
+      ? { ...existing, pendingRevision, revisionHistory: history }
+      : { ...base, isDraft: true, approvalStatus: 'pending_review', pendingRevision, revisionHistory: history }
+    writeCampaign(record, livePublished ? [] : plan)
+    recordAudit('campaign.revision.submitted', { organizationId: org.id, targetId: campaign.id, detail: id })
+    return { mode: 'pending_review', reviewerAvailable: eligibleReviewers(org.id, actor.id).length > 0 }
+  }
+
+  assertCan('campaign.publish', { campaign: base, organization: org }, 'Your organization requires an Organization Admin to publish this campaign.')
+  history.push({ revisionId: revisionId(), action: 'published', actorId: actor.id, at: now })
+  writeCampaign({ ...base, isDraft: false, pendingRevision: undefined, revisionHistory: history }, plan)
+  recordAudit('campaign.published', { organizationId: org.id, targetId: campaign.id })
+  return { mode: 'published', reviewerAvailable: true }
+}
+
+/** Fields that keep their live value when a revision is approved (they are not part of review). */
+const LIVE_FIELDS = ['manualClosedAt', 'finalReport', 'fundingNote', 'translations', 'demoVerification'] as const
+
+/**
+ * An Organization Admin approves or rejects one specific revision. Authors can never review their
+ * own revision, and an approval never carries over to a later revision.
+ */
+export function reviewRevision(campaignId: string, revisionIdToReview: string, decision: 'approve' | 'reject', note = ''): Campaign {
+  const store = loadStore()
+  const index = store.campaigns.findIndex((item) => item.id === campaignId)
+  if (index < 0) throw new Error('Campaign not found.')
+  const campaign = store.campaigns[index]
+  const org = organizationForCampaign(campaign)
+  if (!org) throw new Error('Organization not found.')
+  const actor = assertCan('campaign.review', { campaign, organization: org }, 'Only an Organization Admin can review campaigns.')
+  const revision = campaign.pendingRevision
+  if (!revision || revision.status !== 'pending' || revision.id !== revisionIdToReview) {
+    throw new Error('This revision is no longer waiting for review. Open the campaign again to review the latest submission.')
+  }
+  if (revision.authorId === actor.id) throw new PermissionError('You can’t review your own revision. Another Organization Admin must review it.')
+
+  const now = new Date().toISOString()
+  const history = [...(campaign.revisionHistory ?? []), { revisionId: revision.id, action: decision === 'approve' ? ('approved' as const) : ('rejected' as const), actorId: actor.id, at: now, note: note.trim().slice(0, 400) || undefined }]
+  let next: Campaign
+  if (decision === 'approve') {
+    const live: Partial<Campaign> = {}
+    for (const key of LIVE_FIELDS) (live as Record<string, unknown>)[key] = campaign[key]
+    next = {
+      ...revision.snapshot,
+      ...live,
+      id: campaign.id,
+      organizationId: campaign.organizationId,
+      createdBy: campaign.createdBy ?? revision.snapshot.createdBy,
+      createdAt: campaign.createdAt,
+      isDraft: false,
+      approvalStatus: 'approved',
+      approvalNote: undefined,
+      approvedRevisionId: revision.id,
+      pendingRevision: undefined,
+      revisionHistory: history,
+    }
+  } else {
+    next = {
+      ...campaign,
+      approvalStatus: campaign.isDraft ? 'rejected' : campaign.approvalStatus,
+      approvalNote: note.trim().slice(0, 400) || undefined,
+      pendingRevision: { ...revision, status: 'rejected', reviewNote: note.trim().slice(0, 400) || undefined, reviewedBy: actor.id },
+      revisionHistory: history,
+    }
+  }
+  store.campaigns[index] = next
+  saveStore(store)
+  recordAudit(decision === 'approve' ? 'campaign.revision.approved' : 'campaign.revision.rejected', { organizationId: org.id, targetId: campaignId, detail: revision.id })
+  return next
 }
 
 function writeCampaign(campaign: Campaign, plan: { title: string; due: string }[]): void {
@@ -63,42 +177,40 @@ function writeCampaign(campaign: Campaign, plan: { title: string; due: string }[
   saveStore(store)
 }
 
-export function setApprovalStatus(campaignId: string, status: 'approved' | 'rejected' | 'draft', note = ''): void {
-  const store = loadStore()
-  const campaign = store.campaigns.find((item) => item.id === campaignId)
-  if (!campaign) return
-  const org = organizationForCampaign(campaign)
-  if (!org || !canUseFeature(org, 'reviewApproval')) throw new Error('Review and approval is not enabled.')
-  campaign.approvalStatus = status
-  campaign.approvalNote = note.slice(0, 400) || undefined
-  if (status === 'approved') campaign.isDraft = false
-  if (status === 'rejected' || status === 'draft') campaign.isDraft = true
-  saveStore(store)
-}
-
 export function duplicateCampaign(source: Campaign): Campaign {
   const org = organizationForCampaign(source)
   if (!org) throw new Error('Organization not found.')
   assertCanUseFeature(org, 'campaignDuplication')
+  assertCan('campaign.view', { campaign: source, organization: org }, 'You can only reuse campaigns you can see.')
+  const actor = assertCan('campaign.create', { organization: org })
   const copy: Campaign = {
     ...source,
     id: crypto.randomUUID(),
     title: `${source.title} (copy)`.slice(0, 80),
     createdAt: new Date().toISOString(),
+    createdBy: actor.id,
     isDraft: true,
     manualClosedAt: undefined,
     approvalStatus: campaignNeedsApproval(org) ? 'draft' : undefined,
     approvalNote: undefined,
+    approvedRevisionId: undefined,
+    pendingRevision: undefined,
+    revisionHistory: [],
     finalReport: undefined,
   }
   const store = loadStore()
   store.campaigns.unshift(copy)
   saveStore(store)
+  if (membership(actor.id, org.id)?.role === 'campaign_organizer') addCampaignToScope(actor.id, org.id, copy.id)
+  recordAudit('campaign.duplicated', { organizationId: org.id, targetId: copy.id, detail: source.id })
   return copy
 }
 
 export function exportOrganizationRecords(org: Organization): string {
-  assertCanUseFeature(org, 'recordExports')
+  const stored = loadOrganizations().find((item) => item.id === org.id)
+  if (!stored) throw new Error('Organization not found.')
+  assertCanUseFeature(stored, 'recordExports')
+  assertCan('org.exportRecords', { organization: stored }, 'Only an Organization Admin can export records.')
   const store = loadStore()
   const campaigns = store.campaigns.filter((item) => item.organizationId === org.id)
   const ids = new Set(campaigns.map((item) => item.id))
@@ -106,13 +218,18 @@ export function exportOrganizationRecords(org: Organization): string {
     exportedAt: new Date().toISOString(),
     organizationId: org.id,
     organizationName: org.name,
-    note: 'Demo export from this browser only. Not a bank statement.',
-    campaigns,
-    contributions: store.contributions.filter((item) => ids.has(item.campaignId)),
+    note: 'Demo export from this browser only. Not a bank statement. Supporter profiles are not included.',
+    campaigns: campaigns.map((item) => snapshotOf(item)),
+    contributions: store.contributions.filter((item) => ids.has(item.campaignId)).map(({ supporterId: _owner, playerId: _player, ...rest }) => {
+      void _owner
+      void _player
+      return rest
+    }),
     expenses: store.expenses.filter((item) => ids.has(item.campaignId)),
     milestones: store.milestones.filter((item) => ids.has(item.campaignId)),
     updates: store.campaignUpdates.filter((item) => ids.has(item.campaignId)),
   }
+  recordAudit('records.exported', { organizationId: org.id })
   return JSON.stringify(payload, null, 2)
 }
 
@@ -123,11 +240,17 @@ function eligiblePartnerOffers(form: CampaignForm, org: Organization): string[] 
   return form.partnerOfferIds.filter((id) => eligible.has(id))
 }
 
+function sponsorSetByAdmin(form: CampaignForm): boolean {
+  if (!form.id) return false
+  return Boolean(loadStore().campaigns.find((item) => item.id === form.id)?.sponsorEnabled)
+}
+
 /** Strip feature fields the organization cannot use before save. */
 export function sanitizeFormForOrg(form: CampaignForm, org: Organization): CampaignForm {
   return {
     ...form,
-    sponsorEnabled: canUseFeature(org, 'sponsorPlay') ? form.sponsorEnabled : false,
+    // Sponsor confirmations are managed by Organization Admins; organizers keep what an admin set.
+    sponsorEnabled: canUseFeature(org, 'sponsorPlay') ? (canCurrent('org.manageSponsors', { organization: org }) ? form.sponsorEnabled : sponsorSetByAdmin(form)) : false,
     nextUpdateAt: canUseFeature(org, 'updateCommitments') ? form.nextUpdateAt : '',
     partnerOfferIds: eligiblePartnerOffers(form, org),
   }

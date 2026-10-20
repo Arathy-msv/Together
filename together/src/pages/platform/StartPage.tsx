@@ -2,6 +2,8 @@ import { useEffect } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { OrgLogoMark } from '../../components/org/OrgChrome.tsx'
 import { useOrganizations } from '../../hooks/useOrganizations.ts'
+import { useCurrentUser } from '../../hooks/useIdentity.ts'
+import { ownsSetup } from '../../lib/permissions.ts'
 import { useStartWebsite } from '../../hooks/useStartWebsite.ts'
 import { formatDateTime } from '../../lib/format.ts'
 import { discardUnfinishedOrganization } from '../../lib/orgStorage.ts'
@@ -10,7 +12,8 @@ import { resumeSetupStep, SETUP_STEP_COUNT } from '../../lib/website.ts'
 
 /** /start — resume an unfinished organization setup on this device. */
 export function StartPage() {
-  const unfinished = useOrganizations().filter((org) => org.website.status === 'setup')
+  const user = useCurrentUser()
+  const unfinished = useOrganizations().filter((org) => org.website.status === 'setup' && ownsSetup(user, org.id))
   const startWebsite = useStartWebsite()
 
   useEffect(() => {

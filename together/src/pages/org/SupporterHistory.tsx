@@ -2,7 +2,8 @@ import { useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useOrg } from '../../components/org/OrgContext.tsx'
 import { useDemoStore } from '../../hooks/useDemoStore.ts'
-import { useSupporterProfile, useVoucherStore } from '../../hooks/useVoucherStore.ts'
+import { useCurrentUser, useSupporterId } from '../../hooks/useIdentity.ts'
+import { useVoucherStore } from '../../hooks/useVoucherStore.ts'
 import { canUseFeature } from '../../lib/features.ts'
 import { holderVouchers } from '../../lib/vouchers.ts'
 import { VoucherList } from './PartnerOffersPublic.tsx'
@@ -41,8 +42,9 @@ export function SupporterHistoryPage() {
   const store = useDemoStore()
   const ids = useMemo(() => readLocalHistory(org.id), [org.id])
   const voucherStore = useVoucherStore()
-  const profile = useSupporterProfile()
-  const vouchers = holderVouchers(voucherStore, org.id, profile?.id)
+  const user = useCurrentUser()
+  const supporterId = useSupporterId()
+  const vouchers = holderVouchers(voucherStore, org.id, supporterId)
 
   useEffect(() => {
     document.title = `Your contributions — ${org.name}`
@@ -51,7 +53,7 @@ export function SupporterHistoryPage() {
   if (!canUseFeature(org, 'supporterHistory')) return <OrgNotFound kind="page" />
 
   const rows = store.contributions
-    .filter((item) => ids.includes(item.id))
+    .filter((item) => ids.includes(item.id) && (!item.supporterId || item.supporterId === supporterId))
     .map((item) => ({ item, campaign: store.campaigns.find((campaign) => campaign.id === item.campaignId) }))
     .filter((row) => row.campaign?.organizationId === org.id)
     .sort((a, b) => Date.parse(b.item.createdAt) - Date.parse(a.item.createdAt))
@@ -86,7 +88,7 @@ export function SupporterHistoryPage() {
         <section aria-labelledby="history-vouchers-title">
           <h2 id="history-vouchers-title">Your partner vouchers</h2>
           <p className="muted small">
-            For {profile?.name}. <Link to={`${base}/my-vouchers`}>Manage demo supporters in My vouchers</Link>
+            For {user ? user.name : 'the guest visitor on this device'}. <Link to={`${base}/my-vouchers`}>Open My vouchers</Link>
           </p>
           <VoucherList vouchers={vouchers} />
         </section>

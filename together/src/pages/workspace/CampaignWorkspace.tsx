@@ -9,8 +9,10 @@ import { useOrg } from '../../components/org/OrgContext.tsx'
 import { Select, TextArea, TextInput } from '../../components/workspace/fields.tsx'
 import { useCampaignView, useDemoStore } from '../../hooks/useDemoStore.ts'
 import { campaignDetailsPath, closeCampaign } from '../../lib/campaigns.ts'
-import { canUseFeature } from '../../lib/features.ts'
-import { setApprovalStatus } from '../../lib/featureActions.ts'
+import { RevisionReview } from '../../components/campaign/RevisionReview.tsx'
+import { AccessDenied } from '../../components/identity/AccessDenied.tsx'
+import { useCurrentUser } from '../../hooks/useIdentity.ts'
+import { can } from '../../lib/permissions.ts'
 import { currencySymbol, formatDate, formatMoney } from '../../lib/format.ts'
 import { parseRupeesToPaise } from '../../lib/gameContribution.ts'
 import { fromDateInput, minorToInput, toDateInput, nowIso } from '../../lib/inputs.ts'
@@ -65,16 +67,22 @@ export interface WorkspaceProps {
 /** Organizer workspace for one campaign, inside the existing organizer area. */
 export function CampaignWorkspacePage() {
   const { campaignId = '', tab = 'overview' } = useParams()
-  const { base, workspace } = useOrg()
+  const { base, workspace, org } = useOrg()
   const view = useCampaignView(campaignId)
   const store = useDemoStore()
+  const user = useCurrentUser()
 
   useEffect(() => {
     if (view) document.title = `Manage ${view.campaign.title}`
   }, [view])
 
-  if (!view) return <OrgNotFound kind="campaign" />
+  if (!view || view.campaign.organizationId !== org.id) return <OrgNotFound kind="campaign" />
+  if (!can(user, 'campaign.view', { campaign: view.campaign, organization: org })) {
+    return <AccessDenied reason="This campaign isn’t assigned to your demo identity. An Organization Admin can assign it to you under Members." />
+  }
   const campaign = view.campaign
+  const reportsAllowed = can(user, 'org.viewReports', { organization: org })
+  const tabs = WORKSPACE_TABS.filter((item) => item.id !== 'report' || reportsAllowed)
   const props: WorkspaceProps = { campaign, view, store }
   const root = `${workspace}/campaigns/${campaign.id}`
 
@@ -96,7 +104,7 @@ export function CampaignWorkspacePage() {
         </Link>
       </header>
       <nav className="workspace-tabs" aria-label="Campaign workspace">
-        {WORKSPACE_TABS.map((item) => (
+        {tabs.map((item) => (
           <NavLink key={item.id} to={item.id === 'overview' ? root : `${root}/${item.id}`} end>
             {item.label}
           </NavLink>
@@ -110,7 +118,8 @@ export function CampaignWorkspacePage() {
         {tab === 'updates' ? <UpdatesEditor {...props} /> : null}
         {tab === 'expenses' ? <ExpensesEditor {...props} /> : null}
         {tab === 'trust' ? <TrustEditor {...props} /> : null}
-        {tab === 'report' ? <FinalReportEditor {...props} /> : null}
+        {tab === 'report' && reportsAllowed ? <FinalReportEditor {...props} /> : null}
+        {tab === 'report' && !reportsAllowed ? <AccessDenied reason="Final reports are prepared by an Organization Admin." /> : null}
         {!WORKSPACE_TABS.some((item) => item.id === tab) ? <OrgNotFound kind="page" /> : null}
       </div>
     </div>
@@ -135,6 +144,9 @@ function workspaceTarget(field: ReadinessField, root: string, workspace: string)
 
 function Overview({ campaign, view, store }: WorkspaceProps) {
   const { workspace, org } = useOrg()
+  const user = useCurrentUser()
+  const canClose = can(user, 'campaign.close', { campaign, organization: org })
+  const reportsAllowed = can(user, 'org.viewReports', { organization: org })
   const navigate = useNavigate()
   const summary = fundSummary(campaign, store)
   const delivery = deliverySummary(campaignMilestones(store, campaign.id))
@@ -145,20 +157,7 @@ function Overview({ campaign, view, store }: WorkspaceProps) {
   const fundraisingOpen = !campaign.manualClosedAt && (view.status === 'active' || view.status === 'scheduled')
   return (
     <div className="workspace-grid">
-      {canUseFeature(org, 'reviewApproval') && campaign.approvalStatus === 'pending_review' ? (
-        <section className="panel ws-card wide" aria-labelledby="approval-title">
-          <h2 id="approval-title">Waiting for review</h2>
-          <p className="muted">This campaign is not visible to supporters until someone in your organization approves it. In this demo you can approve it here.</p>
-          <div className="inline-actions">
-            <button type="button" className="btn btn-primary btn-sm" onClick={() => setApprovalStatus(campaign.id, 'approved')}>
-              Approve and publish
-            </button>
-            <button type="button" className="btn btn-outline btn-sm" onClick={() => setApprovalStatus(campaign.id, 'rejected', 'Needs changes before publishing.')}>
-              Send back for edits
-            </button>
-          </div>
-        </section>
-      ) : null}
+      <RevisionReview campaign={campaign} />
 
       <section className="panel ws-card wide" aria-labelledby="report-tasks-title">
         <h2 id="report-tasks-title">Keep supporters informed</h2>
@@ -182,7 +181,7 @@ function Overview({ campaign, view, store }: WorkspaceProps) {
           </li>
         </ul>
         <ul className="task-list">
-          {REPORT_TASKS.map((task) => (
+          {REPORT_TASKS.filter((task) => task.id !== 'report' || reportsAllowed).map((task) => (
             <li key={task.id}>
               <div>
                 <strong>{task.label}</strong>
@@ -216,7 +215,7 @@ function Overview({ campaign, view, store }: WorkspaceProps) {
           </div>
         </dl>
         <p className="muted small">Sharing-page credit is part of the campaign total, not added to it.</p>
-        {fundraisingOpen ? (
+        {fundraisingOpen && canClose ? (
           <button
             type="button"
             className="btn btn-outline btn-sm"
@@ -226,6 +225,8 @@ function Overview({ campaign, view, store }: WorkspaceProps) {
           >
             Close fundraising
           </button>
+        ) : fundraisingOpen ? (
+          <p className="small muted">An Organization Admin can close fundraising.</p>
         ) : (
           <p className="small">
             Fundraising is {view.status === 'completed' ? 'complete' : 'closed'}. Publishing a final report is a separate step.

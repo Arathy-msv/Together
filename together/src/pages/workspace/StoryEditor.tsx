@@ -22,14 +22,16 @@ interface ImpactDraft extends LineDraft {
 }
 
 export function StoryEditor({ campaign, view }: WorkspaceProps) {
-  const [summary, setSummary] = useState(campaign.description)
-  const [category, setCategory] = useState<CampaignCategory>(campaign.category ?? 'other')
+  // While a revision waits for review, keep editing the proposed version rather than the live one.
+  const source = campaign.pendingRevision?.status === 'pending' ? campaign.pendingRevision.snapshot : campaign
+  const [summary, setSummary] = useState(source.description)
+  const [category, setCategory] = useState<CampaignCategory>(source.category ?? 'other')
   const [story, setStory] = useState<CampaignStory>(
-    campaign.story ?? { whoItHelps: '', whatTheyNeed: '', whatItSupports: '', whatHappensNext: '', beneficiary: '', imageStory: [] },
+    source.story ?? { whoItHelps: '', whatTheyNeed: '', whatItSupports: '', whatHappensNext: '', beneficiary: '', imageStory: [] },
   )
-  const [budget, setBudget] = useState<LineDraft[]>((campaign.budget ?? []).map((line) => ({ id: line.id, label: line.label, amount: minorToInput(line.amountMinor) })))
+  const [budget, setBudget] = useState<LineDraft[]>((source.budget ?? []).map((line) => ({ id: line.id, label: line.label, amount: minorToInput(line.amountMinor) })))
   const [impact, setImpact] = useState<ImpactDraft[]>(
-    (campaign.impactExamples ?? []).map((item) => ({ id: item.id, label: '', amount: minorToInput(item.amountMinor), outcome: item.outcome, costBasis: item.costBasis })),
+    (source.impactExamples ?? []).map((item) => ({ id: item.id, label: '', amount: minorToInput(item.amountMinor), outcome: item.outcome, costBasis: item.costBasis })),
   )
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [notice, setNotice] = useState('')
@@ -48,7 +50,7 @@ export function StoryEditor({ campaign, view }: WorkspaceProps) {
     setErrors(next)
     if (Object.keys(next).length > 0) return
     try {
-      saveCampaignFields(campaign.id, {
+      const result = saveCampaignFields(campaign.id, {
         description: summary.trim(),
         category,
         story: {
@@ -62,9 +64,20 @@ export function StoryEditor({ campaign, view }: WorkspaceProps) {
         budget: budget.filter((line) => line.label.trim()).map((line) => ({ id: line.id, label: line.label.trim(), amountMinor: parseRupeesToPaise(line.amount)! })),
         impactExamples: impact.map((item) => ({ id: item.id, amountMinor: parseRupeesToPaise(item.amount)!, outcome: item.outcome.trim(), costBasis: item.costBasis.trim() })),
       })
-      setNotice('Story saved. The public Story tab is updated.')
+      setNotice(
+        result.pendingReview
+          ? 'Sent for review. Supporters keep seeing the published story until an Organization Admin who didn’t make this change approves it.'
+          : 'Story saved. The public Story tab is updated.',
+      )
     } catch (problem) {
-      setErrors({ form: problem instanceof StorageFullError ? 'Browser storage is full. Remove an image or the video and try again.' : 'The story could not be saved.' })
+      setErrors({
+        form:
+          problem instanceof StorageFullError
+            ? 'Browser storage is full. Remove an image or the video and try again.'
+            : problem instanceof Error
+              ? problem.message
+              : 'The story could not be saved.',
+      })
     }
   }
 

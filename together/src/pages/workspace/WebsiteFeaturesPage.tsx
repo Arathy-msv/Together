@@ -22,9 +22,9 @@ import {
   type VoucherSettings,
 } from '../../lib/features.ts'
 import { formatDateTime, formatMoney } from '../../lib/format.ts'
-import { saveOrganization } from '../../lib/orgStorage.ts'
+import { currentActorId, userName } from '../../lib/identity.ts'
+import { saveOrganizationAs } from '../../lib/orgActions.ts'
 import { demoPlan, optionalFeatureNames } from '../../lib/plans.ts'
-import { StorageFullError } from '../../lib/storage.ts'
 import type { FeatureChange, Organization } from '../../lib/types.ts'
 import { pauseOffersForCapabilities, voucherDisableImpact } from '../../lib/vouchers.ts'
 
@@ -92,22 +92,23 @@ function FeaturesEditor({ stored }: { stored: Organization }) {
     }
     const nextFeatures = clampFeaturesToPlan(features, stored.plan.id)
     const at = new Date().toISOString()
+    const actorId = currentActorId()
     const history: FeatureChange[] = [
-      ...FEATURE_KEYS.filter((key) => stored.features[key] !== nextFeatures[key]).map((key) => ({ key, enabled: nextFeatures[key], at })),
+      ...FEATURE_KEYS.filter((key) => stored.features[key] !== nextFeatures[key]).map((key) => ({ key, enabled: nextFeatures[key], at, actorId })),
       ...VOUCHER_CAPABILITIES.map((item) => item.key)
         .filter((key) => stored.voucherSettings[key] !== voucherSettings[key])
-        .map((key) => ({ key: `voucher:${key}` as const, enabled: voucherSettings[key], at })),
+        .map((key) => ({ key: `voucher:${key}` as const, enabled: voucherSettings[key], at, actorId })),
     ]
     try {
       const paused = pauseOffersForCapabilities(stored.id, capabilitiesOff)
-      saveOrganization({ ...stored, features: nextFeatures, voucherSettings, featureHistory: [...stored.featureHistory, ...history].slice(-100) })
+      saveOrganizationAs('org.manageFeatures', { ...stored, features: nextFeatures, voucherSettings, featureHistory: [...stored.featureHistory, ...history].slice(-100) }, 'features.changed')
       setConfirming(false)
       setNotice({
         tone: 'success',
         text: `Website features saved on this device.${paused ? ` ${paused} partner offer${paused === 1 ? ' was' : 's were'} paused; re-activate them yourself if you turn this back on.` : ''}`,
       })
     } catch (error) {
-      setNotice({ tone: 'error', text: error instanceof StorageFullError ? error.message : 'This browser could not save your features.' })
+      setNotice({ tone: 'error', text: error instanceof Error ? error.message : 'This browser could not save your features.' })
     }
   }
 
@@ -258,7 +259,10 @@ function FeaturesEditor({ stored }: { stored: Organization }) {
                   <strong>{change.key.startsWith('voucher:') ? capabilityName(change.key.slice(8) as VoucherCapability) : featureCard(change.key as FeatureKey).name}</strong>{' '}
                   {change.enabled ? 'turned on' : 'turned off'}
                 </span>
-                <span className="muted small">{formatDateTime(change.at)}</span>
+                <span className="muted small">
+                  {formatDateTime(change.at)}
+                  {change.actorId ? ` · ${userName(change.actorId)}` : ''}
+                </span>
               </li>
             ))}
           </ul>

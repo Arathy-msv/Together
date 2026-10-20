@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { useOrg } from '../../components/org/OrgContext.tsx'
 import { useDemoStore } from '../../hooks/useDemoStore.ts'
-import { useSupporterProfile, useVoucherStore } from '../../hooks/useVoucherStore.ts'
+import { useCurrentUser, useSupporterId } from '../../hooks/useIdentity.ts'
+import { useVoucherStore } from '../../hooks/useVoucherStore.ts'
 import { campaignDetailsPath } from '../../lib/campaigns.ts'
 import { canUseFeature, capabilityName } from '../../lib/features.ts'
 import { formatDate, formatDateTime, formatMoney } from '../../lib/format.ts'
@@ -12,17 +13,13 @@ import {
   campaignsForOffer,
   claimContributionReward,
   claimOnlineOffer,
-  createSupporterProfile,
-  ensureSupporterProfile,
   holderVouchers,
   isExpired,
-  listSupporterProfiles,
   merchantFor,
   offerIsLive,
   offerValueLine,
   publicOffers,
   purchaseStoreValue,
-  selectSupporterProfile,
   type IssuedVoucher,
   type PartnerOffer,
 } from '../../lib/vouchers.ts'
@@ -90,7 +87,7 @@ function OnlineOfferAction({ offer, campaignId }: { offer: PartnerOffer; campaig
         className="btn btn-outline btn-sm"
         onClick={() => {
           try {
-            setVoucher(claimOnlineOffer(org, offer.id, campaignId, ensureSupporterProfile().id))
+            setVoucher(claimOnlineOffer(org, offer.id, campaignId))
             setError('')
           } catch (problem) {
             setError(problem instanceof Error ? problem.message : 'This offer is not available.')
@@ -169,7 +166,7 @@ export function ContributionRewards({ campaign, contribution }: { campaign: Camp
             className="btn btn-primary btn-sm"
             onClick={() => {
               try {
-                claimContributionReward(org, offer.id, contribution.id, ensureSupporterProfile().id)
+                claimContributionReward(org, offer.id, contribution.id)
                 setError('')
               } catch (problem) {
                 setError(problem instanceof Error ? problem.message : 'This reward is not available.')
@@ -359,7 +356,7 @@ export function StoreValuePurchasePage() {
               return
             }
             try {
-              setVoucher(purchaseStoreValue(org, offer.id, campaignId, ensureSupporterProfile().id))
+              setVoucher(purchaseStoreValue(org, offer.id, campaignId))
             } catch (problem) {
               setError(problem instanceof Error ? problem.message : 'This purchase could not be completed.')
             }
@@ -447,43 +444,6 @@ export function VoucherList({ vouchers }: { vouchers: IssuedVoucher[] }) {
   )
 }
 
-/** Choose which local demo supporter profile is active on this device. */
-export function SupporterProfilePicker() {
-  const profile = useSupporterProfile()
-  const profiles = listSupporterProfiles()
-  const [name, setName] = useState('')
-  return (
-    <div className="supporter-profile">
-      {profiles.length > 0 ? (
-        <label className="field">
-          <span className="field-label">Demo supporter on this device</span>
-          <select value={profile?.id ?? ''} onChange={(event) => selectSupporterProfile(event.target.value)}>
-            {profiles.map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.name}
-              </option>
-            ))}
-          </select>
-        </label>
-      ) : null}
-      <form
-        className="inline-actions"
-        onSubmit={(event) => {
-          event.preventDefault()
-          createSupporterProfile(name)
-          setName('')
-        }}
-      >
-        <input aria-label="New demo supporter name" value={name} maxLength={40} placeholder="Add another demo supporter" onChange={(event) => setName(event.target.value)} />
-        <button type="submit" className="btn btn-outline btn-sm">
-          Add
-        </button>
-      </form>
-      <p className="muted small">Each demo supporter only sees their own vouchers.</p>
-    </div>
-  )
-}
-
 /**
  * /o/:slug/my-vouchers — always reachable for holders, even when the organization has stopped
  * offering vouchers, supporter history is off, or the campaign has finished.
@@ -491,8 +451,9 @@ export function SupporterProfilePicker() {
 export function VoucherWalletPage() {
   const { org, base } = useOrg()
   const store = useVoucherStore()
-  const profile = useSupporterProfile()
-  const mine = holderVouchers(store, org.id, profile?.id)
+  const user = useCurrentUser()
+  const supporterId = useSupporterId()
+  const mine = holderVouchers(store, org.id, supporterId)
 
   useEffect(() => {
     document.title = `My vouchers — ${org.name}`
@@ -504,8 +465,10 @@ export function VoucherWalletPage() {
         ← Back to {org.name}
       </Link>
       <h1>My vouchers</h1>
-      <p className="muted">Partner vouchers from {org.name} for the selected demo supporter on this device. Other devices cannot see them.</p>
-      <SupporterProfilePicker />
+      <p className="muted">
+        Partner vouchers from {org.name} for {user ? user.name : 'the guest visitor on this device'}. Only this demo identity can see them; other devices
+        cannot see them at all.
+      </p>
       <VoucherList vouchers={mine} />
       {canUseFeature(org, 'supporterHistory') ? (
         <p className="small">

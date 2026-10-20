@@ -20,7 +20,8 @@ import {
   validateStep,
   type AssistantStepId,
 } from '../../lib/assistant.ts'
-import { makeAccessCode, publishCampaign } from '../../lib/campaigns.ts'
+import { makeAccessCode } from '../../lib/campaigns.ts'
+import { formCampaignForOrg, publishWithPolicy } from '../../lib/featureActions.ts'
 import { RequiredProgress, ResumeDrafts, SaveIndicator } from '../../components/drafts/DraftUI.tsx'
 import { AiBadge } from '../../components/ai/AiUI.tsx'
 import { DraftSuggestions, NotedFacts } from '../../components/ai/DraftSuggestions.tsx'
@@ -37,7 +38,7 @@ import { GAME_THUMBS, gameMeta } from '../../lib/games.ts'
 import { selectableGames } from '../../lib/organizations.ts'
 import { StorageFullError } from '../../lib/storage.ts'
 import type { CampaignForm, Organization } from '../../lib/types.ts'
-import { blankForm, formToCampaign, gameSettingsFields, requiredChecklist, validateAll, type FormErrors } from '../../lib/wizard.ts'
+import { blankForm, gameSettingsFields, requiredChecklist, validateAll, type FormErrors } from '../../lib/wizard.ts'
 
 type Stage = AssistantStepId | 'review'
 
@@ -306,18 +307,19 @@ function AssistantChat({ org, start }: { org: Organization; start: ChatStart }) 
       }
       return
     }
-    const campaign = formToCampaign({ ...form, organizationId: org.id }, { isDraft: false })
+    const campaign = formCampaignForOrg({ ...form, organizationId: org.id }, org, { isDraft: false })
+    let mode: 'published' | 'pending_review'
     try {
-      publishCampaign(campaign, form.milestonePlan)
+      mode = publishWithPolicy(campaign, form.milestonePlan).mode
     } catch (error) {
       setNotice({
         tone: 'error',
-        text: error instanceof StorageFullError ? error.message : 'The campaign could not be saved in this browser.',
+        text: error instanceof StorageFullError ? error.message : error instanceof Error ? error.message : 'The campaign could not be saved in this browser.',
       })
       return
     }
     deleteDraft(start.draftId)
-    navigate(`${workspace}/campaigns?created=${campaign.id}`)
+    navigate(`${workspace}/campaigns?${mode === 'pending_review' ? 'pending' : 'created'}=${campaign.id}`)
   }
 
   const steps = activeSteps(form)

@@ -178,6 +178,7 @@ export function normalizeReferral(value: unknown, campaigns: Map<string, Campaig
     personalTarget: Number.isSafeInteger(target) && target > 0 ? target : undefined,
     coverImage: isMediaSource(raw.coverImage) ? (raw.coverImage as string) : undefined,
     translations: normalizeTranslations(raw.translations, ['headline', 'message'] as const),
+    ownerId: typeof raw.ownerId === 'string' ? raw.ownerId : undefined,
     createdAt: isoOr(raw.createdAt, now),
     updatedAt: isoOr(raw.updatedAt, isoOr(raw.createdAt, now)),
   }

@@ -8,6 +8,8 @@ import { useDemoStore } from '../../hooks/useDemoStore.ts'
 import { useOrganizations } from '../../hooks/useOrganizations.ts'
 import { toView } from '../../lib/campaigns.ts'
 import { listDrafts } from '../../lib/drafts.ts'
+import { useCurrentUser } from '../../hooks/useIdentity.ts'
+import { can } from '../../lib/permissions.ts'
 import { formatINR } from '../../lib/format.ts'
 import { hasUnpublishedChanges, isPubliclyAvailable, setupTasks, websiteStatusLabel } from '../../lib/website.ts'
 
@@ -17,14 +19,19 @@ export function WorkspaceOverviewPage() {
   const stored = useOrganizations().find((item) => item.id === org.id)!
   const store = useDemoStore()
   const [params, setParams] = useSearchParams()
+  const user = useCurrentUser()
+  const isAdmin = can(user, 'org.manageWebsite', { organization: stored })
   const campaigns = store.campaigns.filter((campaign) => campaign.organizationId === org.id && !campaign.isDraft)
   const visibleCampaigns = store.campaigns.filter(
-    (campaign) => campaign.organizationId === org.id && (!campaign.isDraft || campaign.approvalStatus === 'pending_review'),
+    (campaign) =>
+      campaign.organizationId === org.id &&
+      (!campaign.isDraft || campaign.pendingRevision?.status === 'pending') &&
+      can(user, 'campaign.view', { campaign, organization: stored }),
   )
   const views = visibleCampaigns.map((campaign) => toView(campaign, store.contributions)).sort((a, b) => Date.parse(b.campaign.createdAt) - Date.parse(a.campaign.createdAt))
   const tasks = setupTasks(stored, campaigns.length, workspace)
-  const next = tasks.find((task) => !task.done)
-  const showChecklist = Boolean(next) || params.get('checklist') === '1'
+  const next = isAdmin ? tasks.find((task) => !task.done) : undefined
+  const showChecklist = isAdmin && (Boolean(next) || params.get('checklist') === '1')
   const drafts = listDrafts(org.id).length
   const pending = hasUnpublishedChanges(stored)
 
@@ -120,11 +127,13 @@ export function WorkspaceOverviewPage() {
           <div className="preview-window small-preview">
             <BrandPreview org={org} views={views} device="mobile" />
           </div>
-          {pending ? <p className="muted small">You have changes that aren’t published yet.</p> : null}
+          {pending && isAdmin ? <p className="muted small">You have changes that aren’t published yet.</p> : null}
           <div className="inline-actions">
-            <Link to={`${workspace}/website`} className="btn btn-outline btn-sm">
-              Edit my website
-            </Link>
+            {isAdmin ? (
+              <Link to={`${workspace}/website`} className="btn btn-outline btn-sm">
+                Edit my website
+              </Link>
+            ) : null}
             {isPubliclyAvailable(stored) ? (
               <Link to={base} className="btn btn-outline btn-sm">
                 Open website

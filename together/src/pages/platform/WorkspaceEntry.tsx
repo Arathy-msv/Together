@@ -2,6 +2,8 @@ import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { OrgLogoMark } from '../../components/org/OrgChrome.tsx'
 import { useOrganizations } from '../../hooks/useOrganizations.ts'
+import { useCurrentUser } from '../../hooks/useIdentity.ts'
+import { membership, ROLE_LABEL } from '../../lib/identity.ts'
 import { orgBase, orgTypeLabel } from '../../lib/organizations.ts'
 import { demoPlan } from '../../lib/plans.ts'
 import { setActiveOrgId } from '../../lib/orgStorage.ts'
@@ -9,7 +11,8 @@ import { previewOrganization, websiteStatusLabel, workspacePath } from '../../li
 
 /** /workspace — demo entry point for choosing an organization workspace. Not a sign-in. */
 export function WorkspaceEntryPage() {
-  const organizations = useOrganizations()
+  const user = useCurrentUser()
+  const organizations = useOrganizations().filter((org) => user && membership(user.id, org.id))
 
   useEffect(() => {
     document.title = 'Demo workspace — Together'
@@ -20,15 +23,28 @@ export function WorkspaceEntryPage() {
       <header className="page-head">
         <div>
           <p className="settings-kicker">
-            <span className="demo-badge">Demo control</span> Not secure access control
+            <span className="demo-badge">Demo control</span> Simulated identities — not secure access control
           </p>
-          <h1>Open a demo workspace</h1>
-          <p className="muted">Choose an organization to manage. In a real product this would require signing in; here anyone using this browser can open any workspace.</p>
+          <h1>Your workspaces</h1>
+          <p className="muted">
+            {user
+              ? `Organizations where ${user.name} is a member. In a real product this would require signing in.`
+              : 'You are browsing as a guest. Choose a demo identity above to manage an organization.'}
+          </p>
         </div>
         <Link to="/plans" className="btn btn-primary">
           Create your organization website
         </Link>
       </header>
+      {organizations.length === 0 ? (
+        <div className="panel empty">
+          <h2>No workspaces for this identity</h2>
+          <p className="muted">Switch to an Organization Admin or Campaign Organizer demo identity, or create a new organization website.</p>
+          <Link to="/demo-identities" className="btn btn-outline">
+            Choose a demo identity
+          </Link>
+        </div>
+      ) : null}
       <ul className="workspace-cards">
         {organizations.map((stored) => {
           const org = previewOrganization(stored)
@@ -40,7 +56,7 @@ export function WorkspaceEntryPage() {
                 <div>
                   <strong>{org.name || 'Untitled organization'}</strong>
                   <span className="muted small">
-                    {orgTypeLabel(org.type)} · {demoPlan(org.plan.id).name}
+                    {orgTypeLabel(org.type)} · {demoPlan(org.plan.id).name} · you: {ROLE_LABEL[membership(user!.id, org.id)!.role]}
                   </span>
                 </div>
               </div>

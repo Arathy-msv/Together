@@ -11,7 +11,11 @@ import { useOrganizations } from '../../hooks/useOrganizations.ts'
 import { CURRENCIES, formatMoney, isCurrencyCode } from '../../lib/format.ts'
 import { GAMES } from '../../lib/games.ts'
 import { COMING_SOON_GAMES, IMAGE_GALLERY, ORG_TYPES, slugify, validateOrganization, validateSlug } from '../../lib/organizations.ts'
-import { saveOrganization, setActiveOrgId } from '../../lib/orgStorage.ts'
+import { setActiveOrgId } from '../../lib/orgStorage.ts'
+import { saveOrganizationAs } from '../../lib/orgActions.ts'
+import { AccessDenied } from '../../components/identity/AccessDenied.tsx'
+import { useCurrentUser } from '../../hooks/useIdentity.ts'
+import { ownsSetup } from '../../lib/permissions.ts'
 import {
   ALWAYS_INCLUDED,
   capabilityName,
@@ -58,6 +62,7 @@ function stepErrors(step: number, org: Organization, all: Organization[]): Recor
 export function OnboardingPage() {
   const { organizationId = '' } = useParams()
   const stored = useOrganizations().find((org) => org.id === organizationId)
+  const user = useCurrentUser()
   // Publishing changes the status mid-session; keep the wizard mounted so it can show the result.
   const [startedInSetup] = useState(stored?.website.status === 'setup')
   if (!stored) {
@@ -73,6 +78,7 @@ export function OnboardingPage() {
       </div>
     )
   }
+  if (!ownsSetup(user, stored.id)) return <AccessDenied reason="Only an Organization Admin of this organization can continue its setup." />
   if (stored.website.status !== 'setup' && !startedInSetup) return <Navigate to={`/workspace/${stored.id}/overview`} replace />
   return <Wizard key={stored.id} stored={stored} />
 }
@@ -90,7 +96,7 @@ function Wizard({ stored }: { stored: Organization }) {
   const autosave = useAutosave(snapshot, (value) => {
     if (finished.current) return
     const now = new Date().toISOString()
-    saveOrganization({ ...value.org, website: { status: 'setup', draft: websiteConfigOf(value.org), updatedAt: now }, onboarding: { step: value.step, updatedAt: now, flow: 5 } })
+    saveOrganizationAs('org.manageWebsite', { ...value.org, website: { status: 'setup', draft: websiteConfigOf(value.org), updatedAt: now }, onboarding: { step: value.step, updatedAt: now, flow: 5 } }, null)
   })
 
   useEffect(() => {
@@ -144,7 +150,7 @@ function Wizard({ stored }: { stored: Organization }) {
     const final = publish ? withPublishedWebsite(base) : { ...base, onboarding: undefined }
     finished.current = true
     try {
-      saveOrganization(final)
+      saveOrganizationAs('org.manageWebsite', final, publish ? 'website.published' : 'website.saved')
     } catch {
       finished.current = false
       setErrors({ form: 'This browser could not save your website. Free up storage and try again.' })

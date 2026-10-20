@@ -136,7 +136,7 @@ export function canUseVoucherCapability(organization: Organization, capability: 
   return canUseFeature(organization, 'partnerVouchers') && Boolean(organization.voucherSettings?.[capability])
 }
 
-/** Every listed feature is implemented in this prototype. */
+/** Every listed feature is implemented in this prototype. A Platform Admin can make one unavailable. */
 export const PLATFORM_AVAILABLE: Record<FeatureKey, true> = {
   sponsorPlay: true,
   updateCommitments: true,
@@ -164,6 +164,23 @@ export const PLAN_ENTITLEMENTS: Record<PlanId, FeatureKey[]> = {
     'reviewApproval',
     'partnerVouchers',
   ],
+}
+
+export const PLATFORM_SETTINGS_KEY = 'together.platform.v1'
+
+/** Features a Platform Admin has made unavailable on this demo platform. Organization data is kept. */
+export function unavailableFeatures(): FeatureKey[] {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(PLATFORM_SETTINGS_KEY) ?? 'null') as { unavailable?: unknown } | null
+    return Array.isArray(parsed?.unavailable) ? (parsed!.unavailable as FeatureKey[]).filter((key) => (FEATURE_KEYS as readonly string[]).includes(key)) : []
+  } catch {
+    return []
+  }
+}
+
+/** Level A: implemented on the platform and not switched off by a Platform Admin. */
+export function isPlatformAvailable(key: FeatureKey): boolean {
+  return Boolean(PLATFORM_AVAILABLE[key]) && !unavailableFeatures().includes(key)
 }
 
 export function emptyFeatures(value = false): OrgFeatures {
@@ -243,7 +260,7 @@ export function normalizeFeatures(value: unknown, fallback: OrgFeatures): OrgFea
  * has activated it. Pass a loaded organization — never rely on hiding a button alone.
  */
 export function canUseFeature(organization: Organization, key: FeatureKey): boolean {
-  if (!PLATFORM_AVAILABLE[key]) return false
+  if (!isPlatformAvailable(key)) return false
   if (!planEntitles(organization.plan.id, key)) return false
   return Boolean(organization.features?.[key])
 }
@@ -255,7 +272,7 @@ export function enabledFeatures(org: Organization): FeatureKey[] {
 
 /** Features included in the plan but not activated. */
 export function availableButOff(org: Organization): FeatureKey[] {
-  return FEATURE_KEYS.filter((key) => PLATFORM_AVAILABLE[key] && planEntitles(org.plan.id, key) && !org.features?.[key])
+  return FEATURE_KEYS.filter((key) => isPlatformAvailable(key) && planEntitles(org.plan.id, key) && !org.features?.[key])
 }
 
 /**

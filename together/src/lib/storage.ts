@@ -62,7 +62,20 @@ function isCampaign(value: unknown): value is Campaign {
   )
 }
 
-function normalizeCampaign(campaign: Campaign): Campaign {
+/** Campaigns submitted for review before revisions existed become one pending revision by “earlier demo data”. */
+function migrateLegacyReview(campaign: Campaign): Campaign {
+  if (campaign.pendingRevision || campaign.approvalStatus !== 'pending_review') return campaign
+  const { pendingRevision: _pending, revisionHistory: _history, ...snapshot } = campaign
+  void _pending
+  void _history
+  return {
+    ...campaign,
+    pendingRevision: { id: `rev_legacy_${campaign.id}`, authorId: 'legacy', submittedAt: campaign.createdAt, status: 'pending', snapshot },
+  }
+}
+
+function normalizeCampaign(input: Campaign): Campaign {
+  const campaign = migrateLegacyReview(input)
   const gameType = isGameType(campaign.gameType) ? campaign.gameType : 'garden'
   return {
     ...campaign,

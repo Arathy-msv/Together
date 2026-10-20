@@ -1,5 +1,9 @@
 import { formatMoney } from './format.ts'
 import { goalReached, raisedOf } from './campaigns.ts'
+import { campaignNeedsApproval } from './features.ts'
+import { recordAudit } from './identity.ts'
+import { findOrganization } from './orgStorage.ts'
+import { assertCan } from './permissions.ts'
 import { loadStore, saveStore } from './storage.ts'
 import type {
   Campaign,
@@ -162,8 +166,18 @@ export function workspacePrompts(campaign: Campaign, store: DemoStore, now = Dat
 
 type Collection = 'milestones' | 'campaignUpdates' | 'expenses' | 'supportingDocuments'
 
+/** Milestones, updates, expenses and documents: Organization Admins, or organizers assigned to the campaign. */
+function assertContent(store: DemoStore, campaignId: string): void {
+  const campaign = store.campaigns.find((item) => item.id === campaignId)
+  if (!campaign) throw new Error('Campaign not found.')
+  assertCan('campaign.manageContent', { campaign }, 'You can only manage campaigns assigned to you.')
+}
+
 function upsert<K extends Collection>(collection: K, record: DemoStore[K][number]): void {
   const store = loadStore()
+  const existing = (store[collection] as Array<{ id: string; campaignId: string }>).find((item) => item.id === record.id)
+  if (existing && existing.campaignId !== record.campaignId) throw new Error('A record can’t be moved to another campaign.')
+  assertContent(store, record.campaignId)
   const list = store[collection] as Array<{ id: string }>
   const index = list.findIndex((item) => item.id === record.id)
   if (index >= 0) list[index] = record
@@ -173,6 +187,9 @@ function upsert<K extends Collection>(collection: K, record: DemoStore[K][number
 
 function remove(collection: Collection, id: string): void {
   const store = loadStore()
+  const existing = (store[collection] as Array<{ id: string; campaignId: string }>).find((item) => item.id === id)
+  if (!existing) return
+  assertContent(store, existing.campaignId)
   ;(store[collection] as Array<{ id: string }>) = (store[collection] as Array<{ id: string }>).filter((item) => item.id !== id)
   if (collection === 'expenses') {
     store.campaignUpdates = store.campaignUpdates.map((item) => ({ ...item, expenseIds: item.expenseIds.filter((expenseId) => expenseId !== id) }))
@@ -193,16 +210,57 @@ export const deleteExpense = (id: string) => remove('expenses', id)
 export const saveDocument = (record: SupportingDocument) => upsert('supportingDocuments', record)
 export const deleteDocument = (id: string) => remove('supportingDocuments', id)
 
-/** Updates organizer-editable campaign fields. The demo verification flag can never be changed here. */
-export function saveCampaignFields(
-  campaignId: string,
-  patch: Partial<Pick<Campaign, 'description' | 'category' | 'story' | 'budget' | 'impactExamples' | 'finalReport' | 'fundingNote' | 'translations'>>,
-): void {
+type EditableField = 'description' | 'category' | 'story' | 'budget' | 'impactExamples' | 'finalReport' | 'fundingNote' | 'translations'
+
+/** Campaign facts that need review again when the organization requires approval. */
+const MATERIAL_FIELDS: EditableField[] = ['description', 'category', 'story', 'budget', 'impactExamples']
+
+/**
+ * Updates organizer-editable campaign fields. The demo verification flag can never be changed here.
+ * When review is required and the campaign is published, material changes become a pending
+ * revision: supporters keep seeing the last published version until an admin approves it.
+ */
+export function saveCampaignFields(campaignId: string, patch: Partial<Pick<Campaign, EditableField>>): { pendingReview: boolean } {
   const store = loadStore()
   const index = store.campaigns.findIndex((item) => item.id === campaignId)
-  if (index < 0) return
-  store.campaigns[index] = { ...store.campaigns[index], ...patch, demoVerification: store.campaigns[index].demoVerification }
+  if (index < 0) return { pendingReview: false }
+  const campaign = store.campaigns[index]
+  const organization = findOrganization(campaign.organizationId)
+  const actor = assertCan('campaign.manageContent', { campaign, organization }, 'You can only edit campaigns assigned to you.')
+  if ('finalReport' in patch) assertCan('org.viewReports', { campaign, organization }, 'Only an Organization Admin can edit the final report.')
+
+  const material = MATERIAL_FIELDS.filter((key) => key in patch)
+  if (material.length > 0 && !campaign.isDraft && organization && campaignNeedsApproval(organization)) {
+    const now = new Date().toISOString()
+    const live: Partial<Campaign> = {}
+    const proposed: Partial<Campaign> = {}
+    for (const key of Object.keys(patch) as EditableField[]) {
+      if (MATERIAL_FIELDS.includes(key)) (proposed as Record<string, unknown>)[key] = patch[key]
+      else (live as Record<string, unknown>)[key] = patch[key]
+    }
+    const pending = campaign.pendingRevision?.status === 'pending' ? campaign.pendingRevision : undefined
+    const { pendingRevision: _p, revisionHistory: _h, ...current } = campaign
+    void _p
+    void _h
+    const id = `rev_${crypto.randomUUID().slice(0, 12)}`
+    const history = [...(campaign.revisionHistory ?? [])]
+    if (pending) history.push({ revisionId: pending.id, action: 'superseded' as const, actorId: actor.id, at: now })
+    history.push({ revisionId: id, action: 'submitted' as const, actorId: actor.id, at: now })
+    store.campaigns[index] = {
+      ...campaign,
+      ...live,
+      demoVerification: campaign.demoVerification,
+      pendingRevision: { id, authorId: actor.id, submittedAt: now, status: 'pending', snapshot: { ...(pending?.snapshot ?? current), ...proposed } },
+      revisionHistory: history,
+    }
+    saveStore(store)
+    recordAudit('campaign.revision.submitted', { organizationId: campaign.organizationId, targetId: campaignId, detail: id })
+    return { pendingReview: true }
+  }
+
+  store.campaigns[index] = { ...campaign, ...patch, demoVerification: campaign.demoVerification }
   saveStore(store)
+  return { pendingReview: false }
 }
 
 export function newId(prefix: string): string {

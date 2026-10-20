@@ -1,3 +1,4 @@
+import { currentUser, membership } from './identity.ts'
 import { StorageFullError } from './storage.ts'
 import type { CampaignForm } from './types.ts'
 import { completeForm } from './wizard.ts'
@@ -15,6 +16,8 @@ export interface CampaignDraft {
   form: CampaignForm
   /** Form step (1–3) or assistant question id. */
   step: string
+  /** Demo identity that started the draft. Earlier drafts have none and are visible to admins only. */
+  authorId?: string
   createdAt: string
   updatedAt: string
 }
@@ -35,6 +38,7 @@ function parseDraft(value: unknown): CampaignDraft | null {
     kind: raw.kind === 'assistant' ? 'assistant' : 'form',
     form: completeForm({ ...raw.form, organizationId: raw.organizationId }),
     step: typeof raw.step === 'string' ? raw.step : String(raw.step ?? '1'),
+    authorId: typeof raw.authorId === 'string' ? raw.authorId : undefined,
     createdAt: at(raw.createdAt),
     updatedAt: at(raw.updatedAt),
   }
@@ -97,15 +101,25 @@ export function newDraftId(): string {
   return `draft_${crypto.randomUUID()}`
 }
 
-/** Drafts for one organization, most recently edited first. */
+/** Organization Admins see every draft of their organization; organizers only their own. */
+function canSeeDraft(draft: CampaignDraft): boolean {
+  const user = currentUser()
+  if (!user) return false
+  const member = membership(user.id, draft.organizationId)
+  if (!member) return false
+  return member.role === 'org_admin' || draft.authorId === user.id
+}
+
+/** Drafts for one organization that the acting demo identity may open, most recently edited first. */
 export function listDrafts(organizationId: string, kind?: DraftKind): CampaignDraft[] {
   return readFile()
-    .filter((draft) => draft.organizationId === organizationId && (!kind || draft.kind === kind))
+    .filter((draft) => draft.organizationId === organizationId && (!kind || draft.kind === kind) && canSeeDraft(draft))
     .sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt))
 }
 
 export function readDraft(id: string, organizationId: string): CampaignDraft | null {
-  return readFile().find((draft) => draft.id === id && draft.organizationId === organizationId) ?? null
+  const draft = readFile().find((item) => item.id === id && item.organizationId === organizationId)
+  return draft && canSeeDraft(draft) ? draft : null
 }
 
 /** Saves one draft without touching the others. Throws StorageFullError when the browser refuses. */
@@ -113,7 +127,10 @@ export function saveDraft(draft: Omit<CampaignDraft, 'updatedAt' | 'createdAt'> 
   const drafts = readFile()
   const now = new Date().toISOString()
   const existing = drafts.find((item) => item.id === draft.id)
-  const next: CampaignDraft = { ...draft, createdAt: existing?.createdAt ?? draft.createdAt ?? now, updatedAt: now }
+  const user = currentUser()
+  if (!user || !membership(user.id, draft.organizationId)) throw new Error('Only members of this organization can save campaign drafts.')
+  if (existing && !canSeeDraft(existing)) throw new Error('This draft belongs to another organizer.')
+  const next: CampaignDraft = { ...draft, authorId: existing?.authorId ?? user.id, createdAt: existing?.createdAt ?? draft.createdAt ?? now, updatedAt: now }
   const index = drafts.findIndex((item) => item.id === draft.id)
   if (index >= 0) drafts[index] = next
   else drafts.push(next)
@@ -126,8 +143,10 @@ export function saveDraft(draft: Omit<CampaignDraft, 'updatedAt' | 'createdAt'> 
 }
 
 export function deleteDraft(id: string): void {
+  const draft = readFile().find((item) => item.id === id)
+  if (draft && !canSeeDraft(draft)) return
   try {
-    writeFile(readFile().filter((draft) => draft.id !== id))
+    writeFile(readFile().filter((item) => item.id !== id))
   } catch {
     // Nothing else to do; the draft stays until storage frees up.
   }

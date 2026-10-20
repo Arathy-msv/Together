@@ -4,12 +4,16 @@ import { useOrg } from '../../components/org/OrgContext.tsx'
 import { Select, TextArea, TextInput } from '../../components/workspace/fields.tsx'
 import { useDemoStore } from '../../hooks/useDemoStore.ts'
 import { useVoucherStore } from '../../hooks/useVoucherStore.ts'
+import { useCurrentUser } from '../../hooks/useIdentity.ts'
+import { listUsers, merchantStaff, userName } from '../../lib/identity.ts'
+import { grantMerchantAccess, revokeMerchantAccess } from '../../lib/members.ts'
 import { canUseFeature, canUseVoucherCapability, capabilityName, VOUCHER_CAPABILITIES } from '../../lib/features.ts'
 import { CURRENCIES, formatDate, formatDateTime, formatMoney, isCurrencyCode } from '../../lib/format.ts'
 import type { CurrencyCode, Organization, VoucherCapability } from '../../lib/types.ts'
 import {
   activateOffer,
   addMerchant,
+  addMerchantBranch,
   assignOfferToCampaign,
   createOffer,
   isExpired,
@@ -103,6 +107,93 @@ export function PartnerOffersPage() {
 
 type Run = (action: () => void, success: string) => void
 
+/** Branches and Merchant access for one partner store. Staff see only this store in the merchant portal. */
+function StoreStaff({ org, merchantId, branches, run }: { org: Organization; merchantId: string; branches: { id: string; name: string }[]; run: Run }) {
+  const user = useCurrentUser()
+  const [branchName, setBranchName] = useState('')
+  const [staffId, setStaffId] = useState('')
+  const [scope, setScope] = useState<string>('all')
+  const staff = merchantStaff(merchantId)
+  const candidates = listUsers().filter((item) => item.id !== user?.id && !staff.some((access) => access.userId === item.id))
+  return (
+    <div className="store-staff">
+      <p className="small">
+        <strong>Branches:</strong> {branches.map((branch) => branch.name).join(', ')}
+      </p>
+      <form
+        className="inline-actions"
+        onSubmit={(event) => {
+          event.preventDefault()
+          run(() => {
+            addMerchantBranch(org, merchantId, branchName)
+            setBranchName('')
+          }, 'Branch added.')
+        }}
+      >
+        <input aria-label="New branch name" value={branchName} maxLength={80} placeholder="Add a branch" onChange={(event) => setBranchName(event.target.value)} />
+        <button type="submit" className="btn btn-outline btn-sm">
+          Add branch
+        </button>
+      </form>
+      <p className="small">
+        <strong>Store staff (Merchant access):</strong>{' '}
+        {staff.length === 0 ? 'None yet.' : null}
+      </p>
+      {staff.length > 0 ? (
+        <ul className="ws-list compact">
+          {staff.map((access) => (
+            <li key={access.userId}>
+              <span>
+                {userName(access.userId)} · {access.branchIds === 'all' ? 'all branches' : branches.filter((branch) => (access.branchIds as string[]).includes(branch.id)).map((branch) => branch.name).join(', ')}
+              </span>
+              <button type="button" className="btn btn-outline btn-sm" onClick={() => run(() => revokeMerchantAccess(org.id, merchantId, access.userId), 'Store access removed.')}>
+                Remove access
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      <form
+        className="inline-actions"
+        onSubmit={(event) => {
+          event.preventDefault()
+          run(() => {
+            if (!staffId) throw new Error('Choose a demo identity.')
+            grantMerchantAccess(org.id, merchantId, staffId, scope === 'all' ? 'all' : [scope])
+            setStaffId('')
+          }, 'Store access given. That identity can now use the merchant portal for this store only.')
+        }}
+      >
+        <label className="sr-only" htmlFor={`staff-${merchantId}`}>
+          Demo identity
+        </label>
+        <select id={`staff-${merchantId}`} value={staffId} onChange={(event) => setStaffId(event.target.value)}>
+          <option value="">Give store access to…</option>
+          {candidates.map((item) => (
+            <option key={item.id} value={item.id}>
+              {item.name}
+            </option>
+          ))}
+        </select>
+        <label className="sr-only" htmlFor={`scope-${merchantId}`}>
+          Branches
+        </label>
+        <select id={`scope-${merchantId}`} value={scope} onChange={(event) => setScope(event.target.value)}>
+          <option value="all">All branches</option>
+          {branches.map((branch) => (
+            <option key={branch.id} value={branch.id}>
+              {branch.name} only
+            </option>
+          ))}
+        </select>
+        <button type="submit" className="btn btn-outline btn-sm">
+          Give access
+        </button>
+      </form>
+    </div>
+  )
+}
+
 function SetupChecklist({ org, store }: { org: Organization; store: VoucherStore }) {
   const demo = useDemoStore()
   const offers = orgOffers(store, org.id)
@@ -163,13 +254,14 @@ function MerchantsSection({ org, store, run }: { org: Organization; store: Vouch
     <section className="panel ws-card" aria-labelledby="stores-title">
       <h2 id="stores-title">Partner stores</h2>
       {merchants.length > 0 ? (
-        <ul className="ws-list">
+        <ul className="member-list">
           {merchants.map((merchant) => (
-            <li key={merchant.id}>
+            <li key={merchant.id} className="member">
               <div>
                 <strong>{merchant.name}</strong>
                 <span className="muted small">{[merchant.location, merchant.description].filter(Boolean).join(' · ') || 'Fictional partner store'}</span>
               </div>
+              <StoreStaff org={org} merchantId={merchant.id} branches={merchant.branches} run={run} />
             </li>
           ))}
         </ul>

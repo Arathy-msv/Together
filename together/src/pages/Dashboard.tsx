@@ -8,7 +8,10 @@ import { useOrg } from '../components/org/OrgContext.tsx'
 import { useCampaignViews } from '../hooks/useDemoStore.ts'
 import { closeCampaign, deleteCampaign } from '../lib/campaigns.ts'
 import { canUseFeature } from '../lib/features.ts'
-import { duplicateCampaign, exportOrganizationRecords } from '../lib/featureActions.ts'
+import { duplicateCampaign, exportOrganizationRecords, NO_REVIEWER_MESSAGE } from '../lib/featureActions.ts'
+import { useCurrentUser } from '../hooks/useIdentity.ts'
+import { orgAdmins, userName } from '../lib/identity.ts'
+import { can } from '../lib/permissions.ts'
 import { formatDate, formatDateTime, formatINR, formatMoney } from '../lib/format.ts'
 import { gameMeta } from '../lib/games.ts'
 import { clearGameData } from '../lib/gameLedger.ts'
@@ -16,6 +19,12 @@ import { resetOrganizations } from '../lib/orgStorage.ts'
 import { deleteDraft, draftTitle, listDrafts } from '../lib/drafts.ts'
 import { resetStore } from '../lib/storage.ts'
 import type { CampaignView, CurrencyCode } from '../lib/types.ts'
+
+/** Whether an admin other than the revision author exists to review it. */
+function orgReviewersFor(organizationId: string, campaign: CampaignView['campaign']): boolean {
+  const author = campaign.pendingRevision?.authorId
+  return orgAdmins(organizationId).some((id) => id !== author)
+}
 
 /** Totals per currency, so campaigns in different currencies are never added together. */
 function formatTotals(views: CampaignView[], fallback: CurrencyCode): string {
@@ -26,13 +35,18 @@ function formatTotals(views: CampaignView[], fallback: CurrencyCode): string {
 }
 
 export function DashboardPage() {
-  const views = [...useCampaignViews()].sort(
-    (a, b) => Date.parse(b.campaign.createdAt) - Date.parse(a.campaign.createdAt),
-  )
   const { org, base, workspace } = useOrg()
+  const user = useCurrentUser()
+  const views = [...useCampaignViews()]
+    .filter((view) => can(user, 'campaign.view', { campaign: view.campaign, organization: org }))
+    .sort((a, b) => Date.parse(b.campaign.createdAt) - Date.parse(a.campaign.createdAt))
+  const isAdmin = can(user, 'campaign.review', { organization: org })
+  const reviewQueue = isAdmin ? views.filter((view) => view.campaign.pendingRevision?.status === 'pending') : []
   const [params] = useSearchParams()
   const createdId = params.get('created')
   const pendingId = params.get('pending')
+  const pendingCampaign = pendingId ? views.find((view) => view.campaign.id === pendingId)?.campaign : undefined
+  const pendingNoReviewer = pendingCampaign ? !orgReviewersFor(org.id, pendingCampaign) : false
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [actionError, setActionError] = useState('')
   const [menuId, setMenuId] = useState<string | null>(null)
@@ -65,7 +79,13 @@ export function DashboardPage() {
   }
 
   function handleDelete(id: string, title: string) {
-    deleteCampaign(id)
+    try {
+      deleteCampaign(id)
+    } catch (error) {
+      setActionError(error instanceof Error ? error.message : 'This campaign could not be deleted.')
+      setConfirmDeleteId(null)
+      return
+    }
     setConfirmDeleteId(null)
     setMenuId(null)
     setDeletedNotice(`“${title}” was removed from this browser.`)
@@ -112,8 +132,10 @@ export function DashboardPage() {
           <span className="success-pill">Waiting for review</span>
           <h2 id="pending-title">Submitted for review.</h2>
           <p className="muted">
-            “{views.find((view) => view.campaign.id === pendingId)?.campaign.title}” needs approval before it appears on your website. Open Manage to approve it in this demo.
+            “{pendingCampaign?.title}” needs an Organization Admin who didn’t author it to approve it.{' '}
+            {pendingCampaign && !pendingCampaign.isDraft ? 'Supporters keep seeing the published version until then.' : 'It stays hidden from supporters until then.'}
           </p>
+          {pendingNoReviewer ? <p className="notice warn compact">{NO_REVIEWER_MESSAGE}</p> : null}
           <Link to={`${workspace}/campaigns/${pendingId}`} className="btn btn-primary">
             Manage campaign
           </Link>
@@ -126,7 +148,29 @@ export function DashboardPage() {
         </div>
       ) : null}
 
-      {canUseFeature(org, 'recordExports') ? (
+      {reviewQueue.length > 0 ? (
+        <section className="panel ws-card" aria-labelledby="queue-title">
+          <h2 id="queue-title">Waiting for your review</h2>
+          <ul className="ws-list">
+            {reviewQueue.map((view) => (
+              <li key={view.campaign.id}>
+                <div>
+                  <strong>{view.campaign.pendingRevision?.snapshot.title ?? view.campaign.title}</strong>
+                  <span className="muted small">
+                    Submitted by {userName(view.campaign.pendingRevision?.authorId)}
+                    {view.campaign.pendingRevision?.authorId === user?.id ? ' (you — another admin must review it)' : ''}
+                  </span>
+                </div>
+                <Link to={`${workspace}/campaigns/${view.campaign.id}`} className="btn btn-outline btn-sm">
+                  Review
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {canUseFeature(org, 'recordExports') && can(user, 'org.exportRecords', { organization: org }) ? (
         <div className="inline-actions" style={{ marginBottom: 12 }}>
           <button
             type="button"
@@ -245,7 +289,11 @@ export function DashboardPage() {
                     setConfirmDeleteId(null)
                   }}
                   onClose={() => {
-                    closeCampaign(view.campaign.id)
+                    try {
+                      closeCampaign(view.campaign.id)
+                    } catch (error) {
+                      setActionError(error instanceof Error ? error.message : 'Fundraising could not be closed.')
+                    }
                     setMenuId(null)
                   }}
                   onAskDelete={() => setConfirmDeleteId(view.campaign.id)}
@@ -264,7 +312,7 @@ export function DashboardPage() {
           <strong>Demo sharing limitation</strong>
           <p className="small">Campaign links in this demo work only on this browser and device. They are not public links.</p>
         </div>
-        {confirmReset ? (
+        {!isAdmin ? null : confirmReset ? (
           <div className="inline-actions">
             <span className="small">Restore sample campaigns and organization branding, and clear your changes?</span>
             <button
@@ -337,11 +385,13 @@ function Row({
   onConfirmDelete: () => void
 }) {
   const { org } = useOrg()
+  const user = useCurrentUser()
   const navigate = useNavigate()
   const { campaign, raised, percent, supporters, status } = view
-  const canClose = !campaign.isDraft && status !== 'closed' && status !== 'completed'
+  const canClose = !campaign.isDraft && status !== 'closed' && status !== 'completed' && can(user, 'campaign.close', { campaign, organization: org })
+  const canDelete = can(user, 'campaign.delete', { campaign, organization: org })
   const pendingReview = status === 'pending_review'
-  const canReuse = canUseFeature(org, 'campaignDuplication') && status !== 'draft'
+  const canReuse = canUseFeature(org, 'campaignDuplication') && status !== 'draft' && can(user, 'campaign.create', { organization: org })
   const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -386,6 +436,8 @@ function Row({
       <td data-label="Contributions">{supporters === 1 ? '1 contribution' : `${supporters} contributions`}</td>
       <td data-label="Status">
         <StatusBadge status={status} />
+        {campaign.pendingRevision?.status === 'pending' && !campaign.isDraft ? <span className="muted small block">Revision in review</span> : null}
+        {campaign.pendingRevision?.status === 'rejected' ? <span className="muted small block">Changes requested</span> : null}
       </td>
       <td data-label="Dates" className="small muted">
         {formatDate(campaign.opensAt)}
@@ -446,7 +498,7 @@ function Row({
                     Close campaign
                   </button>
                 ) : null}
-                {confirmDelete ? (
+                {!canDelete ? null : confirmDelete ? (
                   <div className="menu-confirm" role="group" aria-label="Confirm delete">
                     <p className="menu-note">
                       Delete this campaign and its simulated contributions from this browser? This cannot be undone.

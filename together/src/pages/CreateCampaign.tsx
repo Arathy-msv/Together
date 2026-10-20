@@ -11,7 +11,9 @@ import { COVERS, UPLOADED_COVER_ID } from '../data/covers.ts'
 import { useAutosave } from '../hooks/useAutosave.ts'
 import { getCampaign } from '../lib/campaigns.ts'
 import { canUseFeature, campaignNeedsApproval } from '../lib/features.ts'
-import { formCampaignForOrg, publishWithPolicy } from '../lib/featureActions.ts'
+import { canCurrent } from '../lib/permissions.ts'
+import { currentActorId } from '../lib/identity.ts'
+import { eligibleReviewers, formCampaignForOrg, NO_REVIEWER_MESSAGE, publishWithPolicy } from '../lib/featureActions.ts'
 import { PartnerOfferChooser } from '../components/campaign/PartnerOfferChooser.tsx'
 import { deleteDraft, listDrafts, newDraftId, readDraft, saveDraft } from '../lib/drafts.ts'
 import { currencySymbol, formatDateTime, formatINR, setDisplayCurrency } from '../lib/format.ts'
@@ -157,12 +159,13 @@ function initialStart(params: URLSearchParams, org: Organization): EditorStart |
   if (draftId) {
     const draft = readDraft(draftId, org.id)
     if (draft && draft.kind === 'form') return { draftId, form: draft.form, step: Number(draft.step) || 1 }
-    if (!draft) return { draftId, form: blankForm(org), step: 1 }
+    // Unknown, or another organizer’s draft: start a fresh one rather than opening it.
+    if (!draft) return { draftId: newDraftId(), form: blankForm(org), step: 1 }
   }
   const campaignId = params.get('draft')
   if (campaignId) {
     const existing = getCampaign(campaignId)
-    if (existing && existing.organizationId === org.id) {
+    if (existing && existing.organizationId === org.id && canCurrent('campaign.edit', { campaign: existing, organization: org })) {
       const id = `draft_from_${campaignId}`
       const saved = readDraft(id, org.id)
       return saved ? { draftId: id, form: saved.form, step: Number(saved.step) || 1 } : { draftId: id, form: campaignToForm(existing), step: 1 }
@@ -345,7 +348,12 @@ function CreateCampaignEditor({ start }: { start: EditorStart }) {
             <span className="eyebrow-label">Preview — how supporters will see it</span>
             <LivePreview form={form} />
             <div className="publish-box">
-              <p className="small">{campaignNeedsApproval(org) ? 'A reviewer in your organization must approve this campaign before supporters see it.' : 'Publishing makes this campaign visible on your organization’s demo website.'}</p>
+              <p className="small">
+                {campaignNeedsApproval(org)
+                  ? 'An Organization Admin who didn’t author this revision must approve it before supporters see it.'
+                  : 'Publishing makes this campaign visible on your organization’s demo website.'}
+              </p>
+              {campaignNeedsApproval(org) && eligibleReviewers(org.id, currentActorId()).length === 0 ? <p className="notice warn compact">{NO_REVIEWER_MESSAGE}</p> : null}
               <div className="aside-actions">
                 <button type="button" className="btn btn-outline" onClick={() => goToStep(3)}>
                   Back
@@ -854,7 +862,12 @@ function SettingsStep({
           />
         </div>
         {errors.form ? <p className="error-text">{errors.form}</p> : null}
-        {canUseFeature(org, 'sponsorPlay') && form.game ? (
+        {canUseFeature(org, 'sponsorPlay') && form.game && !canCurrent('org.manageSponsors', { organization: org }) ? (
+          <p className="muted small">
+            Sponsor-funded play {form.sponsorEnabled ? 'is confirmed for this campaign' : 'is off for this campaign'}. An Organization Admin confirms sponsors.
+          </p>
+        ) : null}
+        {canUseFeature(org, 'sponsorPlay') && form.game && canCurrent('org.manageSponsors', { organization: org }) ? (
           <label className="toggle-row">
             <button
               type="button"

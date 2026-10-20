@@ -1,21 +1,26 @@
 import { useId } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useOrganizations } from '../../hooks/useOrganizations.ts'
+import { useCurrentUser } from '../../hooks/useIdentity.ts'
+import { membershipsFor } from '../../lib/identity.ts'
 import { setActiveOrgId } from '../../lib/orgStorage.ts'
 
 const WORKSPACE_SECTIONS = ['website', 'settings', 'plan', 'assistant', 'campaigns', 'features']
 
 /**
- * Demo control for jumping between organization workspaces in this browser. Lives only in the
+ * Demo control for jumping between the workspaces this demo identity is a member of. Lives only in the
  * workspace (manage site) chrome — an organization's public website never reveals that other
  * organizations exist in this demo, so this is intentionally not shown there.
  */
 export function OrgSwitcher({ currentId }: { currentId: string }) {
-  const organizations = useOrganizations()
+  const user = useCurrentUser()
+  const memberOf = new Set(membershipsFor(user?.id).map((item) => item.organizationId))
+  const organizations = useOrganizations().filter((org) => memberOf.has(org.id))
   const navigate = useNavigate()
   const { pathname } = useLocation()
   const id = useId()
 
+  if (organizations.length < 2) return null
   return (
     <div className="org-switcher">
       <label htmlFor={id}>Switch organization</label>

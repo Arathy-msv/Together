@@ -23,6 +23,7 @@ const session = new MemoryStorage()
 Object.assign(globalThis, { localStorage: local, sessionStorage: session })
 
 const { loadStore, saveStore, STORAGE_KEY, StorageFullError } = await import('../src/lib/storage.ts')
+const { DEMO_USERS, switchIdentity } = await import('../src/lib/identity.ts')
 const { addContribution, raisedOf, statusOf } = await import('../src/lib/campaigns.ts')
 const { referralTotals, makeReferralCode, createReferral, updateReferral } = await import('../src/lib/referrals.ts')
 const { setShareContext, snapshotReferral, checkoutReferral } = await import('../src/lib/attribution.ts')
@@ -182,6 +183,7 @@ test('uploading evidence or editing the story never creates a verified badge', (
   const store = loadStore()
   const campaign = store.campaigns.find((item) => item.id === 'cmp_maple_garden')!
   assert.equal(campaign.demoVerification, undefined)
+  switchIdentity(DEMO_USERS.mapleAdmin)
   saveCampaignFields(campaign.id, { description: campaign.description, demoVerification: { label: 'Verified', note: 'x', date: '' } } as never)
   assert.equal(loadStore().campaigns.find((item) => item.id === campaign.id)!.demoVerification, undefined)
   const relabelled = normalizeCampaignExtras({ ...campaign, demoVerification: { label: 'Verified', note: 'n', date: campaign.createdAt } })
@@ -197,6 +199,7 @@ test('only published updates are public', () => {
 
 test('drafts are saved separately and a storage failure is reported, not hidden', () => {
   const form = blankForm()
+  switchIdentity(DEMO_USERS.togetherAdmin)
   const first = saveDraft({ id: newDraftId(), organizationId: 'org_together', kind: 'form', form: { ...form, title: 'First' }, step: '1' })
   saveDraft({ id: newDraftId(), organizationId: 'org_together', kind: 'assistant', form: { ...form, title: 'Second' }, step: 'goal' })
   assert.equal(listDrafts('org_together').length, 2)

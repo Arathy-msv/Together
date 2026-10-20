@@ -1157,3 +1157,32 @@ html.low-data .hero-stack, html.low-data .play-side { display: none; }
   .offer-admin-head { flex-direction: column; }
   .offer-facts { grid-template-columns: 1fr; }
 }
+
+/* ---------- Demo identities and roles ---------- */
+
+.identity-bar { background: #fbf6e8; border-bottom: 1px solid #ecdcae; }
+.identity-bar .oh-header-inner { min-height: 0; padding: 6px 0; }
+.identity-switcher { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 0.85rem; }
+.identity-switcher label { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; }
+.identity-switcher .identity-label { color: #7a5a12; font-weight: 600; }
+.identity-switcher select { min-height: 36px; max-width: 100%; padding: 4px 8px; border-radius: 8px; border: 1px solid var(--p-line); background: #fff; font: inherit; }
+.ws-top .identity-switcher { margin-left: 12px; }
+.ws-top .identity-switcher label, .ws-top .identity-switcher .identity-label { color: #f4f1e8; }
+.ws-top .identity-switcher select { color: #13332a; }
+.identity-switcher.compact .identity-label { display: none; }
+.ws-role { color: #f4f1e8; font-size: 0.8rem; font-weight: 700; border: 1px solid rgba(255, 255, 255, 0.35); border-radius: 999px; padding: 2px 10px; }
+.identity-list, .member-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.identity-list > li { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: 12px 14px; border: 1px solid var(--p-line); border-radius: 12px; }
+.identity-list > li > div:first-child, .member-head > div:first-child { display: grid; gap: 2px; min-width: 0; }
+.identity-list > li.current { border-color: var(--org-primary); box-shadow: inset 3px 0 0 var(--org-primary); }
+.member { border: 1px solid var(--p-line); border-radius: 12px; padding: 12px 14px; display: grid; gap: 10px; }
+.member-head { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; flex-wrap: wrap; }
+.member-head select { min-height: 36px; }
+.store-staff { display: grid; gap: 8px; }
+.store-staff p { margin: 0; }
+.block { display: block; }
+.notice-card { border-color: #d9a441; }
+@media (max-width: 640px) {
+  .identity-list > li { flex-direction: column; align-items: flex-start; }
+  .identity-switcher select { width: 100%; }
+}

@@ -1,3 +1,5 @@
+import { currentSupporterId } from './identity.ts'
+import { PermissionError } from './permissions.ts'
 import { slugify } from './organizations.ts'
 import { loadStore, saveStore } from './storage.ts'
 import type { CampaignView, Contribution, Referral } from './types.ts'
@@ -83,6 +85,7 @@ export function createReferral(campaignId: string, input: ReferralInput): Referr
     organizationId: campaign.organizationId,
     code: makeReferralCode(input.displayName, new Set(store.referrals.map((item) => item.code))),
     ...personalFields(input),
+    ownerId: currentSupporterId(),
     createdAt: now,
     updatedAt: now,
   }
@@ -97,6 +100,7 @@ export function updateReferral(id: string, input: ReferralInput): Referral | nul
   const store = loadStore()
   const index = store.referrals.findIndex((item) => item.id === id)
   if (index < 0) return null
+  assertOwner(store.referrals[index])
   const next: Referral = { ...store.referrals[index], ...personalFields(input), updatedAt: new Date().toISOString() }
   store.referrals[index] = next
   saveStore(store)
@@ -108,6 +112,7 @@ export function saveReferralTranslations(id: string, ml: Partial<Record<'headlin
   const store = loadStore()
   const index = store.referrals.findIndex((item) => item.id === id)
   if (index < 0) return
+  assertOwner(store.referrals[index])
   const clean = Object.fromEntries(Object.entries(ml).filter(([, text]) => text?.trim()))
   store.referrals[index] = { ...store.referrals[index], translations: Object.keys(clean).length ? { ml: clean } : undefined, updatedAt: new Date().toISOString() }
   saveStore(store)
@@ -149,7 +154,21 @@ function rememberMine(id: string): void {
   }
 }
 
-/** Demo convenience only: the device that created a page can edit it. This is not access control. */
+/**
+ * Only the supporter who created a sharing page may edit it. Pages saved before identities existed
+ * stay editable on the device that created them, and only by its guest visitor.
+ */
+export function ownsReferral(referral: Pick<Referral, 'id' | 'ownerId'>): boolean {
+  if (referral.ownerId) return referral.ownerId === currentSupporterId()
+  return readMine().includes(referral.id) && currentSupporterId().startsWith('sup_guest_')
+}
+
+function assertOwner(referral: Referral): void {
+  if (!ownsReferral(referral)) throw new PermissionError('Only the supporter who created this sharing page can edit it.')
+}
+
+/** Whether the acting demo identity owns this sharing page. A demo check, not production access control. */
 export function isMyReferral(id: string): boolean {
-  return readMine().includes(id)
+  const referral = loadStore().referrals.find((item) => item.id === id)
+  return referral ? ownsReferral(referral) : false
 }

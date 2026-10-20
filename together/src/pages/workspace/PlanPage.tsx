@@ -3,7 +3,7 @@ import { useOrg } from '../../components/org/OrgContext.tsx'
 import { useOrganizations } from '../../hooks/useOrganizations.ts'
 import { formatDate } from '../../lib/format.ts'
 import { DEMO_PLANS, demoPlan } from '../../lib/plans.ts'
-import { saveOrganization } from '../../lib/orgStorage.ts'
+import { saveOrganizationAs } from '../../lib/orgActions.ts'
 import type { PlanId } from '../../lib/types.ts'
 
 /** /workspace/:organizationId/plan — the selected demo plan. Changing it is simulated. */
@@ -69,7 +69,7 @@ export function PlanPage() {
           className="btn btn-primary btn-sm"
           disabled={choice === stored.plan.id}
           onClick={() => {
-            saveOrganization({ ...stored, plan: { id: choice, selectedAt: new Date().toISOString() } })
+            saveOrganizationAs('org.managePlan', { ...stored, plan: { id: choice, selectedAt: new Date().toISOString() } }, 'plan.changed')
             setNotice(`Switched to the ${demoPlan(choice).name}. No payment was collected.`)
           }}
         >
