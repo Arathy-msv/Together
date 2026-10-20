@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Link, NavLink, useParams } from 'react-router-dom'
+import { Link, NavLink, useNavigate, useParams } from 'react-router-dom'
+import { ReadinessPanel } from '../../components/ai/ReadinessPanel.tsx'
+import { readinessFromCampaign, type ReadinessField } from '../../lib/ai/readiness.ts'
 import { CampaignCover } from '../../components/CampaignImage.tsx'
 import { MilestoneTimeline, StatusPill } from '../../components/campaign/PublicSections.tsx'
 import { useOrg } from '../../components/org/OrgContext.tsx'
@@ -21,6 +23,7 @@ import {
   MILESTONE_LABEL,
   newId,
   publishedUpdates,
+  saveCampaignFields,
   saveMilestone,
   workspacePrompts,
 } from '../../lib/transparency.ts'
@@ -106,8 +109,25 @@ export function CampaignWorkspacePage() {
   )
 }
 
+/** Where a readiness result points inside the workspace. */
+function workspaceTarget(field: ReadinessField, root: string, base: string): string {
+  switch (field) {
+    case 'milestones':
+      return `${root}/milestones`
+    case 'documents':
+      return `${root}/trust`
+    case 'updates':
+      return `${root}/updates`
+    case 'contact':
+      return `${base}/settings#set-footer`
+    default:
+      return `${root}/story`
+  }
+}
+
 function Overview({ campaign, view, store }: WorkspaceProps) {
-  const { base } = useOrg()
+  const { base, org } = useOrg()
+  const navigate = useNavigate()
   const summary = fundSummary(campaign, store)
   const delivery = deliverySummary(campaignMilestones(store, campaign.id))
   const prompts = workspacePrompts(campaign, store)
@@ -177,6 +197,17 @@ function Overview({ campaign, view, store }: WorkspaceProps) {
           </div>
         </dl>
       </section>
+      <div className="wide">
+        <ReadinessPanel
+          input={readinessFromCampaign(campaign, store, org)}
+          onJump={(field) => navigate(workspaceTarget(field, root, base))}
+          applicable={['whatItSupports', 'whatHappensNext']}
+          onApply={(field, text) => {
+            const story = campaign.story ?? { whoItHelps: '', whatTheyNeed: '', whatItSupports: '', whatHappensNext: '', beneficiary: '', imageStory: [] }
+            saveCampaignFields(campaign.id, { story: field === 'whatItSupports' ? { ...story, whatItSupports: text } : { ...story, whatHappensNext: text } })
+          }}
+        />
+      </div>
       <section className="panel ws-card wide">
         <h2>Suggested next steps</h2>
         {prompts.length === 0 ? (

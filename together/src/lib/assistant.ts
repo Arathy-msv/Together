@@ -5,12 +5,12 @@ import { templateFor } from './templates.ts'
 import type { CampaignForm, GameType, OrgType, Organization } from './types.ts'
 import { validateSettings, validateStory, type FormErrors } from './wizard.ts'
 
-export type AssistantStepId = 'purpose' | 'category' | 'story' | 'title' | 'goal' | 'dates' | 'access' | 'participation' | 'game' | 'amounts' | 'cover'
+export type AssistantStepId = 'purpose' | 'category' | 'story' | 'title' | 'goal' | 'budget' | 'dates' | 'access' | 'participation' | 'game' | 'amounts' | 'cover'
 
-export const ASSISTANT_STEPS: AssistantStepId[] = ['purpose', 'category', 'story', 'title', 'goal', 'dates', 'access', 'participation', 'game', 'amounts', 'cover']
+export const ASSISTANT_STEPS: AssistantStepId[] = ['purpose', 'category', 'story', 'title', 'goal', 'budget', 'dates', 'access', 'participation', 'game', 'amounts', 'cover']
 
 /** Questions that can be skipped without blocking the campaign. */
-export const OPTIONAL_STEPS: AssistantStepId[] = ['category', 'story']
+export const OPTIONAL_STEPS: AssistantStepId[] = ['category', 'story', 'budget']
 
 /** Which form fields each question is responsible for, so errors from the shared validators map to one step. */
 const STEP_FIELDS: Record<AssistantStepId, Array<keyof FormErrors>> = {
@@ -19,6 +19,7 @@ const STEP_FIELDS: Record<AssistantStepId, Array<keyof FormErrors>> = {
   story: [],
   title: ['title'],
   goal: ['goalAmount'],
+  budget: ['budget'],
   dates: ['opensAt', 'closesAt'],
   access: ['accessCode'],
   participation: ['form'],
@@ -68,18 +69,20 @@ export function firstInvalidStep(form: CampaignForm, allowedGames: GameType[]): 
   return null
 }
 
-export function stepQuestion(step: AssistantStepId, org: Pick<Organization, 'name'>): string {
+export function stepQuestion(step: AssistantStepId, _org: Pick<Organization, 'name'>): string {
   switch (step) {
     case 'purpose':
-      return `Let’s create a campaign for ${org.name}${/[.!?]$/.test(org.name) ? '' : '.'} What are you raising funds for?`
+      return 'Tell me what you’re raising funds for. We’ll build your campaign together.'
     case 'category':
       return 'Which type of campaign is this closest to?'
     case 'story':
-      return 'Who does it help, and what happens once the money arrives?'
+      return 'Who does it help, what will contributions pay for, and what happens once the money arrives?'
     case 'title':
       return 'Lovely. What should the campaign be called?'
     case 'goal':
-      return 'What is the fundraising target?'
+      return 'What is the fundraising target, and in which currency?'
+    case 'budget':
+      return 'How did you arrive at the target? Add the budget lines you already know.'
     case 'dates':
       return 'When should it open and close?'
     case 'access':
@@ -98,15 +101,17 @@ export function stepQuestion(step: AssistantStepId, org: Pick<Organization, 'nam
 export function stepHint(step: AssistantStepId, org: Pick<Organization, 'content' | 'defaults'>): string {
   switch (step) {
     case 'purpose':
-      return `A sentence or two for ${org.content.supporterNoun || 'supporters'}: who it helps and what the money buys.`
+      return `For example: “Our company wants to raise ₹50,000 for school supplies.” I’ll note any amount you mention and ask about everything else — I won’t guess details for ${org.content.supporterNoun || 'supporters'}.`
     case 'category':
-      return 'Optional. A type suggests milestones, budget headings and a game. It never changes what you have written.'
+      return 'Optional. The type shapes the suggestions you can accept at review. It never changes what you have written.'
     case 'story':
       return 'Optional — skip if you prefer. Describe groups, not individuals.'
     case 'title':
       return 'Short and specific works best — up to 80 characters.'
     case 'goal':
       return `Whole amounts in ${org.defaults.currency}, the default currency for new campaigns.`
+    case 'budget':
+      return 'Optional. Only add amounts you have a basis for, such as a quotation. You can skip this and add it later.'
     case 'dates':
       return `Your organization’s default is ${org.defaults.durationDays} days.`
     case 'access':
@@ -129,11 +134,15 @@ export function answerSummary(step: AssistantStepId, form: CampaignForm): string
     case 'category':
       return templateFor(form.category).label
     case 'story':
-      return [form.storyWho.trim(), form.storyNext.trim()].filter(Boolean).join(' · ') || 'Skipped for now'
+      return [form.storyWho.trim(), form.storySupports.trim(), form.storyNext.trim()].filter(Boolean).join(' · ') || 'Skipped for now'
     case 'title':
       return form.title.trim()
     case 'goal':
       return formatMoney(Number(form.goalAmount) || 0, form.currency)
+    case 'budget': {
+      const lines = form.budget.filter((line) => line.label.trim())
+      return lines.length ? lines.map((line) => `${line.label}${line.amount ? ` ${formatMoney(Number(line.amount) || 0, form.currency)}` : ''}`).join(' · ') : 'Skipped for now'
+    }
     case 'dates':
       return `${safeStamp(form.opensAt)} → ${safeStamp(form.closesAt)}`
     case 'access':

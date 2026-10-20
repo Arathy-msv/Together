@@ -100,8 +100,9 @@ function ChangeList({ changes }: { changes: TemplateChange[] }) {
   )
 }
 
-function StoryField({ label, value, placeholder, onChange, rows = 2, help }: { label: string; value: string; placeholder: string; onChange: (value: string) => void; rows?: number; help?: string }) {
-  const id = useId()
+function StoryField({ label, value, placeholder, onChange, rows = 2, help, fieldId }: { label: string; value: string; placeholder: string; onChange: (value: string) => void; rows?: number; help?: string; fieldId?: string }) {
+  const generated = useId()
+  const id = fieldId ?? generated
   return (
     <div className="field">
       <label className="field-label" htmlFor={id}>
@@ -116,7 +117,6 @@ function StoryField({ label, value, placeholder, onChange, rows = 2, help }: { l
 /** Optional structured story, budget plan and milestone plan for the campaign form. */
 export function StoryDetails({ form, errors, onChange }: { form: CampaignForm; errors: FormErrors; onChange: (patch: Partial<CampaignForm>) => void }) {
   const template = templateFor(form.category)
-  const budgetTotal = form.budget.reduce((sum, line) => sum + (parseRupeesToPaise(line.amount) ?? 0), 0)
   return (
     <details className="story-details" open={Boolean(form.storyWho || form.storyNeed || form.budget.length || form.milestonePlan.length)}>
       <summary>
@@ -124,11 +124,12 @@ export function StoryDetails({ form, errors, onChange }: { form: CampaignForm; e
         <span className="muted small">Optional — supporters find a structured story easier to scan. You can skip this and add it later.</span>
       </summary>
       <div className="story-details-body">
-        <StoryField label="Who this helps" value={form.storyWho} placeholder={template.prompts.who} onChange={(storyWho) => onChange({ storyWho })} />
+        <StoryField fieldId="story-who" label="Who this helps" value={form.storyWho} placeholder={template.prompts.who} onChange={(storyWho) => onChange({ storyWho })} />
         <StoryField label="What they need" value={form.storyNeed} placeholder={template.prompts.need} onChange={(storyNeed) => onChange({ storyNeed })} />
-        <StoryField label="What contributions will support" value={form.storySupports} placeholder={template.prompts.supports} onChange={(storySupports) => onChange({ storySupports })} />
-        <StoryField label="What happens next" value={form.storyNext} placeholder={template.prompts.next} onChange={(storyNext) => onChange({ storyNext })} />
+        <StoryField fieldId="story-supports" label="What contributions will support" value={form.storySupports} placeholder={template.prompts.supports} onChange={(storySupports) => onChange({ storySupports })} />
+        <StoryField fieldId="story-next" label="What happens next" value={form.storyNext} placeholder={template.prompts.next} onChange={(storyNext) => onChange({ storyNext })} />
         <StoryField
+          fieldId="story-beneficiary"
           label="Beneficiary description"
           value={form.beneficiary}
           placeholder={template.prompts.beneficiary}
@@ -136,7 +137,51 @@ export function StoryDetails({ form, errors, onChange }: { form: CampaignForm; e
           help="Describe the group who benefits. Avoid names, addresses or details that identify individuals."
         />
 
-        <div className="field">
+        <BudgetLines form={form} onChange={onChange} error={errors.budget} />
+
+        <div className="field" id="milestone-plan" tabIndex={-1}>
+          <span className="field-label">
+            Milestone plan <span className="optional-tag">Optional</span>
+          </span>
+          <p className="help">Planned steps appear on the public timeline as “Planned”. You report progress later from the organizer workspace.</p>
+          {form.milestonePlan.map((item, index) => (
+            <div key={item.id} className="plan-row">
+              <input
+                aria-label={`Milestone ${index + 1} title`}
+                value={item.title}
+                maxLength={120}
+                placeholder="e.g. Purchase materials"
+                onChange={(event) => onChange({ milestonePlan: form.milestonePlan.map((m) => (m.id === item.id ? { ...m, title: event.target.value } : m)) })}
+              />
+              <input
+                aria-label={`Milestone ${index + 1} expected date`}
+                type="date"
+                value={item.due}
+                onChange={(event) => onChange({ milestonePlan: form.milestonePlan.map((m) => (m.id === item.id ? { ...m, due: event.target.value } : m)) })}
+              />
+              <button type="button" className="btn btn-outline btn-sm icon-only" aria-label={`Remove milestone ${index + 1}`} onClick={() => onChange({ milestonePlan: form.milestonePlan.filter((m) => m.id !== item.id) })}>
+                ×
+              </button>
+            </div>
+          ))}
+          {form.milestonePlan.length < 10 ? (
+            <button type="button" className="btn btn-outline btn-sm" onClick={() => onChange({ milestonePlan: [...form.milestonePlan, { id: crypto.randomUUID(), title: '', due: '' }] })}>
+              + Add milestone
+            </button>
+          ) : null}
+        </div>
+      </div>
+    </details>
+  )
+}
+
+/** Organizer-supplied budget lines with a running total compared against the target. */
+export function BudgetLines({ form, onChange, error }: { form: CampaignForm; onChange: (patch: Partial<CampaignForm>) => void; error?: string }) {
+  const budgetTotal = form.budget.reduce((sum, line) => sum + (parseRupeesToPaise(line.amount) ?? 0), 0)
+  const goal = Number(form.goalAmount)
+  const goalMinor = Number.isFinite(goal) && goal > 0 ? goal * 100 : 0
+  return (
+        <div className="field" id="budget-plan" tabIndex={-1}>
           <span className="field-label">
             Budget plan <span className="optional-tag">Optional</span>
           </span>
@@ -173,42 +218,12 @@ export function StoryDetails({ form, errors, onChange }: { form: CampaignForm; e
             ) : null}
             {budgetTotal > 0 ? <span className="muted small">Planned total {formatMoney(budgetTotal / 100, form.currency)}</span> : null}
           </div>
-          {errors.budget ? <p className="error-text">{errors.budget}</p> : null}
+          {error ? <p className="error-text">{error}</p> : null}
+          {budgetTotal > 0 && goalMinor > 0 && budgetTotal !== goalMinor ? (
+        <p className="help">
+          Budget lines total {formatMoney(budgetTotal / 100, form.currency)}; the target is {formatMoney(goal, form.currency)}. That’s fine for now — readiness checks will remind you.
+        </p>
+      ) : null}
         </div>
-
-        <div className="field">
-          <span className="field-label">
-            Milestone plan <span className="optional-tag">Optional</span>
-          </span>
-          <p className="help">Planned steps appear on the public timeline as “Planned”. You report progress later from the organizer workspace.</p>
-          {form.milestonePlan.map((item, index) => (
-            <div key={item.id} className="plan-row">
-              <input
-                aria-label={`Milestone ${index + 1} title`}
-                value={item.title}
-                maxLength={120}
-                placeholder="e.g. Purchase materials"
-                onChange={(event) => onChange({ milestonePlan: form.milestonePlan.map((m) => (m.id === item.id ? { ...m, title: event.target.value } : m)) })}
-              />
-              <input
-                aria-label={`Milestone ${index + 1} expected date`}
-                type="date"
-                value={item.due}
-                onChange={(event) => onChange({ milestonePlan: form.milestonePlan.map((m) => (m.id === item.id ? { ...m, due: event.target.value } : m)) })}
-              />
-              <button type="button" className="btn btn-outline btn-sm icon-only" aria-label={`Remove milestone ${index + 1}`} onClick={() => onChange({ milestonePlan: form.milestonePlan.filter((m) => m.id !== item.id) })}>
-                ×
-              </button>
-            </div>
-          ))}
-          {form.milestonePlan.length < 10 ? (
-            <button type="button" className="btn btn-outline btn-sm" onClick={() => onChange({ milestonePlan: [...form.milestonePlan, { id: crypto.randomUUID(), title: '', due: '' }] })}>
-              + Add milestone
-            </button>
-          ) : null}
-        </div>
-      </div>
-    </details>
   )
 }
-

@@ -30,11 +30,33 @@ import {
   type FormErrors,
 } from '../lib/wizard.ts'
 import { StoryDetails, TemplatePicker } from '../components/story/StoryDetails.tsx'
+import { ReadinessPanel } from '../components/ai/ReadinessPanel.tsx'
+import { readinessFromForm, type ReadinessField } from '../lib/ai/readiness.ts'
 
 const STEP_COPY: Record<number, { title: string; sub: string }> = {
   1: { title: 'Create a campaign', sub: 'Start with your story.' },
   2: { title: 'Campaign settings', sub: 'Choose when it runs and how people take part.' },
   3: { title: 'Review your campaign', sub: 'Check the details, then publish it in this browser.' },
+}
+
+const FIELD_TARGETS: Partial<Record<ReadinessField, { step: number; selector: string; inDetails?: boolean }>> = {
+  title: { step: 1, selector: '#title' },
+  description: { step: 1, selector: '#purpose' },
+  impact: { step: 1, selector: '#purpose' },
+  cover: { step: 1, selector: '.cover-choice' },
+  organizer: { step: 1, selector: '#organizer' },
+  goal: { step: 1, selector: '#goal' },
+  amounts: { step: 1, selector: '.amount-add input' },
+  access: { step: 1, selector: '#access-code' },
+  dates: { step: 2, selector: '#opens' },
+  participation: { step: 2, selector: '.option-card' },
+  puzzle: { step: 2, selector: '#puzzle-image' },
+  whoItHelps: { step: 1, selector: '#story-who', inDetails: true },
+  beneficiary: { step: 1, selector: '#story-beneficiary', inDetails: true },
+  whatItSupports: { step: 1, selector: '#story-supports', inDetails: true },
+  whatHappensNext: { step: 1, selector: '#story-next', inDetails: true },
+  budget: { step: 1, selector: '#budget-plan', inDetails: true },
+  milestones: { step: 1, selector: '#milestone-plan', inDetails: true },
 }
 
 interface EditorStart {
@@ -127,6 +149,24 @@ function CreateCampaignEditor({ start }: { start: EditorStart }) {
     setNotice(null)
   }
 
+  /** Opens the step that holds a readiness result's field and focuses it. */
+  function jumpTo(field: ReadinessField) {
+    if (field === 'contact' || field === 'documents') {
+      navigate(`${base}/settings`)
+      return
+    }
+    const target = FIELD_TARGETS[field]
+    if (!target) return
+    setStep(target.step)
+    window.setTimeout(() => {
+      const details = document.querySelector<HTMLDetailsElement>('.story-details')
+      if (target.inDetails && details) details.open = true
+      const element = document.querySelector<HTMLElement>(target.selector)
+      element?.scrollIntoView({ block: 'center' })
+      element?.focus()
+    }, 60)
+  }
+
   function discard() {
     if (!window.confirm('Discard this draft? Your answers on this device will be deleted.')) return
     deleteDraft(start.draftId)
@@ -192,6 +232,14 @@ function CreateCampaignEditor({ start }: { start: EditorStart }) {
           {step === 1 ? <StoryStep form={form} errors={errors} onChange={update} org={org} /> : null}
           {step === 2 ? <SettingsStep form={form} errors={errors} onChange={update} org={org} /> : null}
           {step === 3 ? <ReviewStep form={form} onEdit={setStep} /> : null}
+          {step === 3 ? (
+            <ReadinessPanel
+              input={readinessFromForm(form, org, allowedGames)}
+              onJump={jumpTo}
+              applicable={['whatItSupports', 'whatHappensNext']}
+              onApply={(field, text) => update(field === 'whatItSupports' ? { storySupports: text } : { storyNext: text })}
+            />
+          ) : null}
         </div>
         {step < 3 ? (
           <div className="create-aside">

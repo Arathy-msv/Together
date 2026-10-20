@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { Icon } from '../../components/illustrations.tsx'
 import { LivePreview } from '../../components/LivePreview.tsx'
 import { OrgLogoMark } from '../../components/org/OrgChrome.tsx'
 import { useOrg } from '../../components/org/OrgContext.tsx'
@@ -9,6 +8,7 @@ import { useImagePicker } from '../../hooks/useImagePicker.tsx'
 import {
   activeSteps,
   answerSummary,
+  ASSISTANT_STEPS,
   firstInvalidStep,
   OPTIONAL_STEPS,
   goalIdeas,
@@ -22,10 +22,16 @@ import {
 } from '../../lib/assistant.ts'
 import { makeAccessCode, publishCampaign } from '../../lib/campaigns.ts'
 import { RequiredProgress, ResumeDrafts, SaveIndicator } from '../../components/drafts/DraftUI.tsx'
+import { AiBadge } from '../../components/ai/AiUI.tsx'
+import { DraftSuggestions, NotedFacts } from '../../components/ai/DraftSuggestions.tsx'
+import { ReadinessPanel } from '../../components/ai/ReadinessPanel.tsx'
+import { BudgetLines } from '../../components/story/StoryDetails.tsx'
+import { parseCampaignMessage } from '../../lib/ai/parse.ts'
+import { readinessFromForm, type ReadinessField } from '../../lib/ai/readiness.ts'
 import { useAutosave } from '../../hooks/useAutosave.ts'
 import { deleteDraft, listDrafts, newDraftId, readDraft, saveDraft } from '../../lib/drafts.ts'
-import { applyTemplate, TEMPLATES, templateFor } from '../../lib/templates.ts'
-import { currencySymbol, formatDateTime, formatMoney, setDisplayCurrency, toDatetimeLocal } from '../../lib/format.ts'
+import { TEMPLATES, templateFor } from '../../lib/templates.ts'
+import { CURRENCIES, currencySymbol, formatDateTime, formatMoney, isCurrencyCode, setDisplayCurrency, toDatetimeLocal } from '../../lib/format.ts'
 import { GAME_THUMBS, gameMeta } from '../../lib/games.ts'
 import { selectableGames } from '../../lib/organizations.ts'
 import { StorageFullError } from '../../lib/storage.ts'
@@ -33,6 +39,41 @@ import type { CampaignForm, Organization } from '../../lib/types.ts'
 import { blankForm, formToCampaign, gameSettingsFields, requiredChecklist, validateAll, type FormErrors } from '../../lib/wizard.ts'
 
 type Stage = AssistantStepId | 'review'
+
+const STEP_LABELS: Record<AssistantStepId, string> = {
+  purpose: 'Purpose',
+  category: 'Campaign type',
+  story: 'Beneficiaries & story',
+  title: 'Title',
+  goal: 'Target & currency',
+  budget: 'Budget basis',
+  dates: 'Dates',
+  access: 'Visibility',
+  participation: 'Ways to give',
+  game: 'Game',
+  amounts: 'Amounts',
+  cover: 'Cover image',
+}
+
+/** Where each readiness result sends the organizer in the conversation. */
+const READINESS_STEP: Partial<Record<ReadinessField, AssistantStepId>> = {
+  title: 'title',
+  description: 'purpose',
+  cover: 'cover',
+  goal: 'goal',
+  dates: 'dates',
+  amounts: 'amounts',
+  participation: 'participation',
+  access: 'access',
+  puzzle: 'game',
+  beneficiary: 'story',
+  whoItHelps: 'story',
+  whatItSupports: 'story',
+  whatHappensNext: 'story',
+  budget: 'budget',
+  milestones: 'category',
+  impact: 'purpose',
+}
 
 interface ChatStart {
   draftId: string
@@ -91,10 +132,9 @@ export function AssistantPage() {
 }
 
 function asStage(step: string): Stage {
-  return step === 'review' || (ASSISTANT_STEP_IDS as string[]).includes(step) ? (step as Stage) : 'purpose'
+  return step === 'review' || (ASSISTANT_STEPS as string[]).includes(step) ? (step as Stage) : 'purpose'
 }
 
-const ASSISTANT_STEP_IDS: AssistantStepId[] = ['purpose', 'category', 'story', 'title', 'goal', 'dates', 'access', 'participation', 'game', 'amounts', 'cover']
 
 function AssistantOff({ org }: { org: Organization }) {
   const { base } = useOrg()
@@ -135,6 +175,7 @@ function AssistantChat({ org, start }: { org: Organization; start: ChatStart }) 
   })
   const checklist = requiredChecklist(form, allowedGames)
   const [showPreview, setShowPreview] = useState(false)
+  const [confirmed, setConfirmed] = useState(false)
   const currentRef = useRef<HTMLDivElement>(null)
 
   setDisplayCurrency(form.currency)
@@ -164,6 +205,19 @@ function AssistantChat({ org, start }: { org: Organization; start: ChatStart }) 
     const stepErrors = validateStep(step, form, allowedGames)
     setErrors(stepErrors)
     if (Object.keys(stepErrors).length > 0) return
+    let current = form
+    if (step === 'purpose') {
+      // Only explicit facts are picked up; the organizer confirms them on later questions.
+      const parsed = parseCampaignMessage(form.description)
+      const patch: Partial<CampaignForm> = {}
+      if (parsed.amount) {
+        patch.goalAmount = String(parsed.amount)
+        if (parsed.currency) patch.currency = parsed.currency
+      }
+      current = { ...form, ...patch }
+      if (parsed.category && form.category === 'other') current = { ...current, category: parsed.category }
+      setForm(current)
+    }
     if (returnToReview) {
       const invalid = firstInvalidStep(form, allowedGames)
       if (invalid) {
@@ -174,7 +228,7 @@ function AssistantChat({ org, start }: { org: Organization; start: ChatStart }) 
       goTo('review')
       return
     }
-    goTo(nextStep(step, form))
+    goTo(nextStep(step, current))
   }
 
   function edit(step: AssistantStepId) {
@@ -190,6 +244,14 @@ function AssistantChat({ org, start }: { org: Organization; start: ChatStart }) 
   function discard() {
     if (!window.confirm('Discard this draft? Your answers on this device will be deleted.')) return
     deleteDraft(start.draftId)
+    navigate(`${base}/dashboard`)
+  }
+
+  function saveAndExit() {
+    if (!autosave.flush()) {
+      setNotice({ tone: 'error', text: 'This browser could not save your draft, so it was kept open. Free up storage and try again.' })
+      return
+    }
     navigate(`${base}/dashboard`)
   }
 
@@ -224,6 +286,10 @@ function AssistantChat({ org, start }: { org: Organization; start: ChatStart }) 
   }
 
   function create() {
+    if (!confirmed) {
+      setNotice({ tone: 'error', text: 'Tick “I’ve reviewed this campaign” before creating it.' })
+      return
+    }
     const allErrors = validateAll(form, allowedGames)
     const invalid = firstInvalidStep(form, allowedGames)
     if (invalid || Object.keys(allErrors).length > 0) {
@@ -274,10 +340,10 @@ function AssistantChat({ org, start }: { org: Organization; start: ChatStart }) 
         </div>
       </div>
       <p className="assistant-note">
-        <Icon name="info" size={16} />
+        <AiBadge />
         <span>
-          Scripted demo assistant — no AI service is connected. Answers stay in this browser and nothing is published until you choose{' '}
-          <strong>Create campaign</strong>.
+          A simulated conversation built on fixed rules. It only uses what you type and your organization’s settings — it never invents beneficiaries, costs,
+          dates or impact. Nothing is published until you choose <strong>Create campaign</strong>.
         </span>
       </p>
       <div className="draft-bar">
@@ -288,6 +354,9 @@ function AssistantChat({ org, start }: { org: Organization; start: ChatStart }) 
           </Link>
           <button type="button" className="link-button danger" onClick={discard}>
             Discard draft
+          </button>
+          <button type="button" className="btn btn-outline btn-sm" onClick={saveAndExit}>
+            Save and exit
           </button>
         </span>
       </div>
@@ -307,9 +376,43 @@ function AssistantChat({ org, start }: { org: Organization; start: ChatStart }) 
         </button>
       </div>
 
-      <div className={showPreview ? 'assistant-grid show-preview' : 'assistant-grid'}>
+      <div className={showPreview ? 'assistant-grid with-steps show-preview' : 'assistant-grid with-steps'}>
+        <nav className="assistant-steps panel" aria-label="Setup progress">
+          <ol>
+            {steps.map((step) => {
+              const done = answered.includes(step)
+              const current = stage === step
+              return (
+                <li key={step} className={current ? 'current' : done ? 'done' : ''}>
+                  {done && !current ? (
+                    <button type="button" onClick={() => edit(step)}>
+                      <span aria-hidden="true">✓</span> {STEP_LABELS[step]}
+                      <span className="sr-only"> — edit answer</span>
+                    </button>
+                  ) : (
+                    <span aria-current={current ? 'step' : undefined}>
+                      <span aria-hidden="true">{current ? '●' : '○'}</span> {STEP_LABELS[step]}
+                      {OPTIONAL_STEPS.includes(step) ? <em> optional</em> : null}
+                    </span>
+                  )}
+                </li>
+              )
+            })}
+            <li className={stage === 'review' ? 'current' : ''}>
+              <span aria-current={stage === 'review' ? 'step' : undefined}>
+                <span aria-hidden="true">{stage === 'review' ? '●' : '○'}</span> Review
+              </span>
+            </li>
+          </ol>
+        </nav>
         <section className="panel chat" aria-label="Conversation">
           <ol className="chat-log" aria-live="polite">
+            <li className="chat-pair">
+              <BotBubble org={org}>
+                I’ve prefilled what I know about {org.name}: organiser name, {org.defaults.currency} as the default currency, suggested amounts and the games
+                turned on for you. You can change any of it.
+              </BotBubble>
+            </li>
             {answered.map((step) => (
               <li key={step} className="chat-pair">
                 <BotBubble org={org}>{stepQuestion(step, org)}</BotBubble>
@@ -319,13 +422,31 @@ function AssistantChat({ org, start }: { org: Organization; start: ChatStart }) 
                     Edit
                   </button>
                 </div>
+                {step === 'purpose' ? <NotedFacts form={form} org={org} /> : null}
               </li>
             ))}
           </ol>
 
           <div ref={currentRef} className={answered.length > 0 ? 'chat-current' : 'chat-current first'}>
             {stage === 'review' ? (
-              <ReviewCard org={org} form={form} onEdit={edit} onChange={update} errors={errors} />
+              <>
+                <ReviewCard org={org} form={form} onEdit={edit} onChange={update} errors={errors} />
+                <DraftSuggestions form={form} org={org} allowedGames={allowedGames} onChange={update} />
+                <ReadinessPanel
+                  input={readinessFromForm(form, org, allowedGames)}
+                  onJump={(field) => {
+                    if (field === 'contact' || field === 'documents') navigate(`${base}/settings`)
+                    else if (field === 'organizer') document.getElementById('a-organizer')?.focus()
+                    else edit(READINESS_STEP[field] ?? 'purpose')
+                  }}
+                  applicable={['whatItSupports', 'whatHappensNext']}
+                  onApply={(field, text) => update(field === 'whatItSupports' ? { storySupports: text } : { storyNext: text })}
+                />
+                <label className="check-row confirm-row">
+                  <input type="checkbox" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} />
+                  I’ve reviewed this campaign. Create it for {org.name} when I choose Create campaign.
+                </label>
+              </>
             ) : (
               <>
                 <BotBubble org={org}>
@@ -365,7 +486,7 @@ function AssistantChat({ org, start }: { org: Organization; start: ChatStart }) 
           <LivePreview form={form} />
           <div className="aside-actions">
             {stage === 'review' ? (
-              <button type="button" className="btn btn-primary" onClick={create}>
+              <button type="button" className="btn btn-primary" onClick={create} disabled={!confirmed}>
                 Create campaign
               </button>
             ) : (
@@ -485,7 +606,6 @@ function StepInput({
         </>
       )
     case 'category': {
-      const changes = applyTemplate(form, templateFor(form.category), { replaceLists: false, useGame: null }).changes.filter((change) => change.kind === 'add')
       return (
         <>
           <ChipRow label="Campaign types">
@@ -496,15 +616,14 @@ function StepInput({
                 data-autofocus={index === 0 ? true : undefined}
                 className={form.category === template.id ? 'chip selected' : 'chip'}
                 aria-pressed={form.category === template.id}
-                onClick={() => onChange(applyTemplate(form, template, { replaceLists: false, useGame: null }).form)}
+                onClick={() => onChange({ category: template.id })}
               >
                 {template.label}
               </button>
             ))}
           </ChipRow>
           <p className="help">
-            {templateFor(form.category).blurb} Templates only fill empty milestone and budget lists — your answers are kept.
-            {changes.length === 0 && form.milestonePlan.length > 0 ? ` Milestone plan: ${form.milestonePlan.map((item) => item.title).join(', ')}.` : ''}
+            {templateFor(form.category).blurb} At review you can accept suggested milestones and a game for this type — nothing is added until you do.
           </p>
         </>
       )
@@ -517,6 +636,10 @@ function StepInput({
             Who this helps
           </label>
           <textarea id="a-who" data-autofocus rows={2} maxLength={600} value={form.storyWho} placeholder={template.prompts.who} onChange={(event) => onChange({ storyWho: event.target.value })} />
+          <label className="field-label" htmlFor="a-supports">
+            What contributions will pay for
+          </label>
+          <textarea id="a-supports" rows={2} maxLength={600} value={form.storySupports} placeholder={template.prompts.supports} onChange={(event) => onChange({ storySupports: event.target.value })} />
           <label className="field-label" htmlFor="a-next">
             What happens next
           </label>
@@ -568,9 +691,23 @@ function StepInput({
               onChange={(event) => onChange({ goalAmount: event.target.value.replace(/[^\d]/g, '') })}
             />
           </div>
+          <div className="field">
+            <label className="field-label" htmlFor="a-currency">
+              Currency
+            </label>
+            <select id="a-currency" value={form.currency} onChange={(event) => isCurrencyCode(event.target.value) && onChange({ currency: event.target.value })}>
+              {CURRENCIES.map((item) => (
+                <option key={item.code} value={item.code}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
+          </div>
           <ErrorText id="a-goal-error" error={errors.goalAmount} />
         </>
       )
+    case 'budget':
+      return <BudgetLines form={form} onChange={onChange} error={errors.budget} />
     case 'dates': {
       const preset = (startOffsetDays: number, durationDays: number) => {
         const opens = new Date()
@@ -844,19 +981,7 @@ function ReviewCard({
   onEdit: (step: AssistantStepId) => void
   onChange: (patch: Partial<CampaignForm>) => void
 }) {
-  const labels: Record<AssistantStepId, string> = {
-    purpose: 'Purpose',
-    category: 'Campaign type',
-    story: 'Story details',
-    title: 'Name',
-    goal: 'Target',
-    dates: 'Dates',
-    access: 'Group',
-    participation: 'Taking part',
-    game: 'Game',
-    amounts: 'Amounts',
-    cover: 'Cover',
-  }
+  const labels = STEP_LABELS
   return (
     <div className="chat-review">
       <BotBubble org={org}>Here’s your campaign. Check each answer, edit anything, then create it when you’re ready.</BotBubble>
