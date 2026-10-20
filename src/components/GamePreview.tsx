@@ -5,10 +5,7 @@ import type { CampaignForm, CampaignView, GameType } from '../lib/types.ts'
 import { GardenGame } from '../pages/play/GardenGame.tsx'
 import { JacketGame } from '../pages/play/JacketGame.tsx'
 import { MemoryGame } from '../pages/play/MemoryGame.tsx'
-import { PageGame } from '../pages/play/PageGame.tsx'
-import { PencilGame } from '../pages/play/PencilGame.tsx'
 import { PuzzleGame } from '../pages/play/PuzzleGame.tsx'
-import { WeightGame } from '../pages/play/WeightGame.tsx'
 
 export function previewViewFromForm(form: CampaignForm, gameType?: GameType): CampaignView {
   const campaign = formToCampaign(
@@ -84,10 +81,7 @@ export function GamePreviewModal({
 function PreviewGame({ view, gameType }: { view: CampaignView; gameType: GameType }) {
   if (gameType === 'memory') return <MemoryGame view={view} preview />
   if (gameType === 'puzzle') return <PuzzleGame view={view} preview />
-  if (gameType === 'weight') return <WeightGame view={view} preview />
-  if (gameType === 'page') return <PageGame view={view} preview />
   if (gameType === 'jacket') return <JacketGame view={view} preview />
-  if (gameType === 'pencil') return <PencilGame view={view} preview />
   return <GardenGame view={view} preview />
 }
 

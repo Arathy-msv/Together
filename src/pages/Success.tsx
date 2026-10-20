@@ -4,6 +4,7 @@ import { CampaignCover } from '../components/CampaignImage.tsx'
 import { Icon } from '../components/illustrations.tsx'
 import { ProgressBar } from '../components/ProgressBar.tsx'
 import { useCampaignView, useDemoStore } from '../hooks/useDemoStore.ts'
+import { campaignDetailsPath } from '../lib/campaigns.ts'
 import { formatINR } from '../lib/format.ts'
 import { NotFoundPage } from './NotFound.tsx'
 
@@ -24,7 +25,7 @@ export function SuccessPage() {
         <div className="panel empty">
           <h1>We couldn’t find that contribution</h1>
           <p className="muted">It may belong to another browser, or the demo data was reset.</p>
-          <Link to={`/campaigns/${view.campaign.id}`} className="btn btn-primary">
+          <Link to={campaignDetailsPath(view.campaign.id)} className="btn btn-primary">
             Back to campaign
           </Link>
         </div>
@@ -73,14 +74,22 @@ export function SuccessPage() {
         <p className="muted small">{view.supporters === 1 ? '1 simulated contribution' : `${view.supporters} simulated contributions`}</p>
       </section>
       <div className="center-actions">
-        <Link to={`/campaigns/${view.campaign.id}`} className="btn btn-primary btn-lg">
+        {contribution.method === 'game' && view.campaign.participation.game ? (
+          <Link to={`/campaigns/${view.campaign.id}/play/${view.campaign.gameType}`} className="btn btn-primary btn-lg">
+            Keep playing
+          </Link>
+        ) : null}
+        <Link
+          to={campaignDetailsPath(view.campaign.id)}
+          className={contribution.method === 'game' ? 'btn btn-outline btn-lg' : 'btn btn-primary btn-lg'}
+        >
           Back to campaign
         </Link>
         <Link to="/" className="btn btn-outline btn-lg">
           Return home
         </Link>
       </div>
-      <p className="muted small center">Saved in this browser. No real money was collected.</p>
+      <p className="muted small center">Saved in this browser as local demo data. No real money was collected. Your completed game progress is kept, and only new actions start a new suggestion.</p>
     </div>
   )
 }

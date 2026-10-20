@@ -1,7 +1,40 @@
 import { makeAccessCode } from './campaigns.ts'
 import { fromDatetimeLocal, toDatetimeLocal } from './format.ts'
+import {
+  campaignGameSettings,
+  defaultGameSettings,
+  gameConfig,
+  paiseToInput,
+  parseRupeesToPaise,
+  MAX_CONTRIBUTION_PAISE,
+} from './gameContribution.ts'
 import { isGameType } from './games.ts'
-import type { Campaign, CampaignForm } from './types.ts'
+import type { Campaign, CampaignForm, GameContributionSettings, GameType } from './types.ts'
+
+/** Form fields for one game's contribution rules, using that game's defaults. */
+export function gameSettingsFields(game: GameType, settings: GameContributionSettings = defaultGameSettings(game)) {
+  return {
+    gameRate: paiseToInput(settings.ratePaise),
+    gameRoundSize: String(settings.actionsPerRound),
+    gameAllowCustom: settings.allowCustom,
+    gameCap: settings.capPaise == null ? '' : paiseToInput(settings.capPaise),
+  }
+}
+
+export function formGameSettings(form: CampaignForm): GameContributionSettings {
+  const game = isGameType(form.gameType) ? form.gameType : 'garden'
+  const fallback = defaultGameSettings(game)
+  const { min, max } = gameConfig(game).roundSize
+  const rounds = Number(form.gameRoundSize)
+  const ratePaise = parseRupeesToPaise(form.gameRate) ?? fallback.ratePaise
+  const capPaise = form.gameCap.trim() ? parseRupeesToPaise(form.gameCap) : null
+  return {
+    ratePaise,
+    actionsPerRound: Number.isInteger(rounds) ? Math.min(max, Math.max(min, rounds)) : fallback.actionsPerRound,
+    allowCustom: form.gameAllowCustom,
+    capPaise: capPaise != null && capPaise >= ratePaise ? capPaise : null,
+  }
+}
 
 export const WIZARD_KEY = 'together.wizard.v1'
 
@@ -29,6 +62,7 @@ export function blankForm(): CampaignForm {
     direct: true,
     game: true,
     gameType: 'garden',
+    ...gameSettingsFields('garden'),
   }
 }
 
@@ -53,6 +87,7 @@ export function campaignToForm(campaign: Campaign): CampaignForm {
     direct: campaign.participation.direct,
     game: campaign.participation.game,
     gameType: isGameType(campaign.gameType) ? campaign.gameType : 'garden',
+    ...gameSettingsFields(campaign.gameType, campaignGameSettings(campaign)),
   }
 }
 
@@ -79,6 +114,7 @@ export function formToCampaign(form: CampaignForm, options: { isDraft: boolean; 
     autoCloseOnGoal: form.autoCloseOnGoal,
     participation: { direct: form.direct, game: form.game },
     gameType: isGameType(form.gameType) ? form.gameType : 'garden',
+    gameSettings: form.game ? formGameSettings(form) : options.existing?.gameSettings,
     createdAt: options.existing?.createdAt ?? new Date().toISOString(),
     manualClosedAt: options.isDraft ? undefined : options.existing?.manualClosedAt,
     isDraft: options.isDraft,
@@ -103,6 +139,11 @@ export function readWizard(): WizardSnapshot | null {
     if (typeof snapshot.form.coverImageData !== 'string') snapshot.form.coverImageData = ''
     if (typeof snapshot.form.logoData !== 'string') snapshot.form.logoData = ''
     if (typeof snapshot.form.puzzleImageData !== 'string') snapshot.form.puzzleImageData = ''
+    if (typeof snapshot.form.gameRate !== 'string' || typeof snapshot.form.gameRoundSize !== 'string') {
+      Object.assign(snapshot.form, gameSettingsFields(snapshot.form.gameType))
+    }
+    if (typeof snapshot.form.gameAllowCustom !== 'boolean') snapshot.form.gameAllowCustom = true
+    if (typeof snapshot.form.gameCap !== 'string') snapshot.form.gameCap = ''
     return snapshot
   } catch {
     return null
@@ -170,6 +211,20 @@ export function validateSettings(form: CampaignForm): FormErrors {
   }
   if (!form.direct && !form.game) {
     errors.form = 'Choose direct giving, a game, or both.'
+  }
+  if (form.game) {
+    const rate = parseRupeesToPaise(form.gameRate)
+    const { min, max } = gameConfig(form.gameType).roundSize
+    const rounds = Number(form.gameRoundSize)
+    if (rate == null || rate > MAX_CONTRIBUTION_PAISE) errors.gameRate = 'Enter a rate greater than zero, like 50.'
+    if (!Number.isInteger(rounds) || rounds < min || rounds > max) {
+      errors.gameRoundSize = min === max ? `This game uses ${min} per round.` : `Choose between ${min} and ${max}.`
+    }
+    if (form.gameCap.trim()) {
+      const cap = parseRupeesToPaise(form.gameCap)
+      if (cap == null) errors.gameCap = 'Enter a cap like 500, or leave it empty.'
+      else if (rate != null && cap < rate) errors.gameCap = 'The cap needs to be at least one action’s rate.'
+    }
   }
   return errors
 }

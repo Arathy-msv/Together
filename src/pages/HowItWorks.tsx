@@ -5,7 +5,7 @@ import { GAME_THUMBS, GAMES } from '../lib/games.ts'
 
 const SUPPORTER_STEPS = [
   { title: 'Open the campaign', text: 'Discover the cause and the people behind it.' },
-  { title: 'Give directly or play first', text: 'Enjoy a free game, or go straight to a contribution.' },
+  { title: 'Give directly or play first', text: 'Play the campaign’s game, or go straight to a contribution.' },
   { title: 'Choose your amount', text: 'Review the amount before confirming.' },
   { title: 'See your thank-you', text: 'Successful demo contributions update campaign progress.' },
 ]
@@ -17,7 +17,7 @@ const FAQ = [
   },
   {
     q: 'Does playing charge me?',
-    a: 'No. Games are free. The total changes only when you confirm a simulated contribution.',
+    a: 'No. Each completed action adds to a suggested contribution that you can edit or cancel. The campaign total changes only when you confirm a simulated contribution.',
   },
   {
     q: 'Can a campaign be private?',
@@ -177,7 +177,7 @@ export function HowItWorksPage() {
             <div className="game-shot">
               <img src={GAME_THUMBS.garden} alt="The Grow Our Garden game" />
               <span className="free-pill">
-                <Icon name="game" size={14} /> Free to play
+                <Icon name="game" size={14} /> ₹50 per plant
               </span>
             </div>
             <div className="game-shot-foot">
@@ -197,7 +197,7 @@ export function HowItWorksPage() {
             <article key={game.id} className="rail-game">
               <img src={GAME_THUMBS[game.id]} alt="" />
               <span className={game.style === 'flow' ? 'rail-chip calm' : 'rail-chip'}>
-                {game.style === 'flow' ? 'Gesture' : 'Playful'}
+                {game.style === 'flow' ? 'Hands-on' : 'Playful'}
               </span>
               <h3>{game.name}</h3>
               <p>{game.hint}</p>
@@ -212,8 +212,8 @@ export function HowItWorksPage() {
             <Icon name="heart" size={20} />
           </span>
           <div>
-            <strong>Free to play</strong>
-            <p>Enjoy the game with no payment required.</p>
+            <strong>Nothing charged while playing</strong>
+            <p>Game actions build a suggestion. You edit it, donate it, or cancel it.</p>
           </div>
         </div>
         <div>

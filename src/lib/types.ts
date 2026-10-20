@@ -3,7 +3,15 @@ export type DonationMode = 'fixed' | 'custom'
 export type CampaignStatus = 'draft' | 'scheduled' | 'active' | 'completed' | 'closed'
 export type ContributionMethod = 'direct' | 'game'
 export type FlowerKind = 'sunflower' | 'marigold' | 'lavender'
-export type GameType = 'garden' | 'memory' | 'puzzle' | 'weight' | 'page' | 'jacket' | 'pencil'
+export type GameType = 'garden' | 'memory' | 'puzzle' | 'jacket'
+
+/** Per-campaign rules for game-calculated contributions. Money values are integer paise. */
+export interface GameContributionSettings {
+  ratePaise: number
+  actionsPerRound: number
+  allowCustom: boolean
+  capPaise: number | null
+}
 
 export interface Participation {
   direct: boolean
@@ -29,6 +37,7 @@ export interface Campaign {
   autoCloseOnGoal: boolean
   participation: Participation
   gameType: GameType
+  gameSettings?: GameContributionSettings
   createdAt: string
   manualClosedAt?: string
   isDraft?: boolean
@@ -71,6 +80,10 @@ export interface CampaignForm {
   direct: boolean
   game: boolean
   gameType: GameType
+  gameRate: string
+  gameRoundSize: string
+  gameAllowCustom: boolean
+  gameCap: string
 }
 
 export interface PendingDonation {

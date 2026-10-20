@@ -1,5 +1,8 @@
-import { useId, useState, type ReactNode } from 'react'
+import { useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
+import { useGameContribution } from '../../hooks/useGameContribution.ts'
+import { newRoundId, readProgress, writeProgress } from '../../lib/gameLedger.ts'
 import type { CampaignView } from '../../lib/types.ts'
+import { animationDelay } from '../../lib/motion.ts'
 import { GameFrame, GameTitle } from './GameFrame.tsx'
 
 const COLS = 3
@@ -8,8 +11,8 @@ const CELL_W = 100
 const CELL_H = 75
 const BOARD_W = COLS * CELL_W
 const BOARD_H = ROWS * CELL_H
-/** Three pieces start in the tray. The other six are already in the picture. */
-const OPEN_SLOTS = [1, 3, 8]
+/** Order in which slots are left open, so any round size spreads the gaps across the picture. */
+const OPEN_ORDER = [1, 3, 8, 5, 6, 0, 7, 2, 4]
 const TOTAL = COLS * ROWS
 const DEFAULT_ART = '/games/puzzle-art.jpg'
 
@@ -99,8 +102,24 @@ function shuffle(pieces: number[]) {
   return next
 }
 
-function freshBoard(): Array<number | null> {
-  return Array.from({ length: TOTAL }, (_, index) => (OPEN_SLOTS.includes(index) ? null : index))
+interface PuzzleProgress {
+  roundId: string
+  slots: number[]
+  placed: number[]
+}
+
+function freshPuzzle(open: number): PuzzleProgress {
+  return { roundId: newRoundId(), slots: OPEN_ORDER.slice(0, open), placed: [] }
+}
+
+function parsePuzzle(value: unknown): PuzzleProgress | null {
+  if (!value || typeof value !== 'object') return null
+  const raw = value as PuzzleProgress
+  const isSlot = (item: unknown): item is number => Number.isInteger(item) && (item as number) >= 0 && (item as number) < TOTAL
+  if (typeof raw.roundId !== 'string' || !Array.isArray(raw.slots) || !Array.isArray(raw.placed)) return null
+  const slots = [...new Set(raw.slots.filter(isSlot))]
+  if (slots.length === 0) return null
+  return { roundId: raw.roundId, slots, placed: [...new Set(raw.placed.filter((slot) => isSlot(slot) && slots.includes(slot)))] }
 }
 
 function PieceArt({
@@ -126,32 +145,81 @@ export function PuzzleGame({
   view: CampaignView
   preview?: boolean
 }) {
+  const campaignId = view.campaign.id
   const art = view.campaign.puzzleImageData || DEFAULT_ART
   const uid = useId().replace(/:/g, '')
-  const [tray, setTray] = useState<number[]>(() => shuffle(OPEN_SLOTS))
-  const [board, setBoard] = useState<Array<number | null>>(freshBoard)
+  const contribution = useGameContribution({ view, game: 'puzzle', preview })
+  const openCount = contribution.settings.actionsPerRound
+  const [progress, setProgress] = useState<PuzzleProgress>(
+    () => (preview ? null : readProgress(campaignId, 'puzzle', parsePuzzle)) ?? freshPuzzle(openCount),
+  )
+  const progressRef = useRef(progress)
+  const [tray, setTray] = useState<number[]>(() => shuffle(progress.slots.filter((slot) => !progress.placed.includes(slot))))
   const [picked, setPicked] = useState<number | null>(null)
+  const [snapping, setSnapping] = useState<number | null>(null)
   const [showPreview, setShowPreview] = useState(false)
   const [wrong, setWrong] = useState<number | null>(null)
-  const placed = board.filter((piece) => piece != null).length
+  const [status, setStatus] = useState('')
+  const board = Array.from({ length: TOTAL }, (_, slot) =>
+    progress.slots.includes(slot) && !progress.placed.includes(slot) && snapping !== slot ? null : slot,
+  )
+  const placedTotal = TOTAL - progress.slots.length + progress.placed.length
+  const roundDone = progress.placed.length === progress.slots.length
 
-  function restart() {
-    setTray(shuffle(OPEN_SLOTS))
-    setBoard(freshBoard())
+  function save(next: PuzzleProgress) {
+    progressRef.current = next
+    setProgress(next)
+    if (!preview) writeProgress(campaignId, 'puzzle', next)
+  }
+
+  function newPuzzle() {
+    const next = freshPuzzle(openCount)
+    save(next)
+    setTray(shuffle(next.slots))
     setPicked(null)
     setWrong(null)
+    setSnapping(null)
+    setStatus('A new puzzle is ready.')
   }
 
   function place(slot: number) {
-    if (picked == null || board[slot] != null) return
+    const current = progressRef.current
+    if (contribution.paused || snapping != null) return
+    if (!current.slots.includes(slot) || current.placed.includes(slot)) return
+    if (picked == null) {
+      setStatus('Choose a piece from the tray first.')
+      return
+    }
     if (picked !== slot) {
       setWrong(slot)
+      setStatus('That piece belongs somewhere else. Nothing was added.')
       window.setTimeout(() => setWrong(null), 450)
       return
     }
-    setBoard((current) => current.map((piece, index) => (index === slot ? picked : piece)))
-    setTray((current) => current.filter((piece) => piece !== picked))
+    setSnapping(slot)
+    setTray((items) => items.filter((piece) => piece !== slot))
     setPicked(null)
+    window.setTimeout(() => {
+      const latest = progressRef.current
+      setSnapping(null)
+      if (latest.roundId !== current.roundId || latest.placed.includes(slot)) return
+      const placed = [...latest.placed, slot]
+      save({ ...latest, placed })
+      setStatus(`Piece ${slot + 1} is locked in place.`)
+      contribution.record({
+        actionId: `${latest.roundId}:piece-${slot}`,
+        roundId: latest.roundId,
+        label: `Placed piece ${slot + 1}`,
+        heading: placed.length === latest.slots.length ? 'You finished the puzzle!' : 'The piece snapped into place!',
+        roundComplete: placed.length === latest.slots.length,
+      })
+    }, animationDelay(450))
+  }
+
+  function onHoleKey(event: KeyboardEvent<SVGPathElement>, slot: number) {
+    if (event.key !== 'Enter' && event.key !== ' ') return
+    event.preventDefault()
+    place(slot)
   }
 
   return (
@@ -159,15 +227,16 @@ export function PuzzleGame({
       view={view}
       game="puzzle"
       preview={preview}
-      note={placed > 0 ? `Placed ${placed} of ${TOTAL} puzzle pieces.` : undefined}
+      contribution={contribution}
+      onNextRound={newPuzzle}
       side={
         <aside className="hud-card puzzle-hud">
           <p className="hud-label">Pieces placed</p>
           <p className="hud-big">
-            {placed} <span>of {TOTAL}</span>
+            {placedTotal} <span>of {TOTAL}</span>
           </p>
           <div className="hud-progress" aria-hidden="true">
-            <span style={{ width: `${(placed / TOTAL) * 100}%` }} />
+            <span style={{ width: `${(placedTotal / TOTAL) * 100}%` }} />
           </div>
           <label className="preview-toggle">
             <span className="preview-toggle-label">
@@ -184,7 +253,15 @@ export function PuzzleGame({
               <span />
             </button>
           </label>
-          <button type="button" className="replay puzzle-restart" onClick={restart}>
+          <p className="hud-status" role="status">
+            {status}
+          </p>
+          {roundDone ? (
+            <button type="button" className="replay primary" onClick={newPuzzle}>
+              Play another puzzle
+            </button>
+          ) : null}
+          <button type="button" className="replay puzzle-restart" onClick={() => contribution.requestRestart(newPuzzle)}>
             ↻ Restart
           </button>
           <FlowerMark />
@@ -194,7 +271,7 @@ export function PuzzleGame({
       <div className="scene scene-puzzle" style={{ ['--puzzle-art' as string]: `url("${art}")` }}>
         <GameTitle game="puzzle" organizer={view.campaign.organizerName} />
         <div className="jigsaw-plate">
-          <svg className="jigsaw-board" viewBox="-32 -32 364 289" role="img" aria-label="Community puzzle">
+          <svg className="jigsaw-board" viewBox="-32 -32 364 289" role="group" aria-label="Community puzzle board">
             <defs>
               {Array.from({ length: TOTAL }, (_, index) => (
                 <clipPath id={`${uid}-piece-${index}`} key={index}>
@@ -214,12 +291,19 @@ export function PuzzleGame({
                     {showPreview ? (
                       <PieceArt art={art} clipId={`${uid}-piece-${slot}`} preview />
                     ) : null}
-                    <path d={path} onClick={() => place(slot)} />
+                    <path
+                      d={path}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`Empty space ${slot + 1}`}
+                      onClick={() => place(slot)}
+                      onKeyDown={(event) => onHoleKey(event, slot)}
+                    />
                   </g>
                 )
               }
               return (
-                <g key={slot} className="jigsaw-piece">
+                <g key={slot} className={snapping === slot ? 'jigsaw-piece snapping' : 'jigsaw-piece'}>
                   <PieceArt art={art} clipId={`${uid}-piece-${slot}`} />
                   <path d={path} />
                 </g>
@@ -227,14 +311,18 @@ export function PuzzleGame({
             })}
           </svg>
         </div>
-        <div className="puzzle-tray" aria-label="Pieces to place">
-          {tray.length === 0 ? <p className="puzzle-done">Every piece is in place.</p> : null}
+        <div className="puzzle-tray" role="group" aria-label="Pieces to place">
+          {tray.length === 0 && snapping == null ? <p className="puzzle-done">Every piece is in place.</p> : null}
           {tray.map((piece) => (
             <button
-              key={piece}
+              key={`${progress.roundId}-${piece}`}
               type="button"
               className={picked === piece ? 'tray-piece selected' : 'tray-piece'}
-              onClick={() => setPicked(piece)}
+              onClick={() => {
+                if (contribution.paused) return
+                setPicked(piece)
+                setStatus(`Piece ${piece + 1} selected. Choose its empty space.`)
+              }}
               aria-pressed={picked === piece}
               aria-label={`Puzzle piece ${piece + 1}`}
             >

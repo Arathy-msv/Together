@@ -1,18 +1,249 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { CampaignCover } from '../components/CampaignImage.tsx'
 import { Icon } from '../components/illustrations.tsx'
-import { useCampaignView } from '../hooks/useDemoStore.ts'
-import { addContribution, toView } from '../lib/campaigns.ts'
+import { useCampaignView, useDemoStore } from '../hooks/useDemoStore.ts'
+import { contributionAvailability } from '../lib/availability.ts'
+import { addContribution, campaignDetailsPath, findContribution, toView } from '../lib/campaigns.ts'
+import {
+  actionBreakdown,
+  campaignGameSettings,
+  contributionRuleMessage,
+  formatPaise,
+  gameConfig,
+  PAISE_PER_RUPEE,
+  returnToPending,
+  selectedPaise,
+  settleConfirmed,
+  type GameLedger,
+} from '../lib/gameContribution.ts'
+import { readLedger, writeLedger } from '../lib/gameLedger.ts'
 import { gameMeta } from '../lib/games.ts'
 import { formatINR } from '../lib/format.ts'
 import { clearPending, getPending } from '../lib/pending.ts'
 import { loadStore } from '../lib/storage.ts'
+import type { CampaignView } from '../lib/types.ts'
 import { NotFoundPage } from './NotFound.tsx'
 
 export function ConfirmPage() {
   const { id = '' } = useParams()
+  const [params] = useSearchParams()
+  const sessionId = params.get('session')
   const view = useCampaignView(id)
+  if (!view) return <NotFoundPage />
+  if (sessionId) return <GameConfirm key={sessionId} view={view} sessionId={sessionId} />
+  return <DirectConfirm view={view} />
+}
+
+/** Reads the ledger and settles a session whose contribution was already saved, e.g. after a refresh. */
+function loadLedgerFor(view: CampaignView, sessionId: string): GameLedger {
+  const ledger = readLedger(view.campaign.id, view.campaign.gameType)
+  if (ledger.session?.id === sessionId && findContribution(sessionId)) {
+    const settled = settleConfirmed(ledger, sessionId)
+    writeLedger(settled)
+    return settled
+  }
+  return ledger
+}
+
+function GameConfirm({ view, sessionId }: { view: CampaignView; sessionId: string }) {
+  const navigate = useNavigate()
+  const store = useDemoStore()
+  const { campaign } = view
+  const [ledger, setLedger] = useState(() => loadLedgerFor(view, sessionId))
+  const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const lock = useRef(false)
+  const session = ledger.session?.id === sessionId ? ledger.session : null
+  const config = gameConfig(campaign.gameType)
+  const playPath = `/campaigns/${campaign.id}/play/${campaign.gameType}`
+
+  useEffect(() => {
+    document.title = 'Review your game contribution — Together'
+  }, [])
+
+  const saved = store.contributions.find((item) => item.id === sessionId && item.campaignId === campaign.id)
+  if (!session) {
+    if (saved) return <Navigate to={`/campaigns/${campaign.id}/success/${saved.id}`} replace />
+    return (
+      <div className="container narrow page-pad">
+        <div className="panel empty">
+          <h1>Nothing is waiting to confirm</h1>
+          <p className="muted">
+            This game contribution was cancelled, or it belongs to another browser. Nothing was collected.
+          </p>
+          <Link to={playPath} className="btn btn-primary">
+            Back to the game
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  const amountPaise = selectedPaise(session)
+  const custom = session.customPaise != null
+  const live = campaignGameSettings(campaign)
+  const availability = contributionAvailability(campaign, store.contributions)
+
+  function validate(): string | null {
+    const fresh = loadStore()
+    const latest = fresh.campaigns.find((item) => item.id === campaign.id)
+    if (!latest) return 'This campaign is no longer saved in this browser.'
+    if (!latest.participation.game) return 'Game-based giving is no longer open on this campaign. Nothing was donated.'
+    const check = contributionAvailability(latest, fresh.contributions)
+    if (!check.ok) return check.reason
+    const rule = contributionRuleMessage(amountPaise)
+    if (rule) return rule
+    if (custom && !campaignGameSettings(latest).allowCustom) {
+      return 'This campaign now accepts the game-calculated amount only. Go back to the game and use Reset to game total.'
+    }
+    return null
+  }
+
+  function confirm() {
+    if (lock.current) return
+    const latestLedger = loadLedgerFor(view, sessionId)
+    if (latestLedger.session?.id !== sessionId) {
+      setLedger(latestLedger)
+      return
+    }
+    const problem = validate()
+    if (problem) {
+      setError(problem)
+      return
+    }
+    lock.current = true
+    setSubmitting(true)
+    try {
+      const savedContribution = addContribution({
+        id: sessionId,
+        campaignId: campaign.id,
+        amount: amountPaise / PAISE_PER_RUPEE,
+        method: 'game',
+        detail: `${gameMeta(campaign.gameType).name} · ${actionBreakdown(session!, config)} · suggestion ${formatPaise(
+          session!.suggestedPaise,
+        )}${custom ? ` · chosen ${formatPaise(amountPaise)}` : ''}`,
+      })
+      writeLedger(settleConfirmed(latestLedger, sessionId))
+      navigate(`/campaigns/${campaign.id}/success/${savedContribution.id}`, { replace: true })
+    } catch (problem) {
+      lock.current = false
+      setSubmitting(false)
+      setError(problem instanceof Error ? problem.message : 'The contribution could not be saved. Your suggestion is kept.')
+    }
+  }
+
+  function backToGame() {
+    const next = returnToPending(readLedger(campaign.id, campaign.gameType), sessionId)
+    writeLedger(next)
+    navigate(playPath)
+  }
+
+  return (
+    <div className="confirm-page-pro">
+      <div className="confirm-bar">
+        <button type="button" className="back-link link-reset" onClick={backToGame}>
+          <Icon name="back" size={16} />
+          Back to the game
+        </button>
+      </div>
+      <div className="container narrow">
+        <header className="center-head">
+          <h1>Review your game contribution</h1>
+          <p className="muted">Check the details, then confirm. No real money will be collected.</p>
+        </header>
+        <section className="panel confirm-summary-card">
+          <div className="confirm-campaign">
+            <CampaignCover campaign={campaign} />
+            <div>
+              <span className="eyebrow-label">Campaign</span>
+              <h2>{campaign.title}</h2>
+              <p className="muted small">Source game: {gameMeta(campaign.gameType).name}</p>
+            </div>
+          </div>
+          <div className="confirm-amount">
+            <div className="money-row">
+              <span className="eyebrow-label">Your contribution</span>
+              <span className="sim-pill">Simulated payment</span>
+            </div>
+            <strong className="amount-big">{formatPaise(amountPaise)}</strong>
+            <p className="muted small">{custom ? 'Custom amount you chose' : 'Game-calculated amount'}</p>
+          </div>
+        </section>
+        <section className="panel gc-checkout">
+          <h2>Action breakdown</h2>
+          <ul className="gc-action-list">
+            {session.actions.map((action) => (
+              <li key={action.id}>
+                <span>{action.label}</span>
+                <strong>{formatPaise(action.amountPaise)}</strong>
+              </li>
+            ))}
+          </ul>
+          <dl className="detail-list">
+            <div>
+              <dt>{actionBreakdown(session, config)}</dt>
+              <dd>Game suggestion {formatPaise(session.suggestedPaise)}</dd>
+            </div>
+            <div>
+              <dt>Final chosen amount</dt>
+              <dd>{formatPaise(amountPaise)}</dd>
+            </div>
+          </dl>
+          {session.capReached && session.capPaise != null ? (
+            <p className="muted small">The game suggestion reached its cap of {formatPaise(session.capPaise)}.</p>
+          ) : null}
+          {custom && !live.allowCustom ? (
+            <p className="notice warn compact">This campaign now accepts the game-calculated amount only.</p>
+          ) : null}
+        </section>
+        {!availability.ok ? (
+          <div className="notice warn" role="status">
+            <div>
+              <strong>This campaign can’t accept contributions right now.</strong>
+              <p className="small">{availability.reason} Your pending suggestion is still saved in the game.</p>
+            </div>
+          </div>
+        ) : null}
+        {error ? (
+          <div className="notice error" role="alert">
+            {error}
+          </div>
+        ) : null}
+        <button
+          type="button"
+          className="btn btn-primary btn-block btn-xl"
+          disabled={submitting || !availability.ok}
+          onClick={confirm}
+        >
+          {submitting ? 'Saving…' : `Confirm simulated contribution — ${formatPaise(amountPaise)}`}
+        </button>
+        <button type="button" className="link-button center-block" onClick={backToGame}>
+          Cancel and return to the game
+        </button>
+        <div className="notice warn compact center-notice">
+          <Icon name="info" size={18} />
+          No real money will be collected.
+        </div>
+        <div className="presenter-row-pro">
+          <span className="muted small">For presenters</span>
+          <button
+            type="button"
+            className="btn btn-outline btn-sm danger-outline"
+            onClick={() =>
+              setError('This simulated payment did not go through. Nothing was added, and your pending suggestion is kept for a retry.')
+            }
+          >
+            Simulate failed payment
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function DirectConfirm({ view }: { view: CampaignView }) {
+  const id = view.campaign.id
   const navigate = useNavigate()
   const pending = getPending(id)
   const [error, setError] = useState('')
@@ -23,7 +254,6 @@ export function ConfirmPage() {
     document.title = 'Confirm your demo contribution — Together'
   }, [])
 
-  if (!view) return <NotFoundPage />
   const { campaign } = view
 
   function confirm() {
@@ -42,8 +272,8 @@ export function ConfirmPage() {
       setError('Direct giving is not open on this campaign.')
       return
     }
-    if (current.method === 'game' && !campaign.participation.game) {
-      setError('Game-based giving is not open on this campaign.')
+    if (current.method !== 'direct') {
+      setError('Game contributions are reviewed from the game. Nothing was donated.')
       return
     }
     if (campaign.donationMode === 'fixed' && !campaign.fixedAmounts.includes(current.amount)) {
@@ -73,8 +303,7 @@ export function ConfirmPage() {
     }
   }
 
-  const backPath =
-    pending?.method === 'game' ? `/campaigns/${campaign.id}/play/${campaign.gameType}` : `/campaigns/${campaign.id}`
+  const backPath = campaignDetailsPath(campaign.id)
 
   return (
     <div className="confirm-page-pro">
@@ -152,7 +381,7 @@ export function ConfirmPage() {
             <p className="muted">
               Choose an amount on the campaign page. If you already confirmed, that contribution is already included.
             </p>
-            <Link to={`/campaigns/${campaign.id}`} className="btn btn-primary">
+            <Link to={campaignDetailsPath(campaign.id)} className="btn btn-primary">
               Back to campaign
             </Link>
           </div>

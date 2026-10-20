@@ -8,6 +8,7 @@ import { useCampaignViews } from '../hooks/useDemoStore.ts'
 import { closeCampaign, deleteCampaign } from '../lib/campaigns.ts'
 import { formatDate, formatINR } from '../lib/format.ts'
 import { gameMeta } from '../lib/games.ts'
+import { clearGameData } from '../lib/gameLedger.ts'
 import { resetStore } from '../lib/storage.ts'
 import type { CampaignView } from '../lib/types.ts'
 
@@ -177,6 +178,7 @@ export function DashboardPage() {
               className="btn btn-danger btn-sm"
               onClick={() => {
                 resetStore()
+                clearGameData()
                 setConfirmReset(false)
               }}
             >

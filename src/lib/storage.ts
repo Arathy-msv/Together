@@ -1,4 +1,5 @@
 import { createSeed } from '../data/seed.ts'
+import { normalizeGameSettings } from './gameContribution.ts'
 import { isGameType } from './games.ts'
 import type { Campaign, Contribution, DemoStore } from './types.ts'
 
@@ -43,9 +44,11 @@ function isCampaign(value: unknown): value is Campaign {
 }
 
 function normalizeCampaign(campaign: Campaign): Campaign {
+  const gameType = isGameType(campaign.gameType) ? campaign.gameType : 'garden'
   return {
     ...campaign,
-    gameType: isGameType(campaign.gameType) ? campaign.gameType : 'garden',
+    gameType,
+    gameSettings: campaign.gameSettings ? normalizeGameSettings(gameType, campaign.gameSettings) : undefined,
     coverImageData:
       typeof campaign.coverImageData === 'string' && campaign.coverImageData.startsWith('data:image/')
         ? campaign.coverImageData
@@ -104,15 +107,30 @@ export function loadStore(): DemoStore {
     if (!parsed || typeof parsed !== 'object') return recover()
     const record = parsed as Partial<DemoStore>
     if (!Array.isArray(record.campaigns) || !Array.isArray(record.contributions)) return recover()
-    return withDefaultCampaigns({
+    const saved = record.campaigns.filter(isCampaign)
+    const retired = saved.some((campaign) => RETIRED_SAMPLE_IDS.includes(campaign.id))
+    const store = withDefaultCampaigns({
       version: 1,
-      campaigns: record.campaigns.filter(isCampaign).map(normalizeCampaign),
-      contributions: record.contributions.filter(isContribution),
+      campaigns: saved.filter((campaign) => !RETIRED_SAMPLE_IDS.includes(campaign.id)).map(normalizeCampaign),
+      contributions: record.contributions
+        .filter(isContribution)
+        .filter((contribution) => !RETIRED_SAMPLE_IDS.includes(contribution.campaignId)),
     })
+    if (retired) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(store))
+      } catch {
+        // Keep the filtered list in memory.
+      }
+    }
+    return store
   } catch {
     return recover()
   }
 }
+
+/** Sample campaigns for games that are no longer part of the demo. */
+const RETIRED_SAMPLE_IDS = ['cmp_access', 'cmp_page', 'cmp_pencil']
 
 /** Add any built-in sample campaigns that are not already saved in this browser. */
 function withDefaultCampaigns(store: DemoStore): DemoStore {

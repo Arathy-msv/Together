@@ -1,4 +1,5 @@
 import { progressPercent } from './format.ts'
+import { clearGameData } from './gameLedger.ts'
 import { clearCampaignSession } from './pending.ts'
 import { loadStore, saveStore } from './storage.ts'
 import type {
@@ -71,6 +72,7 @@ export function removeCampaign(id: string): void {
 export function deleteCampaign(id: string): void {
   removeCampaign(id)
   clearCampaignSession(id)
+  clearGameData(id)
 }
 
 export function closeCampaign(id: string): void {
@@ -130,4 +132,9 @@ export function makeAccessCode(): string {
 
 export function campaignSharePath(id: string): string {
   return `/campaigns/${id}`
+}
+
+/** Campaign story and direct giving. The plain campaign link opens the game when one is enabled. */
+export function campaignDetailsPath(id: string): string {
+  return `/campaigns/${id}?view=details`
 }

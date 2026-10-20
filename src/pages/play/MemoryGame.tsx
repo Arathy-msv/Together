@@ -1,5 +1,8 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+import { useGameContribution } from '../../hooks/useGameContribution.ts'
+import { newRoundId, readProgress, writeProgress } from '../../lib/gameLedger.ts'
 import type { CampaignView } from '../../lib/types.ts'
+import { animationDelay } from '../../lib/motion.ts'
 import { GameFrame, GameTitle } from './GameFrame.tsx'
 
 const FACES = [
@@ -11,63 +14,106 @@ const FACES = [
   { id: 'leaf', src: '/games/card-leaf.jpg', label: 'leaf' },
 ]
 
-interface MemoryCard {
-  key: string
-  face: string
-  src: string
-  label: string
+interface MemoryProgress {
+  roundId: string
+  order: string[]
+  matched: string[]
+  moves: number
 }
 
-function deal(): MemoryCard[] {
-  const cards = FACES.flatMap((face) => [
-    { key: `${face.id}-a`, face: face.id, src: face.src, label: face.label },
-    { key: `${face.id}-b`, face: face.id, src: face.src, label: face.label },
-  ])
-  for (let index = cards.length - 1; index > 0; index -= 1) {
+function faceOf(key: string) {
+  return FACES.find((face) => key.startsWith(`${face.id}-`))
+}
+
+function deal(pairs: number): MemoryProgress {
+  const keys = FACES.slice(0, pairs).flatMap((face) => [`${face.id}-a`, `${face.id}-b`])
+  for (let index = keys.length - 1; index > 0; index -= 1) {
     const swap = Math.floor(Math.random() * (index + 1))
-    const current = cards[index]
-    cards[index] = cards[swap]
-    cards[swap] = current
+    const current = keys[index]
+    keys[index] = keys[swap]
+    keys[swap] = current
   }
-  return cards
+  return { roundId: newRoundId(), order: keys, matched: [], moves: 0 }
+}
+
+function parseMemory(value: unknown): MemoryProgress | null {
+  if (!value || typeof value !== 'object') return null
+  const raw = value as MemoryProgress
+  if (typeof raw.roundId !== 'string' || !Array.isArray(raw.order) || !Array.isArray(raw.matched)) return null
+  if (raw.order.length < 4 || raw.order.length % 2 !== 0 || !raw.order.every((key) => typeof key === 'string' && faceOf(key))) {
+    return null
+  }
+  const faces = new Set(raw.order.map((key) => faceOf(key)!.id))
+  return {
+    roundId: raw.roundId,
+    order: raw.order,
+    matched: raw.matched.filter((face): face is string => typeof face === 'string' && faces.has(face)),
+    moves: Number.isInteger(raw.moves) && raw.moves >= 0 ? raw.moves : 0,
+  }
 }
 
 export function MemoryGame({ view, preview = false }: { view: CampaignView; preview?: boolean }) {
-  const [cards, setCards] = useState(deal)
+  const campaignId = view.campaign.id
+  const contribution = useGameContribution({ view, game: 'memory', preview })
+  const pairsPerRound = contribution.settings.actionsPerRound
+  const [progress, setProgress] = useState<MemoryProgress>(
+    () => (preview ? null : readProgress(campaignId, 'memory', parseMemory)) ?? deal(pairsPerRound),
+  )
+  const progressRef = useRef(progress)
   const [open, setOpen] = useState<string[]>([])
-  const [matched, setMatched] = useState<string[]>([])
-  const [moves, setMoves] = useState(0)
   const [lock, setLock] = useState(false)
-  const pairs = matched.length
+  const totalPairs = progress.order.length / 2
+  const pairs = progress.matched.length
+  const roundDone = pairs === totalPairs
 
-  function restart() {
-    setCards(deal())
+  function save(next: MemoryProgress) {
+    progressRef.current = next
+    setProgress(next)
+    if (!preview) writeProgress(campaignId, 'memory', next)
+  }
+
+  function newRound() {
+    save(deal(pairsPerRound))
     setOpen([])
-    setMatched([])
-    setMoves(0)
     setLock(false)
   }
 
-  function flip(card: MemoryCard) {
-    if (lock || matched.includes(card.face) || open.includes(card.key)) return
-    const next = [...open, card.key]
+  function flip(key: string) {
+    const current = progressRef.current
+    const face = faceOf(key)
+    if (!face || contribution.paused || lock || current.matched.includes(face.id) || open.includes(key)) return
+    const next = [...open, key]
     if (next.length === 1) {
       setOpen(next)
       return
     }
-    setMoves((value) => value + 1)
-    const first = cards.find((item) => item.key === next[0])
-    if (first && first.face === card.face) {
-      setMatched((current) => [...current, first.face])
-      setOpen([])
-      return
-    }
     setOpen(next)
     setLock(true)
+    const first = faceOf(next[0])
+    const moves = current.moves + 1
+    if (first?.id === face.id) {
+      window.setTimeout(() => {
+        const latest = progressRef.current
+        if (latest.roundId !== current.roundId) return
+        const matched = latest.matched.includes(face.id) ? latest.matched : [...latest.matched, face.id]
+        save({ ...latest, matched, moves })
+        setOpen([])
+        setLock(false)
+        contribution.record({
+          actionId: `${latest.roundId}:pair-${face.id}`,
+          roundId: latest.roundId,
+          label: `Matched the ${face.label} pair`,
+          heading: `You matched the ${face.label} pair!`,
+          roundComplete: matched.length === latest.order.length / 2,
+        })
+      }, animationDelay(650))
+      return
+    }
+    save({ ...current, moves })
     window.setTimeout(() => {
       setOpen([])
       setLock(false)
-    }, 700)
+    }, animationDelay(750))
   }
 
   return (
@@ -75,16 +121,22 @@ export function MemoryGame({ view, preview = false }: { view: CampaignView; prev
       view={view}
       game="memory"
       preview={preview}
-      note={moves > 0 ? `Found ${pairs} of 6 pairs in ${moves} moves.` : undefined}
+      contribution={contribution}
+      onNextRound={newRound}
       side={
         <aside className="hud-card">
           <p className="hud-label">Pairs found</p>
           <p className="hud-big">
-            {pairs} <span>of 6</span>
+            {pairs} <span>of {totalPairs}</span>
           </p>
           <p className="hud-label">Moves</p>
-          <p className="hud-big">{moves}</p>
-          <button type="button" className="replay" onClick={restart}>
+          <p className="hud-big">{progress.moves}</p>
+          {roundDone ? (
+            <button type="button" className="replay primary" onClick={newRound}>
+              Play another round
+            </button>
+          ) : null}
+          <button type="button" className="replay" onClick={() => contribution.requestRestart(newRound)}>
             ↻ Restart
           </button>
         </aside>
@@ -92,20 +144,23 @@ export function MemoryGame({ view, preview = false }: { view: CampaignView; prev
     >
       <div className="scene scene-memory">
         <GameTitle game="memory" organizer={view.campaign.organizerName} />
-        <div className="memory-grid">
-          {cards.map((card) => {
-            const up = open.includes(card.key) || matched.includes(card.face)
+        <div className={totalPairs <= 3 ? 'memory-grid small' : 'memory-grid'} aria-busy={lock}>
+          {progress.order.map((key, index) => {
+            const face = faceOf(key)!
+            const matched = progress.matched.includes(face.id)
+            const up = open.includes(key) || matched
             return (
               <button
-                key={card.key}
+                key={`${progress.roundId}-${key}`}
                 type="button"
-                className={up ? 'mem-card up' : 'mem-card'}
-                onClick={() => flip(card)}
-                aria-label={up ? card.label : 'Hidden card'}
+                className={`mem-card${up ? ' up' : ''}${matched ? ' matched' : ''}`}
+                onClick={() => flip(key)}
+                aria-disabled={matched || lock}
+                aria-label={up ? `Card ${index + 1}: ${face.label}${matched ? ', matched' : ''}` : `Card ${index + 1}: hidden`}
               >
                 <span className="mem-inner">
                   <span className="mem-back" />
-                  <span className="mem-face" style={{ backgroundImage: `url(${card.src})` }} />
+                  <span className="mem-face" style={{ backgroundImage: `url(${face.src})` }} />
                 </span>
               </button>
             )

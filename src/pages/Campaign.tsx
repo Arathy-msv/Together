@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { AmountPicker } from '../components/AmountPicker.tsx'
 import { CampaignCover, OrgLogo } from '../components/CampaignImage.tsx'
 import { ProgressBar } from '../components/ProgressBar.tsx'
 import { StatusBadge } from '../components/StatusBadge.tsx'
 import { useCampaignView } from '../hooks/useDemoStore.ts'
 import { formatDateRange, formatINR, parseWholeRupees } from '../lib/format.ts'
+import { campaignGameSettings, gameIntroSentence } from '../lib/gameContribution.ts'
 import { GAME_THUMBS, gameMeta } from '../lib/games.ts'
 import { getPending, isUnlocked, newToken, setPending, unlockCampaign } from '../lib/pending.ts'
 import type { CampaignView } from '../lib/types.ts'
@@ -15,6 +16,7 @@ export function CampaignPage() {
   const { id = '' } = useParams()
   const view = useCampaignView(id)
   const navigate = useNavigate()
+  const [params] = useSearchParams()
   const [unlocked, setUnlocked] = useState(() => (id ? isUnlocked(id) : false))
   const [tab, setTab] = useState<'direct' | 'game'>('direct')
 
@@ -27,6 +29,13 @@ export function CampaignPage() {
   const { campaign } = view
   const needsCode = campaign.access === 'closed' && !campaign.isDraft && !unlocked
   const game = gameMeta(campaign.gameType)
+  const playPath = `/campaigns/${campaign.id}/play/${campaign.gameType}`
+  const contribution = campaignGameSettings(campaign)
+  const gameIntro = gameIntroSentence(campaign.gameType, contribution.ratePaise)
+
+  if (campaign.participation.game && !campaign.isDraft && !needsCode && params.get('view') !== 'details') {
+    return <Navigate to={playPath} replace />
+  }
 
   return (
     <div className="container page-pad campaign">
@@ -71,6 +80,7 @@ export function CampaignPage() {
                 if (campaign.accessCode && code.trim().toUpperCase() === campaign.accessCode.toUpperCase()) {
                   unlockCampaign(campaign.id)
                   setUnlocked(true)
+                  if (campaign.participation.game) navigate(playPath)
                   return true
                 }
                 return false
@@ -110,11 +120,11 @@ export function CampaignPage() {
             />
             <div>
               <h3>{game.name}</h3>
-              <p className="muted small">Play a quick game and support this campaign. Playing is free.</p>
+              <p className="muted small">{gameIntro}</p>
             </div>
             {needsCode ? null : (
-              <Link to={`/campaigns/${campaign.id}/play/${campaign.gameType}`} className="btn btn-primary">
-                Play free
+              <Link to={playPath} className="btn btn-primary">
+                Play {game.name}
               </Link>
             )}
           </>
@@ -182,7 +192,7 @@ function GivePanel({
       ) : tab === 'game' && campaign.participation.game ? (
         <div className="play-cta">
           <p className="muted small">
-            {gameMeta(campaign.gameType).blurb} Playing is free and does not change the total. You can contribute when you finish.
+            {gameMeta(campaign.gameType).blurb} {gameIntroSentence(campaign.gameType, campaignGameSettings(campaign).ratePaise)}
           </p>
           <Link to={`/campaigns/${campaign.id}/play/${campaign.gameType}`} className="btn btn-primary btn-block">
             Play {gameMeta(campaign.gameType).name}

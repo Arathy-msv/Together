@@ -7,6 +7,7 @@ import { LivePreview } from '../components/LivePreview.tsx'
 import { COVERS, UPLOADED_COVER_ID } from '../data/covers.ts'
 import { getCampaign, upsertCampaign } from '../lib/campaigns.ts'
 import { formatDateTime, formatINR } from '../lib/format.ts'
+import { formatPaise, gameConfig } from '../lib/gameContribution.ts'
 import { GAMES, gameMeta } from '../lib/games.ts'
 import { IMAGE_ACCEPT, readImageFile } from '../lib/image.ts'
 import { StorageFullError } from '../lib/storage.ts'
@@ -15,7 +16,9 @@ import {
   blankForm,
   campaignToForm,
   clearWizard,
+  formGameSettings,
   formToCampaign,
+  gameSettingsFields,
   readWizard,
   validateAll,
   validateSettings,
@@ -562,7 +565,8 @@ function SettingsStep({
   return (
     <div className="settings-stack">
       <section className="panel form-panel">
-        <h2>Donation amounts</h2>
+        <h2>Direct donation amounts</h2>
+        <p className="help">Applies to direct donations. Game-based giving uses the game-calculated amount set below.</p>
         <div className="two-col">
           <RadioCard
             checked={form.donationMode === 'fixed'}
@@ -642,6 +646,7 @@ function SettingsStep({
           </div>
         </div>
         {form.game ? <GameGallery form={form} onChange={onChange} /> : null}
+        {form.game ? <GameContributionSettingsPanel form={form} errors={errors} onChange={onChange} /> : null}
       </section>
     </div>
   )
@@ -685,7 +690,13 @@ function GameGallery({
               role="radio"
               aria-checked={form.game && form.gameType === game.id}
               className="game-choice-main"
-              onClick={() => onChange({ game: true, gameType: game.id })}
+              onClick={() =>
+                onChange(
+                  form.gameType === game.id && form.game
+                    ? { game: true }
+                    : { game: true, gameType: game.id, ...gameSettingsFields(game.id) },
+                )
+              }
             >
               <GameThumb
                 gameType={game.id}
@@ -760,6 +771,91 @@ function GameGallery({
   )
 }
 
+function GameContributionSettingsPanel({
+  form,
+  errors,
+  onChange,
+}: {
+  form: CampaignForm
+  errors: FormErrors
+  onChange: (patch: Partial<CampaignForm>) => void
+}) {
+  const config = gameConfig(form.gameType)
+  const fixedRound = config.roundSize.min === config.roundSize.max
+  return (
+    <div className="game-settings">
+      <div className="game-settings-head">
+        <h3>Game contribution settings</h3>
+        <p className="help">
+          Contribution mode for games: <strong>Game-calculated amount</strong>. Each completed {config.noun} adds the rate below to
+          the supporter’s suggestion. Direct donations keep the amount rules above.
+        </p>
+      </div>
+      <div className="game-settings-grid">
+        <Field label={`Rate per ${config.noun}`} htmlFor="game-rate" error={errors.gameRate}>
+          <div className="input-prefix">
+            <span>₹</span>
+            <input
+              id="game-rate"
+              inputMode="decimal"
+              value={form.gameRate}
+              aria-invalid={Boolean(errors.gameRate)}
+              onChange={(event) => onChange({ gameRate: event.target.value })}
+            />
+          </div>
+        </Field>
+        <Field label={config.roundSizeLabel} htmlFor="game-round" error={errors.gameRoundSize}>
+          <input
+            id="game-round"
+            type="number"
+            min={config.roundSize.min}
+            max={config.roundSize.max}
+            value={form.gameRoundSize}
+            readOnly={fixedRound}
+            aria-invalid={Boolean(errors.gameRoundSize)}
+            aria-describedby={fixedRound ? 'game-round-help' : undefined}
+            onChange={(event) => onChange({ gameRoundSize: event.target.value })}
+          />
+          {fixedRound ? (
+            <span id="game-round-help" className="help">
+              Fixed by this game’s design.
+            </span>
+          ) : null}
+        </Field>
+        <Field label="Suggested-total cap (optional)" htmlFor="game-cap" error={errors.gameCap}>
+          <div className="input-prefix">
+            <span>₹</span>
+            <input
+              id="game-cap"
+              inputMode="decimal"
+              placeholder="No cap"
+              value={form.gameCap}
+              aria-invalid={Boolean(errors.gameCap)}
+              onChange={(event) => onChange({ gameCap: event.target.value })}
+            />
+          </div>
+        </Field>
+      </div>
+      <label className="toggle-row">
+        <button
+          type="button"
+          role="switch"
+          aria-checked={form.gameAllowCustom}
+          aria-label="Allow custom total"
+          className={form.gameAllowCustom ? 'switch on' : 'switch'}
+          onClick={() => onChange({ gameAllowCustom: !form.gameAllowCustom })}
+        >
+          <span />
+        </button>
+        <span>
+          <strong>Allow custom total</strong>
+          <em>Supporters can raise or lower the game suggestion before paying.</em>
+        </span>
+      </label>
+    </div>
+  )
+}
+
 function OptionCard({
   checked,
   title,
@@ -807,6 +903,16 @@ function ReviewStep({ form, onEdit }: { form: CampaignForm; onEdit: (step: numbe
         'None selected',
     ],
   ]
+  if (form.game) {
+    const settings = formGameSettings(form)
+    const config = gameConfig(form.gameType)
+    rows.push([
+      'Game contribution',
+      `${formatPaise(settings.ratePaise)} per ${config.noun}${settings.capPaise ? ` · cap ${formatPaise(settings.capPaise)}` : ''} · ${
+        settings.allowCustom ? 'supporters can edit the total' : 'game-calculated amount only'
+      }`,
+    ])
+  }
   return (
     <div className="review-grid">
       <article className="panel review-card">

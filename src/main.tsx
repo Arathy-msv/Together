@@ -11,11 +11,11 @@ import '@fontsource/figtree/500.css'
 import '@fontsource/figtree/600.css'
 import '@fontsource/figtree/700.css'
 import '@fontsource/figtree/800.css'
-import '@fontsource/caveat/600.css'
 import './index.css'
 import './styles/pro.css'
 import './styles/how.css'
 import './styles/flow.css'
+import './styles/contribution.css'
 import App from './App.tsx'
 
 createRoot(document.getElementById('root')!).render(
