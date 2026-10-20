@@ -281,7 +281,8 @@ export function validateAll(form: CampaignForm, allowedGames?: GameType[]): Form
 export interface RequiredItem {
   id: string
   label: string
-  step: 1 | 2
+  /** Form step that holds the field: 1 Your cause, 2 Goal and dates, 3 Ways to contribute. */
+  step: 1 | 2 | 3
   done: boolean
 }
 
@@ -290,16 +291,16 @@ export function requiredChecklist(form: CampaignForm, allowedGames?: GameType[])
   const errors = validateAll(form, allowedGames)
   const items: RequiredItem[] = [
     { id: 'title', label: 'Campaign title', step: 1, done: !errors.title },
-    { id: 'description', label: 'Short summary', step: 1, done: !errors.description },
+    { id: 'description', label: 'What you’re raising money for', step: 1, done: !errors.description },
     { id: 'coverImageId', label: 'Cover image', step: 1, done: !errors.coverImageId },
     { id: 'organizerName', label: 'Organiser name', step: 1, done: !errors.organizerName },
-    { id: 'goalAmount', label: 'Fundraising goal', step: 1, done: !errors.goalAmount },
+    { id: 'goalAmount', label: 'Fundraising goal', step: 2, done: !errors.goalAmount },
     { id: 'dates', label: 'Opening and closing dates', step: 2, done: !errors.opensAt && !errors.closesAt },
-    { id: 'participation', label: 'How supporters take part', step: 2, done: !errors.form && !errors.gameType },
+    { id: 'participation', label: 'How people can contribute', step: 3, done: !errors.form && !errors.gameType },
   ]
-  if (form.donationMode === 'fixed') items.push({ id: 'fixedAmounts', label: 'Suggested amounts', step: 1, done: !errors.fixedAmounts })
-  if (form.access === 'closed') items.push({ id: 'accessCode', label: 'Demo access code', step: 1, done: !errors.accessCode })
-  if (form.game) items.push({ id: 'gameRules', label: 'Game contribution rules', step: 2, done: !errors.gameRate && !errors.gameRoundSize && !errors.gameCap })
-  if (form.game && form.gameType === 'puzzle') items.push({ id: 'puzzleImageData', label: 'Puzzle image', step: 2, done: !errors.puzzleImageData })
+  if (form.donationMode === 'fixed') items.push({ id: 'fixedAmounts', label: 'Suggested amounts', step: 3, done: !errors.fixedAmounts })
+  if (form.access === 'closed') items.push({ id: 'accessCode', label: 'Demo access code', step: 3, done: !errors.accessCode })
+  if (form.game) items.push({ id: 'gameRules', label: 'Game contribution rules', step: 3, done: !errors.gameRate && !errors.gameRoundSize && !errors.gameCap })
+  if (form.game && form.gameType === 'puzzle') items.push({ id: 'puzzleImageData', label: 'Puzzle image', step: 3, done: !errors.puzzleImageData })
   return items
 }

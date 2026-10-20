@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useImagePicker } from '../hooks/useImagePicker.tsx'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { CampaignCover, OrgLogo } from '../components/CampaignImage.tsx'
 import { RequiredProgress, ResumeDrafts, SaveIndicator } from '../components/drafts/DraftUI.tsx'
 import { GamePreviewModal, GameThumb } from '../components/GamePreview.tsx'
@@ -25,8 +25,6 @@ import {
   gameSettingsFields,
   requiredChecklist,
   validateAll,
-  validateSettings,
-  validateStory,
   type FormErrors,
 } from '../lib/wizard.ts'
 import { StoryDetails, TemplatePicker } from '../components/story/StoryDetails.tsx'
@@ -35,9 +33,23 @@ import { SetupSuggestions } from '../components/ai/SetupSuggestions.tsx'
 import { readinessFromForm, type ReadinessField } from '../lib/ai/readiness.ts'
 
 const STEP_COPY: Record<number, { title: string; sub: string }> = {
-  1: { title: 'Create a campaign', sub: 'Start with your story.' },
-  2: { title: 'Campaign settings', sub: 'Choose when it runs and how people take part.' },
-  3: { title: 'Review your campaign', sub: 'Check the details, then publish it in this browser.' },
+  1: { title: 'Your cause', sub: 'Tell supporters what you’re raising money for and who it helps.' },
+  2: { title: 'Goal and dates', sub: 'Set how much you want to raise and when the campaign runs.' },
+  3: { title: 'Ways to contribute', sub: 'Choose how people can take part and who can join.' },
+  4: { title: 'Review', sub: 'Check everything, then publish when you’re ready.' },
+}
+const LAST_STEP = 4
+
+/** Which form fields each step owns, so validation errors point to the right step. */
+const STEP_KEYS: Record<number, string[]> = {
+  1: ['title', 'description', 'coverImageId', 'organizerName', 'budget'],
+  2: ['goalAmount', 'opensAt', 'closesAt'],
+  3: ['fixedAmounts', 'accessCode', 'form', 'gameType', 'gameRate', 'gameRoundSize', 'gameCap', 'puzzleImageData'],
+}
+
+function errorsForStep(step: number, form: CampaignForm, allowedGames: GameType[]): FormErrors {
+  const all = validateAll(form, allowedGames)
+  return Object.fromEntries(Object.entries(all).filter(([key]) => STEP_KEYS[step]?.includes(key))) as FormErrors
 }
 
 const FIELD_TARGETS: Partial<Record<ReadinessField, { step: number; selector: string; inDetails?: boolean }>> = {
@@ -46,13 +58,13 @@ const FIELD_TARGETS: Partial<Record<ReadinessField, { step: number; selector: st
   impact: { step: 1, selector: '#purpose' },
   cover: { step: 1, selector: '.cover-choice' },
   organizer: { step: 1, selector: '#organizer' },
-  goal: { step: 1, selector: '#goal' },
-  amounts: { step: 1, selector: '.amount-add input' },
-  access: { step: 1, selector: '#access-code' },
+  goal: { step: 2, selector: '#goal' },
+  amounts: { step: 3, selector: '.amount-add input' },
+  access: { step: 3, selector: '#access-code' },
   dates: { step: 2, selector: '#opens' },
-  participation: { step: 2, selector: '.option-card' },
-  puzzle: { step: 2, selector: '#puzzle-image' },
-  whoItHelps: { step: 1, selector: '#story-who', inDetails: true },
+  participation: { step: 3, selector: '.option-card' },
+  puzzle: { step: 3, selector: '#puzzle-image' },
+  whoItHelps: { step: 1, selector: '#story-who' },
   beneficiary: { step: 1, selector: '#story-beneficiary', inDetails: true },
   whatItSupports: { step: 1, selector: '#story-supports', inDetails: true },
   whatHappensNext: { step: 1, selector: '#story-next', inDetails: true },
@@ -73,6 +85,7 @@ export function CreateCampaignPage() {
   const allowedGames = selectableGames(org)
   const [start, setStart] = useState<EditorStart | null>(() => initialStart(params, org))
   const [drafts, setDrafts] = useState(() => listDrafts(org.id))
+  const [choosing, setChoosing] = useState(false)
 
   useEffect(() => {
     document.title = `Create a campaign — ${org.name}`
@@ -82,6 +95,32 @@ export function CreateCampaignPage() {
     if (!start || params.get('draftId') === start.draftId) return
     setParams({ draftId: start.draftId }, { replace: true })
   }, [start, params, setParams])
+
+  if (!start && (choosing || drafts.length === 0)) {
+    return (
+      <div className="container narrow page-pad">
+        <Link to={`${workspace}/campaigns`} className="back-link">
+          ← Back to campaigns
+        </Link>
+        <header className="center-head">
+          <h1>Create a campaign</h1>
+          <p className="muted">Both options save the same campaign. You can switch to the form at any point.</p>
+        </header>
+        <div className="choice-grid">
+          {org.visibility.assistant ? (
+            <Link to={`${workspace}/assistant?new=1`} className="choice-card">
+              <strong>Guide me through it</strong>
+              <span>Answer one question at a time. Good for your first campaign.</span>
+            </Link>
+          ) : null}
+          <button type="button" className="choice-card" onClick={() => setStart({ draftId: newDraftId(), form: blankForm(org), step: 1 })}>
+            <strong>Use a form</strong>
+            <span>See every section in four short steps.</span>
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   if (!start) {
     return (
@@ -96,12 +135,12 @@ export function CreateCampaignPage() {
             if (draft.kind === 'assistant') navigate(`${workspace}/assistant?draftId=${draft.id}`)
             else setStart({ draftId: draft.id, form: draft.form, step: Number(draft.step) || 1 })
           }}
-          onStartAnother={() => setStart({ draftId: newDraftId(), form: blankForm(org), step: 1 })}
+          onStartAnother={() => setChoosing(true)}
           onDiscard={(draft) => {
             deleteDraft(draft.id)
             const next = listDrafts(org.id)
             setDrafts(next)
-            if (next.length === 0) setStart({ draftId: newDraftId(), form: blankForm(org), step: 1 })
+            if (next.length === 0) setChoosing(true)
           }}
         />
       </div>
@@ -128,7 +167,7 @@ function initialStart(params: URLSearchParams, org: Organization): EditorStart |
     }
   }
   if (params.get('new') === '1') return { draftId: newDraftId(), form: blankForm(org), step: 1 }
-  return listDrafts(org.id).length > 0 ? null : { draftId: newDraftId(), form: blankForm(org), step: 1 }
+  return null
 }
 
 function CreateCampaignEditor({ start }: { start: EditorStart }) {
@@ -160,8 +199,7 @@ function CreateCampaignEditor({ start }: { start: EditorStart }) {
     if (!target) return
     setStep(target.step)
     window.setTimeout(() => {
-      const details = document.querySelector<HTMLDetailsElement>('.story-details')
-      if (target.inDetails && details) details.open = true
+      if (target.inDetails) document.querySelectorAll<HTMLDetailsElement>('.create .customize-more, .story-details').forEach((details) => (details.open = true))
       const element = document.querySelector<HTMLElement>(target.selector)
       element?.scrollIntoView({ block: 'center' })
       element?.focus()
@@ -174,18 +212,31 @@ function CreateCampaignEditor({ start }: { start: EditorStart }) {
     navigate(`${workspace}/campaigns`)
   }
 
+  function goToStep(next: number) {
+    setStep(next)
+    window.scrollTo(0, 0)
+  }
+
   function continueNext() {
-    const nextErrors = step === 1 ? validateStory(form) : validateSettings(form, allowedGames)
+    const nextErrors = errorsForStep(step, form, allowedGames)
     setErrors(nextErrors)
-    if (Object.keys(nextErrors).length > 0) return
-    setStep((current) => Math.min(3, current + 1))
+    if (Object.keys(nextErrors).length > 0) {
+      window.setTimeout(() => document.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus(), 30)
+      return
+    }
+    goToStep(Math.min(LAST_STEP, step + 1))
+  }
+
+  function saveNow() {
+    setNotice(autosave.flush() ? { tone: 'success', text: 'Draft saved on this device. Find it later under Campaigns.' } : { tone: 'error', text: 'This browser could not save your draft. Your answers are still here.' })
   }
 
   function publish() {
     const nextErrors = validateAll(form, allowedGames)
     setErrors(nextErrors)
     if (Object.keys(nextErrors).length > 0) {
-      setStep(Object.keys(validateStory(form)).length > 0 ? 1 : 2)
+      const first = [1, 2, 3].find((candidate) => Object.keys(errorsForStep(candidate, form, allowedGames)).length > 0) ?? 1
+      goToStep(first)
       return
     }
     const existing = form.id ? getCampaign(form.id) : undefined
@@ -208,8 +259,14 @@ function CreateCampaignEditor({ start }: { start: EditorStart }) {
 
   return (
     <div className="container page-pad create">
+      <Link to={`${workspace}/campaigns`} className="back-link">
+        ← Back to campaigns
+      </Link>
       <div className="create-head">
         <div>
+          <p className="muted small">
+            Step {step} of {LAST_STEP}
+          </p>
           <h1>{copy.title}</h1>
           <p className="lead-sm">{copy.sub}</p>
         </div>
@@ -221,19 +278,45 @@ function CreateCampaignEditor({ start }: { start: EditorStart }) {
           Discard draft
         </button>
       </div>
-      <RequiredProgress items={checklist} onJump={step === 3 ? (item) => setStep(item.step) : undefined} />
+      {step === LAST_STEP ? null : <RequiredProgress items={checklist} />}
       {notice ? (
         <div className={`notice ${notice.tone}`} role="status">
           {notice.text}
         </div>
       ) : null}
-      {errors.form ? <div className="notice error">{errors.form}</div> : null}
-      <div className={step === 3 ? 'create-grid single' : 'create-grid'}>
+      <div className={step === LAST_STEP ? 'create-grid review' : 'create-grid'}>
         <div>
-          {step === 1 ? <StoryStep form={form} errors={errors} onChange={update} org={org} /> : null}
-          {step === 2 ? <SettingsStep form={form} errors={errors} onChange={update} org={org} /> : null}
-          {step === 3 ? <ReviewStep form={form} onEdit={setStep} /> : null}
+          {step === 1 ? <StoryStep form={form} errors={errors} onChange={update} org={org} section="cause" /> : null}
+          {step === 2 ? <SettingsStep form={form} errors={errors} onChange={update} org={org} section="goal" /> : null}
           {step === 3 ? (
+            <>
+              <SettingsStep form={form} errors={errors} onChange={update} org={org} section="contribute" />
+              <StoryStep form={form} errors={errors} onChange={update} org={org} section="contribute" />
+            </>
+          ) : null}
+          {step === LAST_STEP ? (
+            <>
+              {checklist.some((item) => !item.done) ? (
+                <section className="panel missing-panel" aria-labelledby="missing-title">
+                  <h2 id="missing-title">Still needed before you can publish</h2>
+                  <ul>
+                    {checklist
+                      .filter((item) => !item.done)
+                      .map((item) => (
+                        <li key={item.id}>
+                          {item.label}{' '}
+                          <button type="button" className="link-button" onClick={() => goToStep(item.step)}>
+                            Edit
+                          </button>
+                        </li>
+                      ))}
+                  </ul>
+                </section>
+              ) : null}
+              <ReviewStep form={form} onEdit={goToStep} />
+            </>
+          ) : null}
+          {step === LAST_STEP ? (
             <ReadinessPanel
               input={readinessFromForm(form, org, allowedGames)}
               onJump={jumpTo}
@@ -242,12 +325,12 @@ function CreateCampaignEditor({ start }: { start: EditorStart }) {
             />
           ) : null}
         </div>
-        {step < 3 ? (
+        {step < LAST_STEP ? (
           <div className="create-aside">
             <LivePreview form={form} />
             <div className="aside-actions">
               {step > 1 ? (
-                <button type="button" className="btn btn-outline" onClick={() => setStep((current) => current - 1)}>
+                <button type="button" className="btn btn-outline" onClick={() => goToStep(step - 1)}>
                   Back
                 </button>
               ) : null}
@@ -257,13 +340,34 @@ function CreateCampaignEditor({ start }: { start: EditorStart }) {
             </div>
           </div>
         ) : (
-          <div className="review-actions">
-            <button type="button" className="btn btn-outline" onClick={() => setStep(2)}>
-              Back
-            </button>
-            <button type="button" className="btn btn-primary" onClick={publish} disabled={checklist.some((item) => !item.done)}>
-              Create campaign
-            </button>
+          <div className="create-aside" id="campaign-preview" tabIndex={-1} aria-label="Public preview">
+            <span className="eyebrow-label">Preview — how supporters will see it</span>
+            <LivePreview form={form} />
+            <div className="publish-box">
+              <p className="small">Publishing makes this campaign visible on your organization’s demo website.</p>
+              <div className="aside-actions">
+                <button type="button" className="btn btn-outline" onClick={() => goToStep(3)}>
+                  Back
+                </button>
+                <button type="button" className="btn btn-outline" onClick={saveNow}>
+                  Save draft
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  onClick={() => {
+                    const preview = document.getElementById('campaign-preview')
+                    preview?.scrollIntoView({ block: 'start' })
+                    preview?.focus()
+                  }}
+                >
+                  Preview
+                </button>
+                <button type="button" className="btn btn-primary" onClick={publish} disabled={checklist.some((item) => !item.done)}>
+                  Publish campaign
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>
@@ -272,7 +376,7 @@ function CreateCampaignEditor({ start }: { start: EditorStart }) {
 }
 
 function Stepper({ step, onStep }: { step: number; onStep: (step: number) => void }) {
-  const labels = ['Story', 'Settings', 'Review']
+  const labels = ['Your cause', 'Goal and dates', 'Ways to contribute', 'Review']
   return (
     <ol className="steps">
       {labels.map((label, index) => {
@@ -300,11 +404,13 @@ function StoryStep({
   errors,
   onChange,
   org,
+  section,
 }: {
   form: CampaignForm
   errors: FormErrors
   onChange: (patch: Partial<CampaignForm>) => void
   org: Organization
+  section: 'cause' | 'contribute'
 }) {
   const cover = useImagePicker((data) => onChange({ coverImageId: UPLOADED_COVER_ID, coverImageData: data }), {
     maxWidth: 1400,
@@ -339,10 +445,129 @@ function StoryStep({
     setAmountError('')
   }
 
+  const amountChips = (
+    <>
+              <div className="amount-chips">
+                {form.fixedAmounts.map((amount) => (
+                  <span key={amount} className="amount-chip-pro">
+                    {formatINR(amount, form.currency)}
+                    {form.fixedAmounts.length > 1 ? (
+                      <button
+                        type="button"
+                        aria-label={`Remove ${formatINR(amount, form.currency)}`}
+                        onClick={() => onChange({ fixedAmounts: form.fixedAmounts.filter((item) => item !== amount) })}
+                      >
+                        ×
+                      </button>
+                    ) : null}
+                  </span>
+                ))}
+                <span className="amount-add">
+                  <input
+                    inputMode="numeric"
+                    value={draftAmount}
+                    placeholder={`${currencySymbol(form.currency)} Add`}
+                    aria-label="New suggested amount"
+                    onChange={(event) => setDraftAmount(event.target.value.replace(/[^\d]/g, ''))}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') {
+                        event.preventDefault()
+                        addAmount()
+                      }
+                    }}
+                  />
+                  <button type="button" onClick={addAmount}>
+                    Add
+                  </button>
+                </span>
+              </div>
+              {amountError || errors.fixedAmounts ? <p className="error-text">{amountError || errors.fixedAmounts}</p> : null}
+      {amountError || errors.fixedAmounts ? <p className="error-text">{amountError || errors.fixedAmounts}</p> : null}
+    </>
+  )
+  const accessChooser = (
+    <>
+        <div className="radio-stack">
+          <RadioCard
+            checked={form.access === 'open'}
+            title="Anyone with the link"
+            text="The campaign appears on your website and anyone can contribute."
+            onSelect={() => onChange({ access: 'open' })}
+          />
+          <RadioCard
+            checked={form.access === 'closed'}
+            title="Invited group only — demo access code"
+            text="People join with a code you share and their name. The group sees a friendly leaderboard."
+            onSelect={() => onChange({ access: 'closed' })}
+          />
+        </div>
+        {form.access === 'closed' ? (
+          <div className="code-field">
+            <label htmlFor="access-code">Demo access code</label>
+            <input
+              id="access-code"
+              value={form.accessCode}
+              maxLength={12}
+              aria-invalid={Boolean(errors.accessCode)}
+              onChange={(event) => onChange({ accessCode: event.target.value.toUpperCase() })}
+            />
+            <p className="help">
+              Share this code with your group. It’s a demo code, not real security.
+            </p>
+            {errors.accessCode ? <p className="error-text">{errors.accessCode}</p> : null}
+          </div>
+        ) : null}
+    </>
+  )
+  const logoField = (
+        <div className="field">
+          <span className="field-label">Organisation logo</span>
+          <div className="logo-row">
+            <OrgLogo name={form.organizerName || 'Together'} logoData={form.logoData} size={48} />
+            <button type="button" className="btn btn-outline btn-sm" onClick={logo.open}>
+              {logo.busy ? 'Processing…' : form.logoData ? 'Replace logo' : 'Upload logo'}
+            </button>
+            {form.logoData ? (
+              <button type="button" className="link-button danger" onClick={() => onChange({ logoData: '' })}>
+                Remove
+              </button>
+            ) : (
+              <span className="help">Optional. Square images work best.</span>
+            )}
+          </div>
+          {logo.input}
+          {logo.error ? <p className="error-text">{logo.error}</p> : null}
+        </div>
+  )
+
+  if (section === 'contribute') {
+    return (
+      <div className="settings-stack">
+        {form.direct ? (
+          <section className="panel form-panel">
+            <h2>Amounts for direct giving</h2>
+            <div className="two-col">
+              <RadioCard checked={form.donationMode === 'fixed'} title="Suggest amounts" text="Recommended. Supporters pick one of your amounts." onSelect={() => onChange({ donationMode: 'fixed' })} />
+              <RadioCard checked={form.donationMode === 'custom'} title="Any amount" text="Supporters type their own whole amount." onSelect={() => onChange({ donationMode: 'custom' })} />
+            </div>
+            {form.donationMode === 'fixed' ? (
+              <div className="field">
+                <span className="field-label">Suggested amounts</span>
+                {amountChips}
+              </div>
+            ) : null}
+          </section>
+        ) : null}
+        <section className="panel form-panel">
+          <h2>Who can see and join?</h2>
+          {accessChooser}
+        </section>
+      </div>
+    )
+  }
+
   return (
     <div className="panel form-panel">
-      <SetupSuggestions form={form} allowedGames={selectableGames(org)} onChange={onChange} />
-      <TemplatePicker form={form} allowedGames={selectableGames(org)} onChange={onChange} />
       <Field label="Campaign title" htmlFor="title" error={errors.title} counter={`${form.title.trim().length}/80`}>
         <input
           id="title"
@@ -354,7 +579,7 @@ function StoryStep({
         />
       </Field>
 
-      <Field label="Short summary" htmlFor="purpose" error={errors.description} counter={`${form.description.trim().length}/1,000`}>
+      <Field label="What are you raising money for?" htmlFor="purpose" error={errors.description} counter={`${form.description.trim().length}/1,000`}>
         <textarea
           id="purpose"
           maxLength={1000}
@@ -366,7 +591,9 @@ function StoryStep({
         />
       </Field>
 
-      <StoryDetails form={form} errors={errors} onChange={onChange} />
+      <Field label="Who will this help?" htmlFor="story-who" optional hint="Describe the group, not individuals. For example: “Grade 4 students at our school”.">
+        <textarea id="story-who" rows={2} maxLength={600} value={form.storyWho} onChange={(event) => onChange({ storyWho: event.target.value })} />
+      </Field>
 
       <div className="field">
         <span className="field-label">Campaign cover</span>
@@ -447,122 +674,17 @@ function StoryStep({
             onChange={(event) => onChange({ organizerName: event.target.value })}
           />
         </Field>
-        <div className="field">
-          <span className="field-label">Organisation logo</span>
-          <div className="logo-row">
-            <OrgLogo name={form.organizerName || 'Together'} logoData={form.logoData} size={48} />
-            <button type="button" className="btn btn-outline btn-sm" onClick={logo.open}>
-              {logo.busy ? 'Processing…' : form.logoData ? 'Replace logo' : 'Upload logo'}
-            </button>
-            {form.logoData ? (
-              <button type="button" className="link-button danger" onClick={() => onChange({ logoData: '' })}>
-                Remove
-              </button>
-            ) : (
-              <span className="help">Optional. Square images work best.</span>
-            )}
-          </div>
-          {logo.input}
-          {logo.error ? <p className="error-text">{logo.error}</p> : null}
-        </div>
       </div>
 
-      <div className="divider" />
-
-      <div className="two-col">
-        <Field label="Fundraising goal" htmlFor="goal" error={errors.goalAmount}>
-          <div className="input-prefix">
-            <span>{currencySymbol(form.currency)}</span>
-            <input
-              id="goal"
-              inputMode="numeric"
-              value={form.goalAmount}
-              aria-invalid={Boolean(errors.goalAmount)}
-              onChange={(event) => onChange({ goalAmount: event.target.value.replace(/[^\d]/g, '') })}
-            />
-          </div>
-        </Field>
-        <div className="field">
-          <span className="field-label">Suggested donation amounts</span>
-          {form.donationMode === 'fixed' ? (
-            <>
-              <div className="amount-chips">
-                {form.fixedAmounts.map((amount) => (
-                  <span key={amount} className="amount-chip-pro">
-                    {formatINR(amount, form.currency)}
-                    {form.fixedAmounts.length > 1 ? (
-                      <button
-                        type="button"
-                        aria-label={`Remove ${formatINR(amount, form.currency)}`}
-                        onClick={() => onChange({ fixedAmounts: form.fixedAmounts.filter((item) => item !== amount) })}
-                      >
-                        ×
-                      </button>
-                    ) : null}
-                  </span>
-                ))}
-                <span className="amount-add">
-                  <input
-                    inputMode="numeric"
-                    value={draftAmount}
-                    placeholder={`${currencySymbol(form.currency)} Add`}
-                    aria-label="New suggested amount"
-                    onChange={(event) => setDraftAmount(event.target.value.replace(/[^\d]/g, ''))}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter') {
-                        event.preventDefault()
-                        addAmount()
-                      }
-                    }}
-                  />
-                  <button type="button" onClick={addAmount}>
-                    Add
-                  </button>
-                </span>
-              </div>
-              {amountError || errors.fixedAmounts ? <p className="error-text">{amountError || errors.fixedAmounts}</p> : null}
-            </>
-          ) : (
-            <p className="help">Supporters enter their own amount. Change this in Settings.</p>
-          )}
+      <details className="customize-more">
+        <summary>More options (optional): logo, template, budget and milestones</summary>
+        <div className="customize-body">
+          {logoField}
+          <SetupSuggestions form={form} allowedGames={selectableGames(org)} onChange={onChange} />
+          <TemplatePicker form={form} allowedGames={selectableGames(org)} onChange={onChange} />
+          <StoryDetails form={form} errors={errors} onChange={onChange} hideWho />
         </div>
-      </div>
-
-      <div className="field">
-        <span className="field-label">Group type</span>
-        <div className="radio-stack">
-          <RadioCard
-            checked={form.access === 'open'}
-            title="Open group"
-            text="Anyone can find and support this campaign."
-            onSelect={() => onChange({ access: 'open' })}
-          />
-          <RadioCard
-            checked={form.access === 'closed'}
-            title="Private group"
-            text="People join with a demo code and their name. The group keeps a leadership board and referrals."
-            onSelect={() => onChange({ access: 'closed' })}
-          />
-        </div>
-        {form.access === 'closed' ? (
-          <div className="code-field">
-            <label htmlFor="access-code">Demo access code</label>
-            <input
-              id="access-code"
-              value={form.accessCode}
-              maxLength={12}
-              aria-invalid={Boolean(errors.accessCode)}
-              onChange={(event) => onChange({ accessCode: event.target.value.toUpperCase() })}
-            />
-            <p className="help">
-              A demo code only — not secure access control. Players keep their names, get a referral, and earn points when someone contributes through it.
-            </p>
-            {errors.accessCode ? <p className="error-text">{errors.accessCode}</p> : null}
-          </div>
-        ) : null}
-      </div>
-
-      <GameGallery form={form} errors={errors} onChange={onChange} org={org} />
+      </details>
     </div>
   )
 }
@@ -572,23 +694,32 @@ function Field({
   htmlFor,
   error,
   counter,
+  hint,
+  optional = false,
   children,
 }: {
   label: string
   htmlFor: string
   error?: string
   counter?: string
+  hint?: string
+  optional?: boolean
   children: ReactNode
 }) {
   return (
     <div className="field">
       <label className="field-label" htmlFor={htmlFor}>
-        {label}
+        {label} {optional ? <span className="optional-tag">Optional</span> : <span className="required-tag">Required</span>}
       </label>
+      {hint ? (
+        <p className="help" id={`${htmlFor}-hint`}>
+          {hint}
+        </p>
+      ) : null}
       {children}
       {error || counter ? (
         <div className="field-foot">
-          <span className="error-text">{error}</span>
+          <span className="error-text" id={`${htmlFor}-error`}>{error}</span>
           {counter ? <span className="help">{counter}</span> : null}
         </div>
       ) : null}
@@ -623,104 +754,88 @@ function SettingsStep({
   errors,
   onChange,
   org,
+  section,
 }: {
   form: CampaignForm
   errors: FormErrors
   onChange: (patch: Partial<CampaignForm>) => void
   org: Organization
+  section: 'goal' | 'contribute'
 }) {
   const gamesAllowed = selectableGames(org).length > 0
+  if (section === 'goal') {
+    return (
+      <div className="settings-stack">
+        <section className="panel form-panel">
+          <Field label="How much do you want to raise?" htmlFor="goal" error={errors.goalAmount} hint={`In ${form.currency}. For example: ${formatINR(Number(form.fixedAmounts[0] ?? 100) * 100, form.currency)}.`}>
+            <div className="input-prefix">
+              <span>{currencySymbol(form.currency)}</span>
+              <input
+                id="goal"
+                inputMode="numeric"
+                value={form.goalAmount}
+                aria-invalid={Boolean(errors.goalAmount)}
+                aria-describedby={errors.goalAmount ? 'goal-error' : 'goal-hint'}
+                onChange={(event) => onChange({ goalAmount: event.target.value.replace(/[^\d]/g, '') })}
+              />
+            </div>
+          </Field>
+        </section>
+        <section className="panel form-panel">
+          <h2>When should the campaign run?</h2>
+          <div className="two-col">
+            <Field label="Opens" htmlFor="opens" error={errors.opensAt}>
+              <input id="opens" type="datetime-local" value={form.opensAt} aria-invalid={Boolean(errors.opensAt)} onChange={(event) => onChange({ opensAt: event.target.value })} />
+            </Field>
+            <Field label="Closes" htmlFor="closes" error={errors.closesAt}>
+              <input id="closes" type="datetime-local" value={form.closesAt} aria-invalid={Boolean(errors.closesAt)} onChange={(event) => onChange({ closesAt: event.target.value })} />
+            </Field>
+          </div>
+          <label className="toggle-row">
+            <button
+              type="button"
+              role="switch"
+              aria-checked={form.autoCloseOnGoal}
+              className={form.autoCloseOnGoal ? 'switch on' : 'switch'}
+              onClick={() => onChange({ autoCloseOnGoal: !form.autoCloseOnGoal })}
+            >
+              <span />
+            </button>
+            <span>
+              <strong>Stop accepting contributions when the goal is reached</strong>
+              <em>Recommended. You can still post updates afterwards.</em>
+            </span>
+          </label>
+        </section>
+      </div>
+    )
+  }
   return (
     <div className="settings-stack">
       <section className="panel form-panel">
-        <h2>Direct donation amounts</h2>
-        <p className="help">Applies to direct donations. Game-based giving uses the game-calculated amount set below.</p>
-        <div className="two-col">
-          <RadioCard
-            checked={form.donationMode === 'fixed'}
-            title="Suggested amounts"
-            text="Supporters choose from the amounts you set."
-            onSelect={() => onChange({ donationMode: 'fixed' })}
-          />
-          <RadioCard
-            checked={form.donationMode === 'custom'}
-            title="Custom amount"
-            text="Supporters enter any whole amount."
-            onSelect={() => onChange({ donationMode: 'custom' })}
-          />
-        </div>
-      </section>
-
-      <section className="panel form-panel">
-        <h2>Campaign dates</h2>
-        <div className="two-col">
-          <Field label="Opens" htmlFor="opens" error={errors.opensAt}>
-            <input
-              id="opens"
-              type="datetime-local"
-              value={form.opensAt}
-              aria-invalid={Boolean(errors.opensAt)}
-              onChange={(event) => onChange({ opensAt: event.target.value })}
-            />
-          </Field>
-          <Field label="Closes" htmlFor="closes" error={errors.closesAt}>
-            <input
-              id="closes"
-              type="datetime-local"
-              value={form.closesAt}
-              aria-invalid={Boolean(errors.closesAt)}
-              onChange={(event) => onChange({ closesAt: event.target.value })}
-            />
-          </Field>
-        </div>
-        <label className="toggle-row">
-          <button
-            type="button"
-            role="switch"
-            aria-checked={form.autoCloseOnGoal}
-            className={form.autoCloseOnGoal ? 'switch on' : 'switch'}
-            onClick={() => onChange({ autoCloseOnGoal: !form.autoCloseOnGoal })}
-          >
-            <span />
-          </button>
-          <span>
-            <strong>Close automatically when the goal is reached</strong>
-            <em>The campaign stops accepting contributions once it hits the target.</em>
-          </span>
-        </label>
-      </section>
-
-      <section className="panel form-panel">
-        <h2>Participation</h2>
-        <div className="option-grid">
+        <h2>How can people contribute?</h2>
+        <p className="help">Choose one or both. Every contribution in this demo is simulated — no payment is taken.</p>
+        <div className="option-grid two">
           <OptionCard
             checked={form.direct}
-            title="Direct donation"
-            text={org.visibility.direct ? 'A simple simulated contribution.' : `Direct contributions are hidden for ${org.name}.`}
+            title="Give directly"
+            text={org.visibility.direct ? 'Supporters choose an amount and confirm it.' : `Direct contributions are turned off for ${org.name}.`}
             disabled={!org.visibility.direct && !form.direct}
             onToggle={() => onChange({ direct: !form.direct })}
           />
           <OptionCard
             checked={form.game}
-            title="Game-based giving"
+            title="Play a short game"
             text={
               !gamesAllowed
                 ? `Games are turned off for ${org.name}.`
-                : form.game
-                  ? gameMeta(form.gameType).name
-                  : 'Turn giving into a short game.'
+                : 'Each game action adds a small amount to a suggestion. Supporters review it before confirming — playing never takes money.'
             }
             disabled={!gamesAllowed && !form.game}
             onToggle={() => onChange({ game: !form.game })}
           />
-          <div className="option-card disabled">
-            <div className="option-top">
-              <strong>Voucher rewards</strong>
-              <span className="soon-pill">Coming soon</span>
-            </div>
-            <span className="muted small">Thank-you vouchers from local partners.</span>
-          </div>
         </div>
+        {errors.form ? <p className="error-text">{errors.form}</p> : null}
         {form.game ? <GameGallery form={form} errors={errors} onChange={onChange} org={org} /> : null}
         {form.game ? <GameContributionSettingsPanel form={form} errors={errors} onChange={onChange} /> : null}
       </section>
@@ -881,15 +996,18 @@ function GameContributionSettingsPanel({
 }) {
   const config = gameConfig(form.gameType)
   const fixedRound = config.roundSize.min === config.roundSize.max
+  const settings = formGameSettings(form)
+  const hasErrors = Boolean(errors.gameRate || errors.gameRoundSize || errors.gameCap)
   return (
-    <div className="game-settings">
-      <div className="game-settings-head">
-        <h3>Game contribution settings</h3>
-        <p className="help">
-          Contribution mode for games: <strong>Game-calculated amount</strong>. Each completed {config.noun} adds the rate below to
-          the supporter’s suggestion. Direct donations keep the amount rules above.
-        </p>
-      </div>
+    <details className="game-settings customize-more" open={hasErrors}>
+      <summary>
+        <span>
+          <strong>Contribution rules</strong> — recommended: {formatPaise(settings.ratePaise)} per {config.noun}
+          {settings.capPaise ? `, up to ${formatPaise(settings.capPaise)}` : ''}, supporters {settings.allowCustom ? 'can' : 'can’t'} change the total.
+        </span>
+        <span className="muted small"> Edit</span>
+      </summary>
+      <p className="help">Each completed {config.noun} adds this amount to the supporter’s suggestion. Direct giving uses its own amounts.</p>
       <div className="game-settings-grid">
         <Field label={`Rate per ${config.noun}`} htmlFor="game-rate" error={errors.gameRate}>
           <div className="input-prefix">
@@ -951,7 +1069,7 @@ function GameContributionSettingsPanel({
           <em>Supporters can raise or lower the game suggestion before paying.</em>
         </span>
       </label>
-    </div>
+    </details>
   )
 }
 

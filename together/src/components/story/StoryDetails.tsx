@@ -115,7 +115,7 @@ function StoryField({ label, value, placeholder, onChange, rows = 2, help, field
 }
 
 /** Optional structured story, budget plan and milestone plan for the campaign form. */
-export function StoryDetails({ form, errors, onChange }: { form: CampaignForm; errors: FormErrors; onChange: (patch: Partial<CampaignForm>) => void }) {
+export function StoryDetails({ form, errors, onChange, hideWho = false }: { form: CampaignForm; errors: FormErrors; onChange: (patch: Partial<CampaignForm>) => void; hideWho?: boolean }) {
   const template = templateFor(form.category)
   return (
     <details className="story-details" open={Boolean(form.storyWho || form.storyNeed || form.budget.length || form.milestonePlan.length)}>
@@ -124,7 +124,7 @@ export function StoryDetails({ form, errors, onChange }: { form: CampaignForm; e
         <span className="muted small">Optional — supporters find a structured story easier to scan. You can skip this and add it later.</span>
       </summary>
       <div className="story-details-body">
-        <StoryField fieldId="story-who" label="Who this helps" value={form.storyWho} placeholder={template.prompts.who} onChange={(storyWho) => onChange({ storyWho })} />
+        {hideWho ? null : <StoryField fieldId="story-who" label="Who this helps" value={form.storyWho} placeholder={template.prompts.who} onChange={(storyWho) => onChange({ storyWho })} />}
         <StoryField label="What they need" value={form.storyNeed} placeholder={template.prompts.need} onChange={(storyNeed) => onChange({ storyNeed })} />
         <StoryField fieldId="story-supports" label="What contributions will support" value={form.storySupports} placeholder={template.prompts.supports} onChange={(storySupports) => onChange({ storySupports })} />
         <StoryField fieldId="story-next" label="What happens next" value={form.storyNext} placeholder={template.prompts.next} onChange={(storyNext) => onChange({ storyNext })} />

@@ -72,27 +72,35 @@ export function DashboardPage() {
     <div className="container page-pad">
       <div className="page-head">
         <div>
-          <h1>{org.name} campaigns</h1>
-          <p className="muted">Organizer view · saved in this browser.</p>
+          <h1>Campaigns</h1>
+          <p className="muted">Saved on this device.</p>
         </div>
         <div className="page-head-actions">
-          {org.visibility.assistant ? (
-            <Link to={`${workspace}/assistant`} className="btn btn-outline">
-              Create with assistant
-            </Link>
-          ) : null}
-          <Link to={`${workspace}/campaigns/new?new=1`} className="btn btn-primary">
-            Create campaign
+          <Link to={`${workspace}/campaigns/new`} className={createdId ? 'btn btn-outline' : 'btn btn-primary'}>
+            Create a campaign
           </Link>
         </div>
       </div>
 
-      {createdId ? (
-        <div className="notice success" role="status">
-          <Icon name="check" size={18} />
-          Campaign created and saved in this browser.
-          <Link to={`${base}/campaigns/${createdId}`}>View campaign</Link>
-        </div>
+      {createdId && views.some((view) => view.campaign.id === createdId) ? (
+        <section className="panel ready-card" role="status" aria-labelledby="ready-title">
+          <span className="success-pill">Published</span>
+          <h2 id="ready-title">Your campaign is ready to share.</h2>
+          <p className="muted">
+            “{views.find((view) => view.campaign.id === createdId)?.campaign.title}” is now on your demo website. The link works on this device.
+          </p>
+          <div className="inline-actions">
+            <button type="button" className="btn btn-primary" onClick={() => void copyLink(createdId)}>
+              {copiedId === createdId ? 'Link copied.' : 'Copy campaign link'}
+            </button>
+            <Link to={`${base}/campaigns/${createdId}?view=details`} className="btn btn-outline">
+              View campaign
+            </Link>
+            <Link to={`${workspace}/campaigns/${createdId}`} className="btn btn-outline">
+              Manage campaign
+            </Link>
+          </div>
+        </section>
       ) : null}
 
       {deletedNotice ? (
@@ -139,18 +147,20 @@ export function DashboardPage() {
         </section>
       ) : null}
 
+      {published.length > 0 ? (
       <div className="stat-cards">
         <StatCard icon="chart" tone="green" value={String(published.length)} label="campaigns" />
         <StatCard icon="gift" tone="gold" value={formatTotals(published, org.defaults.currency)} label="simulated contributions" />
         <StatCard icon="users" tone="coral" value={String(contributions)} label="contributions" />
       </div>
+      ) : null}
 
       {views.length === 0 ? (
         <div className="panel empty">
           <h2>No campaigns yet</h2>
-          <p className="muted">Create one, or reset demo data to restore the sample campaigns.</p>
-          <Link to={`${workspace}/campaigns/new?new=1`} className="btn btn-primary">
-            Create campaign
+          <p className="muted">Create your first fundraiser. It takes four short steps.</p>
+          <Link to={`${workspace}/campaigns/new`} className="btn btn-primary">
+            Create a campaign
           </Link>
         </div>
       ) : (
@@ -371,7 +381,7 @@ function Row({
           {campaign.isDraft ? null : (
             <button type="button" className="btn btn-outline btn-sm" onClick={onCopy}>
               <Icon name="copy" size={15} />
-              {copied ? 'Copied' : 'Copy demo link'}
+              {copied ? 'Link copied.' : 'Copy link'}
             </button>
           )}
           <div className="menu-wrap" ref={menuRef}>
