@@ -209,8 +209,11 @@ function AssistantChat({ org }: { org: Organization }) {
         </div>
       </div>
       <p className="assistant-note">
-        <Icon name="info" size={16} /> Scripted demo assistant — no AI service is connected. Answers stay in this browser and nothing is published until you
-        choose <strong>Create campaign</strong>.
+        <Icon name="info" size={16} />
+        <span>
+          Scripted demo assistant — no AI service is connected. Answers stay in this browser and nothing is published until you choose{' '}
+          <strong>Create campaign</strong>.
+        </span>
       </p>
       {notice ? (
         <div className={`notice ${notice.tone === 'info' ? 'warn' : notice.tone}`} role="status">
@@ -248,7 +251,7 @@ function AssistantChat({ org }: { org: Organization }) {
             ))}
           </ol>
 
-          <div ref={currentRef} className="chat-current">
+          <div ref={currentRef} className={answered.length > 0 ? 'chat-current' : 'chat-current first'}>
             {stage === 'review' ? (
               <ReviewCard org={org} form={form} onEdit={edit} onChange={update} errors={errors} />
             ) : (

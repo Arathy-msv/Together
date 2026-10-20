@@ -4,7 +4,9 @@ Together is a browser-only proof of concept for an interactive fundraising platf
 
 The organiser and supporter screens use a clean, photographic product style. The games keep an illustrated, storybook style.
 
-No real money is collected. There is no backend, database, account system, or payment gateway. Campaigns and simulated contributions stay in `localStorage` in this browser.
+One codebase serves many organizations — companies, schools, clubs, and nonprofits. Each organization has its own logo, colours, fonts, homepage content, campaign defaults, and available games, all driven by configuration.
+
+No real money is collected. There is no backend, database, account system, or payment gateway. Organizations, campaigns, and simulated contributions stay in `localStorage` in this browser.
 
 ## Run it
 
@@ -21,12 +23,61 @@ npm run lint
 npm test
 ```
 
-`npm test` runs the contribution rules, stage gating, and checkout tests with Node’s built-in test runner.
+`npm test` runs the contribution rules, stage gating, checkout, organization, theming, storage migration, and assistant tests with Node’s built-in test runner.
+
+## Organizations
+
+Every page lives under an organization:
+
+| Route | What it shows |
+| --- | --- |
+| `/o/:organizationSlug` | Branded homepage |
+| `/o/:organizationSlug/campaigns` | That organization’s campaigns |
+| `/o/:organizationSlug/campaigns/:campaignId` | Campaign (opens the game when one is enabled) |
+| `/o/:organizationSlug/create` | Campaign form, pre-filled with the organization’s defaults |
+| `/o/:organizationSlug/assistant` | Scripted campaign creation assistant |
+| `/o/:organizationSlug/settings` | Brand settings with a live preview |
+| `/o/:organizationSlug/dashboard` | Organizer view of that organization’s campaigns |
+
+A campaign only opens under the organization it belongs to (`organizationId`). Unknown slugs and mismatched campaigns show a not-found screen. Old links still work: `/campaigns/:id/...` redirects to the campaign’s organization, and `/`, `/explore`, `/create`, `/dashboard` redirect to the organization last picked in the demo switcher (Together by default).
+
+Seeded organizations:
+
+- **Together** (`/o/together`) — the default theme (warm ivory, forest green, soft sage, gold). Campaigns saved before organizations existed belong here.
+- **Lumen & Co.** (`/o/lumen-co`) — a company with employee campaigns in US dollars.
+- **Maple Grove Public School** (`/o/maple-grove`) — a school with student and family campaigns.
+- **Open Harbour Foundation** (`/o/open-harbour`) — a nonprofit with shelter and kitchen campaigns.
+
+Organizer pages (dashboard, create, assistant, settings) show a **Demo organizer controls** bar with an organization switcher. It exists for reviewing the demo and is not secure tenant isolation. Supporter pages never show it.
+
+### Brand settings
+
+Edit identity, colours and fonts, homepage content, games and participation, and footer links. The preview on the right updates as you type, in desktop or mobile size; the live site only changes when you choose **Save changes**. **Discard changes** returns to the saved version, and **Restore default branding** puts the Together colours and fonts into the preview.
+
+Text colours are chosen automatically for contrast, and the page warns when a colour combination is hard to read. Logo and hero uploads are checked for type and size, resized, and compressed; the hero can also come from a built-in gallery. If browser storage is full, nothing is saved and a message explains why.
+
+Turning a game off stops new campaigns from choosing it; campaigns that already use it keep working. Pencil writing and Paper opening are listed as coming soon.
+
+Campaign currency is fixed per campaign. The organization currency is only the default for new campaigns.
+
+### Campaign assistant
+
+A scripted, question-by-question flow (no AI service). It asks for the purpose, name, target, dates, group type, participation, game, amounts, and cover, with quick-answer chips, back and edit, a live draft preview, and **Save draft** (kept per organization). Answers are validated with the same rules as the campaign form. Nothing is published until you choose **Create campaign** on the review step.
+
+## Storage
+
+| Key | Contents |
+| --- | --- |
+| `together.organizations.v1` | Organization configurations |
+| `together.demo.v1` | Campaigns (with `organizationId` and `currency`) and simulated contributions, format version 2 |
+| `together.assistantDrafts.v1` | Assistant drafts, one per organization |
+
+Each stored organization is repaired or skipped on its own, so one broken record never wipes the rest. Missing demo organizations and sample campaigns are added back.
 
 ## What you can try
 
 - Create a campaign with the three-step story, settings, and review flow. Pick a cover template or upload your own cover, add an organisation logo, and choose which game supporters play.
-- Save a draft and finish it later from My campaigns.
+- Save a draft and finish it later from the organizer dashboard.
 - Open a campaign, confirm a simulated direct contribution, and see the progress update after refresh.
 - Play the campaign’s game. After every completed action (a plant, a correct piece, a matched pair, or a zip stage) a checkpoint shows what was added, the running suggestion, and an editable total. Donate now opens the demo payment review, and nothing is saved until you confirm there.
 - Set a custom total and keep playing: the game suggestion keeps growing while your chosen amount stays fixed until you edit it or reset to the game total.
@@ -40,7 +91,7 @@ Uploaded covers and logos are resized in the browser and stored in `localStorage
 
 ## Sample data
 
-The first visit seeds four campaigns: Grow Our School Library (garden game), Community Garden (puzzle), Winter Care Kits (memory, scheduled), and Zip Up for Winter (jacket). Reset demo data on the dashboard restores those campaigns and clears simulated contributions created in this browser.
+The Together organization has the original sample campaigns: Grow Our School Library (garden game), Community Garden (puzzle), Winter Care Kits (memory, scheduled), Zip Up for Winter (jacket), and Class Circle (private group). Each other organization has three campaigns of its own. Reset demo data on the dashboard restores sample campaigns and organization branding and clears simulated contributions created in this browser.
 
 ## Game contributions
 

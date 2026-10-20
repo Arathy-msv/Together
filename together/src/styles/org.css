@@ -500,6 +500,7 @@ html.org-theme :focus-visible { outline-color: var(--org-focus); }
 .chat-user p { background: var(--org-primary); color: var(--org-on-primary); border-radius: 16px 4px 16px 16px; padding: 10px 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
 .chat-edit { border: 1px solid var(--p-line); background: var(--p-surface); color: var(--org-link); font-weight: 700; font-size: 0.8rem; border-radius: 999px; padding: 6px 10px; cursor: pointer; min-height: 32px; }
 .chat-edit:hover { border-color: var(--org-link); }
+.chat-current.first { border-top: 0; padding-top: 0; }
 .chat-current { display: grid; gap: 12px; padding-top: 6px; border-top: 1px dashed var(--p-line); scroll-margin: 160px; }
 .chat-answer { display: grid; gap: 12px; margin-left: 42px; }
 .chat-chips { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -529,3 +530,4 @@ html.org-theme :focus-visible { outline-color: var(--org-focus); }
   .assistant-progress { width: 100%; }
   .pro .chat { padding: 16px; }
 }
+.org-theme .preview-overlay { font-family: var(--org-heading-font); font-weight: 700; }

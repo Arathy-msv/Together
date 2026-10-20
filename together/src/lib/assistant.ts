@@ -65,7 +65,7 @@ export function firstInvalidStep(form: CampaignForm, allowedGames: GameType[]): 
 export function stepQuestion(step: AssistantStepId, org: Pick<Organization, 'name'>): string {
   switch (step) {
     case 'purpose':
-      return `Let’s create a campaign for ${org.name}. What are you raising funds for?`
+      return `Let’s create a campaign for ${org.name}${/[.!?]$/.test(org.name) ? '' : '.'} What are you raising funds for?`
     case 'title':
       return 'Lovely. What should the campaign be called?'
     case 'goal':
