@@ -150,6 +150,18 @@ export function draftCampaignUpdate(input: UpdateInput): AiResult<UpdateDraft> {
   )
 }
 
+/** Joins the editable sections into one update body. */
+export function composeUpdateBody(draft: UpdateDraft): string {
+  return [
+    draft.summary && !draft.body.startsWith(draft.summary) ? draft.summary : '',
+    draft.body,
+    draft.spending,
+    draft.nextSteps ? `What happens next: ${draft.nextSteps}` : '',
+  ]
+    .filter((part) => part.trim())
+    .join('\n\n')
+}
+
 /* ---------- Final impact report ---------- */
 
 export interface ReportSection {

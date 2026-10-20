@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, useNavigate, useParams } from 'react-router-dom'
 import { ReadinessPanel } from '../../components/ai/ReadinessPanel.tsx'
+import { SparkIcon } from '../../components/ai/AiUI.tsx'
 import { readinessFromCampaign, type ReadinessField } from '../../lib/ai/readiness.ts'
 import { CampaignCover } from '../../components/CampaignImage.tsx'
 import { MilestoneTimeline, StatusPill } from '../../components/campaign/PublicSections.tsx'
@@ -314,6 +315,7 @@ function toDraft(milestone?: Milestone): MilestoneDraft {
 }
 
 export function MilestonesEditor({ campaign, store }: WorkspaceProps) {
+  const { base } = useOrg()
   const milestones = campaignMilestones(store, campaign.id)
   const [draft, setDraft] = useState<MilestoneDraft | null>(null)
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -383,6 +385,9 @@ export function MilestonesEditor({ campaign, store }: WorkspaceProps) {
                 {isMilestoneDelayed(milestone) ? <span className="prompt-inline">This milestone is past its expected date.</span> : null}
               </div>
               <div className="inline-actions">
+                <Link to={`${base}/dashboard/${campaign.id}/updates?assist=1&milestone=${milestone.id}`} className="ai-button">
+                  <SparkIcon size={15} /> Help write an update
+                </Link>
                 <button type="button" className="btn btn-outline btn-sm" onClick={() => setDraft(toDraft(milestone))}>
                   Edit
                 </button>

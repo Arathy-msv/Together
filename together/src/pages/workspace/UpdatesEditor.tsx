@@ -1,4 +1,8 @@
 import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { AiButton } from '../../components/ai/AiUI.tsx'
+import { UpdateWriter, type WrittenUpdate } from '../../components/ai/UpdateWriter.tsx'
+import { useOrg } from '../../components/org/OrgContext.tsx'
 import { Checkbox, MediaEditor, Select, TextArea, TextInput, VideoEditor } from '../../components/workspace/fields.tsx'
 import { formatDate } from '../../lib/format.ts'
 import { fromDateInput, toDateInput, nowIso } from '../../lib/inputs.ts'
@@ -45,6 +49,14 @@ export function UpdatesEditor({ campaign, store }: WorkspaceProps) {
   const [draft, setDraft] = useState<UpdateDraft | null>(null)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [notice, setNotice] = useState('')
+  const [params, setParams] = useSearchParams()
+  const [writing, setWriting] = useState(params.get('assist') === '1')
+  const { base } = useOrg()
+  const root = `${base}/dashboard/${campaign.id}`
+
+  function fromWriter(update: WrittenUpdate): UpdateDraft {
+    return { ...toDraft(), title: update.title, body: update.body, date: update.date, type: update.type, milestoneId: update.milestoneId, expenseIds: update.expenseIds }
+  }
 
   function save(status: PublishState) {
     if (!draft) return
@@ -84,10 +96,48 @@ export function UpdatesEditor({ campaign, store }: WorkspaceProps) {
       <section className="panel ws-card wide">
         <div className="section-head-row">
           <h2>Public updates</h2>
-          <button type="button" className="btn btn-primary btn-sm" onClick={() => setDraft(toDraft())}>
-            + New update
-          </button>
+          <div className="inline-actions">
+            <AiButton onClick={() => setWriting(true)}>Help write an update</AiButton>
+            <button type="button" className="btn btn-primary btn-sm" onClick={() => setDraft(toDraft())}>
+              + New update
+            </button>
+          </div>
         </div>
+        {writing ? (
+          <UpdateWriter
+            campaign={campaign}
+            store={store}
+            root={root}
+            initialMilestoneId={params.get('milestone') ?? ''}
+            onClose={() => {
+              setWriting(false)
+              setParams({}, { replace: true })
+            }}
+            onApply={(update) => {
+              if (draft && (draft.title || draft.body) && !window.confirm('Replace what is currently in the update editor?')) return
+              setDraft(fromWriter(update))
+              setNotice('Draft applied to the editor below. Review it, then save or publish.')
+            }}
+            onSaveDraft={(update) => {
+              const now = nowIso()
+              saveUpdate({
+                id: newId('upd'),
+                campaignId: campaign.id,
+                type: update.type,
+                title: update.title,
+                date: fromDateInput(update.date) ?? now,
+                body: update.body,
+                media: [],
+                milestoneId: update.milestoneId || undefined,
+                expenseIds: update.expenseIds,
+                mediaConsent: false,
+                status: 'draft',
+                createdAt: now,
+                updatedAt: now,
+              })
+            }}
+          />
+        ) : null}
         {notice ? (
           <div className="notice success" role="status">
             {notice}

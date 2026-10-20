@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import { FinalReportCard } from '../../components/campaign/PublicSections.tsx'
 import { TextArea } from '../../components/workspace/fields.tsx'
+import { AiButton } from '../../components/ai/AiUI.tsx'
+import { ReportWriter } from '../../components/ai/ReportWriter.tsx'
+import { hasPlaceholder } from '../../lib/ai/types.ts'
 import { StorageFullError } from '../../lib/storage.ts'
 import { nowIso } from '../../lib/inputs.ts'
 import { templateFor } from '../../lib/templates.ts'
@@ -25,12 +28,22 @@ export function FinalReportEditor({ campaign, view, store }: WorkspaceProps) {
   )
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
+  const [reviewed, setReviewed] = useState(false)
+  const [writing, setWriting] = useState(false)
   const summary = fundSummary(campaign, store)
   const unfinished = campaignMilestones(store, campaign.id).filter((item) => item.status !== 'reported_complete')
   const docs = publicDocuments(store, campaign.id)
   const updates = publishedUpdates(store, campaign.id)
 
   function save(status: FinalReport['status']) {
+    if (status === 'published' && hasPlaceholder(report.outcomes + report.remainingPlan)) {
+      setError('Replace the [bracketed] placeholders with your own information before publishing.')
+      return
+    }
+    if (status === 'published' && !reviewed) {
+      setError('Tick “I have reviewed this report” before publishing.')
+      return
+    }
     if (status === 'published' && report.outcomes.trim().length < 20) {
       setError('Describe the outcomes in at least a sentence before publishing.')
       return
@@ -85,6 +98,27 @@ export function FinalReportEditor({ campaign, view, store }: WorkspaceProps) {
             <dd>{unfinished.length ? unfinished.map((item) => item.title).join(', ') : 'None'}</dd>
           </div>
         </dl>
+        {writing ? (
+          <ReportWriter
+            campaign={campaign}
+            store={store}
+            initialOutcomes={report.outcomes}
+            initialPlan={report.remainingPlan}
+            onClose={() => setWriting(false)}
+            onApply={(draft, plan) => {
+              if (report.outcomes.trim() && !window.confirm('Replace the outcomes text in the report editor? Your current text will be overwritten.')) return
+              setReport({ ...report, outcomes: draft.outcomesText, remainingPlan: plan, evidenceDocumentIds: draft.evidenceDocumentIds, evidenceUpdateIds: draft.evidenceUpdateIds })
+              setReviewed(false)
+              setNotice('Draft applied to the report editor. Review it carefully — it is not published.')
+              setWriting(false)
+            }}
+          />
+        ) : (
+          <div className="readiness-launch">
+            <AiButton onClick={() => setWriting(true)}>Draft final report</AiButton>
+            <span className="muted small">Builds a structured draft from your published records. Amounts are calculated by the app.</span>
+          </div>
+        )}
         <TextArea
           label="Outcomes reported by the organizer"
           rows={5}
@@ -136,6 +170,10 @@ export function FinalReportEditor({ campaign, view, store }: WorkspaceProps) {
             {error}
           </p>
         ) : null}
+        <label className="check-row">
+          <input type="checkbox" checked={reviewed} onChange={(event) => setReviewed(event.target.checked)} />
+          I have reviewed this report and it reflects what the organizer reports.
+        </label>
         <div className="inline-actions">
           <button type="button" className="btn btn-primary" onClick={() => save('published')}>
             Publish final report
