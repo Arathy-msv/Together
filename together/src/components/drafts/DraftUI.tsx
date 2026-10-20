@@ -1,7 +1,7 @@
 import type { SaveStatus } from '../../hooks/useAutosave.ts'
 import { draftTitle, type CampaignDraft } from '../../lib/drafts.ts'
 import { formatDateTime } from '../../lib/format.ts'
-import type { RequiredItem } from '../../lib/wizard.ts'
+import { CAMPAIGN_GROUPS, type CampaignGroup, type RequiredItem } from '../../lib/wizard.ts'
 
 export function SaveIndicator({ status, savedAt, error }: { status: SaveStatus; savedAt: string | null; error: string }) {
   if (status === 'error') {
@@ -19,6 +19,61 @@ export function SaveIndicator({ status, savedAt, error }: { status: SaveStatus; 
           ? `Saved on this device · ${formatDateTime(savedAt)}`
           : 'Changes save automatically on this device'}
     </span>
+  )
+}
+
+/**
+ * The one progress indicator for campaign drafts, used by both the assistant and the form: the four
+ * groups, which one is open, and how many required details each still needs.
+ */
+export function SetupIndicator({
+  items,
+  current,
+  onGroup,
+}: {
+  items: RequiredItem[]
+  current: CampaignGroup
+  onGroup?: (group: CampaignGroup) => void
+}) {
+  const done = items.filter((item) => item.done).length
+  const missing = items.length - done
+  return (
+    <nav className="setup-indicator" aria-label="Campaign setup">
+      <ol>
+        {CAMPAIGN_GROUPS.map((group) => {
+          const own = items.filter((item) => item.step === group.id)
+          const ownDone = own.filter((item) => item.done).length
+          const complete = group.id === 4 ? missing === 0 : own.length > 0 && ownDone === own.length
+          const status = group.id === 4 ? (missing === 0 ? 'Ready' : `${missing} still needed`) : own.length ? `${ownDone} of ${own.length} required` : 'Optional'
+          const state = group.id === current ? 'current' : complete ? 'done' : 'todo'
+          const body = (
+            <>
+              <span className="setup-mark" aria-hidden="true">
+                {complete && group.id !== current ? '✓' : group.id}
+              </span>
+              <span className="setup-text">
+                <strong>{group.label}</strong>
+                <em>{status}</em>
+              </span>
+            </>
+          )
+          return (
+            <li key={group.id} className={state}>
+              {onGroup ? (
+                <button type="button" onClick={() => onGroup(group.id)} aria-current={group.id === current ? 'step' : undefined}>
+                  {body}
+                </button>
+              ) : (
+                <span aria-current={group.id === current ? 'step' : undefined}>{body}</span>
+              )}
+            </li>
+          )
+        })}
+      </ol>
+      <p className="muted small setup-summary">
+        {done} of {items.length} required details. Optional story details never count against you.
+      </p>
+    </nav>
   )
 }
 

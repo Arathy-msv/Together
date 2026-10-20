@@ -301,6 +301,16 @@ export interface RequiredItem {
 }
 
 /** Required fields only — optional story details never count against progress. */
+/** The four groups shared by the guided assistant and the form. Both edit the same draft. */
+export const CAMPAIGN_GROUPS = [
+  { id: 1, label: 'Your cause' },
+  { id: 2, label: 'Goal and dates' },
+  { id: 3, label: 'Ways to contribute' },
+  { id: 4, label: 'Review' },
+] as const
+
+export type CampaignGroup = (typeof CAMPAIGN_GROUPS)[number]['id']
+
 export function requiredChecklist(form: CampaignForm, allowedGames?: GameType[]): RequiredItem[] {
   const errors = validateAll(form, allowedGames)
   const items: RequiredItem[] = [

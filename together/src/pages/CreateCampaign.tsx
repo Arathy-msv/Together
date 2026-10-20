@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useImagePicker } from '../hooks/useImagePicker.tsx'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { CampaignCover, OrgLogo } from '../components/CampaignImage.tsx'
-import { RequiredProgress, ResumeDrafts, SaveIndicator } from '../components/drafts/DraftUI.tsx'
+import { OrgLogo } from '../components/CampaignImage.tsx'
+import { ResumeDrafts, SaveIndicator, SetupIndicator } from '../components/drafts/DraftUI.tsx'
+import { DraftReviewSummary } from '../components/campaign/DraftReviewSummary.tsx'
 import { GamePreviewModal, GameThumb } from '../components/GamePreview.tsx'
 import { useOrg } from '../components/org/OrgContext.tsx'
 import { Icon } from '../components/illustrations.tsx'
@@ -16,7 +17,7 @@ import { currentActorId } from '../lib/identity.ts'
 import { eligibleReviewers, formCampaignForOrg, NO_REVIEWER_MESSAGE, publishWithPolicy } from '../lib/featureActions.ts'
 import { PartnerOfferChooser } from '../components/campaign/PartnerOfferChooser.tsx'
 import { deleteDraft, listDrafts, newDraftId, readDraft, saveDraft } from '../lib/drafts.ts'
-import { currencySymbol, formatDateTime, formatINR, setDisplayCurrency } from '../lib/format.ts'
+import { currencySymbol, formatINR, setDisplayCurrency } from '../lib/format.ts'
 import { formatPaise, gameConfig } from '../lib/gameContribution.ts'
 import { GAMES, gameMeta } from '../lib/games.ts'
 import { selectableGames } from '../lib/organizations.ts'
@@ -269,20 +270,19 @@ function CreateCampaignEditor({ start }: { start: EditorStart }) {
       <div className="create-head">
         <div>
           <p className="muted small">
-            Step {step} of {LAST_STEP}
+            Using the form · Step {step} of {LAST_STEP}
           </p>
           <h1>{copy.title}</h1>
           <p className="lead-sm">{copy.sub}</p>
         </div>
-        <Stepper step={step} onStep={setStep} />
       </div>
+      <SetupIndicator items={checklist} current={step as 1 | 2 | 3 | 4} onGroup={goToStep} />
       <div className="draft-bar">
         <SaveIndicator status={autosave.status} savedAt={autosave.savedAt} error={autosave.error} />
         <button type="button" className="link-button danger" onClick={discard}>
           Discard draft
         </button>
       </div>
-      {step === LAST_STEP ? null : <RequiredProgress items={checklist} />}
       {notice ? (
         <div className={`notice ${notice.tone}`} role="status">
           {notice.text}
@@ -300,24 +300,7 @@ function CreateCampaignEditor({ start }: { start: EditorStart }) {
           ) : null}
           {step === LAST_STEP ? (
             <>
-              {checklist.some((item) => !item.done) ? (
-                <section className="panel missing-panel" aria-labelledby="missing-title">
-                  <h2 id="missing-title">Still needed before you can publish</h2>
-                  <ul>
-                    {checklist
-                      .filter((item) => !item.done)
-                      .map((item) => (
-                        <li key={item.id}>
-                          {item.label}{' '}
-                          <button type="button" className="link-button" onClick={() => goToStep(item.step)}>
-                            Edit
-                          </button>
-                        </li>
-                      ))}
-                  </ul>
-                </section>
-              ) : null}
-              <ReviewStep form={form} onEdit={goToStep} />
+              <DraftReviewSummary form={form} items={checklist} onEdit={goToStep} />
             </>
           ) : null}
           {step === LAST_STEP ? (
@@ -381,30 +364,6 @@ function CreateCampaignEditor({ start }: { start: EditorStart }) {
         )}
       </div>
     </div>
-  )
-}
-
-function Stepper({ step, onStep }: { step: number; onStep: (step: number) => void }) {
-  const labels = ['Your cause', 'Goal and dates', 'Ways to contribute', 'Review']
-  return (
-    <ol className="steps">
-      {labels.map((label, index) => {
-        const number = index + 1
-        const state = number === step ? 'current' : number < step ? 'done' : 'todo'
-        return (
-          <li key={label} className={state}>
-            {number < step ? (
-              <button type="button" onClick={() => onStep(number)} aria-label={`Back to ${label}`}>
-                <Icon name="check" size={14} />
-              </button>
-            ) : (
-              <span>{number}</span>
-            )}
-            <em>{label}</em>
-          </li>
-        )
-      })}
-    </ol>
   )
 }
 
@@ -1145,77 +1104,3 @@ function OptionCard({
   )
 }
 
-function safeStamp(value: string): string {
-  const date = new Date(value)
-  if (!value || Number.isNaN(date.getTime())) return '—'
-  return formatDateTime(date.toISOString())
-}
-
-function ReviewStep({ form, onEdit }: { form: CampaignForm; onEdit: (step: number) => void }) {
-  const goal = Number(form.goalAmount)
-  const rows: Array<[string, string]> = [
-    ['Organizer', form.organizerName],
-    ['Goal', Number.isFinite(goal) ? formatINR(goal, form.currency) : '—'],
-    ['Group type', form.access === 'open' ? 'Open group' : `Private · code ${form.accessCode}`],
-    [
-      'Amounts',
-      form.donationMode === 'custom' ? 'Supporter chooses' : form.fixedAmounts.map((amount) => formatINR(amount, form.currency)).join(', '),
-    ],
-    ['Opens', safeStamp(form.opensAt)],
-    ['Closes', safeStamp(form.closesAt)],
-    ['Auto-close', form.autoCloseOnGoal ? 'When the goal is reached' : 'Off'],
-    [
-      'Participation',
-      [form.direct ? 'Direct donation' : null, form.game ? gameMeta(form.gameType).name : null].filter(Boolean).join(' · ') ||
-        'None selected',
-    ],
-  ]
-  if (form.game) {
-    const settings = formGameSettings(form)
-    const config = gameConfig(form.gameType)
-    rows.push([
-      'Game contribution',
-      `${formatPaise(settings.ratePaise)} per ${config.noun}${settings.capPaise ? ` · cap ${formatPaise(settings.capPaise)}` : ''} · ${
-        settings.allowCustom ? 'supporters can edit the total' : 'game-calculated amount only'
-      }`,
-    ])
-    if (form.gameType === 'puzzle') {
-      rows.push(['Puzzle image', form.puzzleImageData ? 'Uploaded by you' : 'Still needed'])
-    }
-  }
-  return (
-    <div className="review-grid">
-      <article className="panel review-card">
-        <CampaignCover campaign={form} />
-        <div className="review-body">
-          <div className="org-line">
-            <OrgLogo name={form.organizerName} logoData={form.logoData} size={36} />
-            <span className="muted">{form.organizerName}</span>
-          </div>
-          <h2>{form.title.trim() || 'Untitled campaign'}</h2>
-          <p className="muted">{form.description.trim()}</p>
-          {form.game && form.gameType === 'puzzle' && form.puzzleImageData ? (
-            <img className="puzzle-review-art" src={form.puzzleImageData} alt="Community Puzzle artwork" />
-          ) : null}
-          <button type="button" className="link-button" onClick={() => onEdit(1)}>
-            Edit story
-          </button>
-        </div>
-      </article>
-      <article className="panel form-panel">
-        <h2>Details</h2>
-        <dl className="detail-list">
-          {rows.map(([label, value]) => (
-            <div key={label}>
-              <dt>{label}</dt>
-              <dd>{value}</dd>
-            </div>
-          ))}
-        </dl>
-        <button type="button" className="link-button" onClick={() => onEdit(2)}>
-          Edit settings
-        </button>
-      </article>
-    </div>
-  )
-}

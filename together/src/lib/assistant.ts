@@ -9,6 +9,22 @@ export type AssistantStepId = 'purpose' | 'category' | 'story' | 'title' | 'goal
 
 export const ASSISTANT_STEPS: AssistantStepId[] = ['purpose', 'category', 'story', 'title', 'goal', 'budget', 'dates', 'access', 'participation', 'game', 'amounts', 'cover']
 
+/** Which of the four shared groups each question belongs to. */
+export const STEP_GROUP: Record<AssistantStepId, 1 | 2 | 3> = {
+  purpose: 1,
+  category: 1,
+  story: 1,
+  title: 1,
+  budget: 1,
+  cover: 1,
+  goal: 2,
+  dates: 2,
+  access: 3,
+  participation: 3,
+  game: 3,
+  amounts: 3,
+}
+
 /** Questions that can be skipped without blocking the campaign. */
 export const OPTIONAL_STEPS: AssistantStepId[] = ['category', 'story', 'budget']
 

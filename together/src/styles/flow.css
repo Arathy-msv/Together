@@ -234,3 +234,21 @@ a.flow-link {
     justify-self: center;
   }
 }
+
+.setup-indicator { margin: 4px 0 16px; }
+.setup-indicator ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.setup-indicator li > button, .setup-indicator li > span { width: 100%; display: flex; gap: 10px; align-items: center; text-align: left; padding: 10px 12px; border: 1px solid var(--p-line); border-radius: 12px; background: var(--p-surface); font: inherit; color: inherit; }
+.setup-indicator li > button { cursor: pointer; }
+.setup-indicator li > button:focus-visible { outline: 3px solid var(--p-ink); outline-offset: 2px; }
+.setup-indicator li.current > * { border-color: var(--p-ink); box-shadow: 0 0 0 1px var(--p-ink); }
+.setup-indicator .setup-mark { flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 0.85rem; background: var(--p-surface-2); border: 1px solid var(--p-line); }
+.setup-indicator li.done .setup-mark { background: var(--p-ink); color: #fff; border-color: var(--p-ink); }
+.setup-indicator li.current .setup-mark { background: var(--p-ink); color: #fff; }
+.setup-indicator .setup-text { display: grid; min-width: 0; }
+.setup-indicator .setup-text em { font-style: normal; font-size: 0.82rem; color: var(--p-ink-2); }
+.setup-indicator .setup-summary { margin: 8px 0 0; }
+.draft-review { display: grid; gap: 14px; }
+.draft-review-group h3 { margin: 0; }
+@media (max-width: 720px) {
+  .setup-indicator ol { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

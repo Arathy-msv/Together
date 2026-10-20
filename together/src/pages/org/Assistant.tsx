@@ -17,12 +17,15 @@ import {
   purposeIdeas,
   stepHint,
   stepQuestion,
+  STEP_GROUP,
   validateStep,
   type AssistantStepId,
 } from '../../lib/assistant.ts'
 import { makeAccessCode } from '../../lib/campaigns.ts'
 import { formCampaignForOrg, publishWithPolicy } from '../../lib/featureActions.ts'
-import { RequiredProgress, ResumeDrafts, SaveIndicator } from '../../components/drafts/DraftUI.tsx'
+import { ResumeDrafts, SaveIndicator, SetupIndicator } from '../../components/drafts/DraftUI.tsx'
+import { DraftReviewSummary } from '../../components/campaign/DraftReviewSummary.tsx'
+import { campaignNeedsApproval } from '../../lib/features.ts'
 import { AiBadge } from '../../components/ai/AiUI.tsx'
 import { DraftSuggestions, NotedFacts } from '../../components/ai/DraftSuggestions.tsx'
 import { ReadinessPanel } from '../../components/ai/ReadinessPanel.tsx'
@@ -38,7 +41,7 @@ import { GAME_THUMBS, gameMeta } from '../../lib/games.ts'
 import { selectableGames } from '../../lib/organizations.ts'
 import { StorageFullError } from '../../lib/storage.ts'
 import type { CampaignForm, Organization } from '../../lib/types.ts'
-import { blankForm, gameSettingsFields, requiredChecklist, validateAll, type FormErrors } from '../../lib/wizard.ts'
+import { blankForm, gameSettingsFields, requiredChecklist, validateAll, type FormErrors, type RequiredItem } from '../../lib/wizard.ts'
 
 type Stage = AssistantStepId | 'review'
 
@@ -241,6 +244,15 @@ function AssistantChat({ org, start }: { org: Organization; start: ChatStart }) 
     goTo(step)
   }
 
+  function openGroup(group: 1 | 2 | 3 | 4) {
+    if (group === 4) {
+      reviewCampaign()
+      return
+    }
+    const first = activeSteps(form).find((step) => STEP_GROUP[step] === group)
+    if (first) edit(first)
+  }
+
   function back() {
     const previous = previousStep(stage, form)
     if (previous) goTo(previous)
@@ -292,7 +304,7 @@ function AssistantChat({ org, start }: { org: Organization; start: ChatStart }) 
 
   function create() {
     if (!confirmed) {
-      setNotice({ tone: 'error', text: 'Tick “I’ve reviewed this campaign” before creating it.' })
+      setNotice({ tone: 'error', text: 'Tick “I’ve reviewed this campaign” first.' })
       return
     }
     const allErrors = validateAll(form, allowedGames)
@@ -324,7 +336,7 @@ function AssistantChat({ org, start }: { org: Organization; start: ChatStart }) 
 
   const steps = activeSteps(form)
   const answered = stage === 'review' ? steps : steps.slice(0, Math.max(0, steps.indexOf(stage)))
-  const position = stage === 'review' ? steps.length : steps.indexOf(stage) + 1
+  const outline = stage === 'review' ? steps : steps.filter((step) => STEP_GROUP[step] === STEP_GROUP[stage])
 
   return (
     <div className="container page-pad assistant">
@@ -346,18 +358,12 @@ function AssistantChat({ org, start }: { org: Organization; start: ChatStart }) 
             </p>
           </div>
         </div>
-        <div className="assistant-progress" aria-label={`Question ${Math.min(position, steps.length)} of ${steps.length}`}>
-          <span>{stage === 'review' ? 'Ready to review' : `Question ${position} of ${steps.length}`}</span>
-          <span className="assistant-bar" aria-hidden="true">
-            <i style={{ width: `${Math.round((Math.min(position - (stage === 'review' ? 0 : 1), steps.length) / steps.length) * 100)}%` }} />
-          </span>
-        </div>
       </div>
       <p className="assistant-note">
         <AiBadge />
         <span>
           A simulated conversation built on fixed rules. It only uses what you type and your organization’s settings — it never invents beneficiaries, costs,
-          dates or impact. Nothing is published until you choose <strong>Create campaign</strong>.
+          dates or impact. Nothing is published until you choose <strong>{campaignNeedsApproval(org) ? 'Submit for review' : 'Publish campaign'}</strong>.
         </span>
       </p>
       <div className="draft-bar">
@@ -374,7 +380,7 @@ function AssistantChat({ org, start }: { org: Organization; start: ChatStart }) 
           </button>
         </span>
       </div>
-      <RequiredProgress items={checklist} />
+      <SetupIndicator items={checklist} current={stage === 'review' ? 4 : STEP_GROUP[stage]} onGroup={openGroup} />
       {notice ? (
         <div className={`notice ${notice.tone === 'info' ? 'warn' : notice.tone}`} role="status">
           <span>{notice.text}</span>
@@ -391,9 +397,9 @@ function AssistantChat({ org, start }: { org: Organization; start: ChatStart }) 
       </div>
 
       <div className={showPreview ? 'assistant-grid with-steps show-preview' : 'assistant-grid with-steps'}>
-        <nav className="assistant-steps panel" aria-label="Setup progress">
+        <nav className="assistant-steps panel" aria-label="Questions in this section">
           <ol>
-            {steps.map((step) => {
+            {outline.map((step) => {
               const done = answered.includes(step)
               const current = stage === step
               return (
@@ -412,11 +418,6 @@ function AssistantChat({ org, start }: { org: Organization; start: ChatStart }) 
                 </li>
               )
             })}
-            <li className={stage === 'review' ? 'current' : ''}>
-              <span aria-current={stage === 'review' ? 'step' : undefined}>
-                <span aria-hidden="true">{stage === 'review' ? '●' : '○'}</span> Review
-              </span>
-            </li>
           </ol>
         </nav>
         <section className="panel chat" aria-label="Conversation">
@@ -444,7 +445,7 @@ function AssistantChat({ org, start }: { org: Organization; start: ChatStart }) 
           <div ref={currentRef} className={answered.length > 0 ? 'chat-current' : 'chat-current first'}>
             {stage === 'review' ? (
               <>
-                <ReviewCard org={org} form={form} onEdit={edit} onChange={update} errors={errors} />
+                <ReviewCard org={org} form={form} onEdit={openGroup} onChange={update} errors={errors} checklist={checklist} />
                 <DraftSuggestions form={form} org={org} allowedGames={allowedGames} onChange={update} />
                 <ReadinessPanel
                   input={readinessFromForm(form, org, allowedGames)}
@@ -458,7 +459,7 @@ function AssistantChat({ org, start }: { org: Organization; start: ChatStart }) 
                 />
                 <label className="check-row confirm-row">
                   <input type="checkbox" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} />
-                  I’ve reviewed this campaign. Create it for {org.name} when I choose Create campaign.
+                  I’ve reviewed this campaign for {org.name}.
                 </label>
               </>
             ) : (
@@ -501,7 +502,7 @@ function AssistantChat({ org, start }: { org: Organization; start: ChatStart }) 
           <div className="aside-actions">
             {stage === 'review' ? (
               <button type="button" className="btn btn-primary" onClick={create} disabled={!confirmed}>
-                Create campaign
+                {campaignNeedsApproval(org) ? 'Submit for review' : 'Publish campaign'}
               </button>
             ) : (
               <button type="button" className="btn btn-primary" onClick={reviewCampaign}>
@@ -989,30 +990,19 @@ function ReviewCard({
   errors,
   onEdit,
   onChange,
+  checklist,
 }: {
   org: Organization
   form: CampaignForm
   errors: FormErrors
-  onEdit: (step: AssistantStepId) => void
+  onEdit: (group: 1 | 2 | 3) => void
   onChange: (patch: Partial<CampaignForm>) => void
+  checklist: RequiredItem[]
 }) {
-  const labels = STEP_LABELS
   return (
     <div className="chat-review">
       <BotBubble org={org}>Here’s your campaign. Check each answer, edit anything, then create it when you’re ready.</BotBubble>
-      <dl className="detail-list review-list">
-        {activeSteps(form).map((step) => (
-          <div key={step}>
-            <dt>{labels[step]}</dt>
-            <dd>
-              <span>{answerSummary(step, form)}</span>
-              <button type="button" className="link-button" onClick={() => onEdit(step)} aria-label={`Edit ${labels[step].toLowerCase()}`}>
-                Edit
-              </button>
-            </dd>
-          </div>
-        ))}
-      </dl>
+      <DraftReviewSummary form={form} items={checklist} onEdit={onEdit} />
       <div className="field">
         <label className="field-label" htmlFor="a-organizer">
           Organizer name shown to supporters
@@ -1028,7 +1018,7 @@ function ReviewCard({
         <ErrorText id="a-organizer-error" error={errors.organizerName} />
       </div>
       <p className="help">
-        The campaign will be saved under <strong>{org.name}</strong> in {form.currency}. Nothing is published until you choose Create campaign.
+        The campaign will be saved under <strong>{org.name}</strong> in {form.currency}. Nothing is published until you choose {campaignNeedsApproval(org) ? 'Submit for review' : 'Publish campaign'}.
       </p>
     </div>
   )

@@ -182,6 +182,10 @@ main { flex: 1; }
 .status-scheduled i { background: #e0a325; }
 .status-completed i { background: #1b4a3c; }
 .status-closed i, .status-draft i { background: #8b978f; }
+.delivery-not_started i { background: #b9b2a0; }
+.delivery-in_progress i { background: #c98a1a; }
+.delivery-reported_complete i { background: #2f9e62; }
+.status-approved i { background: #2d5a87; }
 
 .feature-grid, .soon-grid { grid-template-columns: repeat(3, 1fr); margin-top: 14px; }
 .feature-card, .soon-card { padding: 18px; }
