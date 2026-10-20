@@ -251,8 +251,15 @@ describe('money', () => {
 })
 
 test('the game explanation and action amounts use plain wording', async () => {
-  const { GAME_EXPLANATION, gameActionAmounts } = await import('../src/lib/gameContribution.ts')
+  const { GAME_EXPLANATION, gameActionAmounts, gameAmountRules } = await import('../src/lib/gameContribution.ts')
   assert.match(GAME_EXPLANATION, /No payment is taken while you play\.$/)
-  assert.equal(gameActionAmounts('garden', 5000), 'Each completed plant adds ₹50.')
-  assert.match(gameActionAmounts('jacket', 5000), /kindness tag adds ₹25/)
+  assert.equal(gameActionAmounts('memory', 5000), 'Each matched pair suggests ₹50.')
+  assert.match(gameActionAmounts('jacket', 5000), /kindness tag suggests ₹25/)
+  assert.deepEqual(gameAmountRules('memory', { ratePaise: 5000, allowCustom: true, capPaise: null }), [
+    'Each matched pair suggests ₹50.',
+    'Your final contribution is your choice.',
+  ])
+  const fixed = gameAmountRules('garden', { ratePaise: 5000, allowCustom: false, capPaise: 30000 })
+  assert.equal(fixed[1], 'Your contribution is the amount the game suggests.')
+  assert.equal(fixed[2], 'Suggestions stop at a giving limit of ₹300.')
 })

@@ -1043,7 +1043,7 @@ a.ai-button { text-decoration: none; }
 .game-intro-body h1 { font-size: clamp(1.7rem, 3vw, 2.3rem); font-weight: 800; }
 .game-intro-body h1:focus { outline: none; }
 .game-intro-body p { margin: 0; font-size: 1.05rem; line-height: 1.55; }
-.game-intro-amounts { font-weight: 700; color: var(--p-ink); }
+.game-intro-amounts { font-weight: 700; color: var(--p-ink); text-align: left; }
 
 @media (max-width: 980px) {
   .mobile-support { display: grid; gap: 10px; margin-bottom: 18px; padding: 14px; border: 1px solid var(--p-line); border-radius: var(--p-radius); background: var(--p-surface); }

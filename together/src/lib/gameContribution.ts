@@ -67,12 +67,23 @@ export function shortNoun(game: GameType): string {
 export const GAME_EXPLANATION =
   'Play to build a suggested contribution. You can stop anytime and review your amount before confirming. No payment is taken while you play.'
 
-/** What each game action adds, in one short sentence. */
+/** What each game action suggests, in one short sentence. */
 export function gameActionAmounts(game: GameType, ratePaise: number): string {
   if (game === 'jacket') {
-    return `Adding a lining or zipping the jacket adds ${formatMoney(50)} each. A kindness tag adds ${formatMoney(25)}.`
+    return `Adding a lining or zipping the jacket suggests ${formatMoney(50)} each. A kindness tag suggests ${formatMoney(25)}.`
   }
-  return `Each completed ${shortNoun(game)} adds ${formatPaise(ratePaise)}.`
+  return `Each ${gameConfig(game).noun} suggests ${formatPaise(ratePaise)}.`
+}
+
+/**
+ * The full amount rule a supporter sees before and while playing: the per-action suggestion, who
+ * decides the final amount, and the giving limit when the organizer set one.
+ */
+export function gameAmountRules(game: GameType, settings: Pick<GameContributionSettings, 'ratePaise' | 'allowCustom' | 'capPaise'>): string[] {
+  const lines = [gameActionAmounts(game, settings.ratePaise)]
+  lines.push(settings.allowCustom ? 'Your final contribution is your choice.' : 'Your contribution is the amount the game suggests.')
+  if (settings.capPaise != null) lines.push(`Suggestions stop at a giving limit of ${formatPaise(settings.capPaise)}.`)
+  return lines
 }
 
 export function gameIntroSentence(game: GameType, ratePaise: number): string {

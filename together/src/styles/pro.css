@@ -604,3 +604,14 @@ html { scroll-padding-top: 84px; }
   .steps li + li::before { width: 18px; }
   .feature-campaigns, .tile-grid, .stat-cards, .option-grid { grid-template-columns: 1fr; }
 }
+
+.give-choice { border: 0; padding: 0; margin: 0 0 14px; display: grid; gap: 8px; }
+.give-choice legend { font-weight: 700; margin-bottom: 8px; padding: 0; }
+.give-option { display: flex; gap: 10px; align-items: flex-start; padding: 12px; border: 1px solid var(--p-line); border-radius: 12px; cursor: pointer; background: var(--p-surface); min-height: 44px; }
+.give-option.selected { border-color: var(--p-ink); box-shadow: 0 0 0 1px var(--p-ink); }
+.give-option input { margin-top: 4px; accent-color: var(--p-ink); }
+.give-option span { display: grid; gap: 2px; }
+.give-option em { font-style: normal; font-size: 0.86rem; color: var(--p-ink-2); }
+.game-rules, .game-intro-amounts { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+.funded-panel h2 { margin-top: 0; }
+.delivery-snapshot .status-badge { justify-self: start; }

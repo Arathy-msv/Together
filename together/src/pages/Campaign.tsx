@@ -21,7 +21,7 @@ import { OrgNotFound } from './org/OrgNotFound.tsx'
 import { formatDate, formatDateRange, formatINR, parseWholeRupees, shortPurpose } from '../lib/format.ts'
 import { canUseFeature, campaignUsesSponsor } from '../lib/features.ts'
 import { CampaignPartnerOffers } from './org/PartnerOffersPublic.tsx'
-import { GAME_EXPLANATION, campaignGameSettings, gameActionAmounts } from '../lib/gameContribution.ts'
+import { GAME_EXPLANATION, campaignGameSettings, gameAmountRules } from '../lib/gameContribution.ts'
 import { gameMeta } from '../lib/games.ts'
 import { getPending, isUnlocked, markGameIntroSeen, newToken, setPending, unlockCampaign } from '../lib/pending.ts'
 import { snapshotReferral } from '../lib/attribution.ts'
@@ -230,6 +230,11 @@ function CampaignDetails({ view, referral }: { view: CampaignView; referral?: Re
             <p className="muted small">
               {view.supporters === 1 ? '1 confirmed simulated contribution' : `${view.supporters} confirmed simulated contributions`}
             </p>
+            {campaign.story?.whatItSupports?.trim() ? (
+              <p className="small support-purpose">
+                <strong>Your contribution supports:</strong> {shortPurpose(campaign.story.whatItSupports)}
+              </p>
+            ) : null}
             <div className="divider" />
             {needsCode ? (
               <AccessGate
@@ -471,15 +476,24 @@ function GivePanel({
 
   return (
     <div>
-      {campaign.participation.direct && campaign.participation.game ? (
-        <div className="underline-tabs" role="group" aria-label="How do you want to help?">
-          <button type="button" aria-pressed={tab === 'direct'} className={tab === 'direct' ? 'active' : ''} onClick={() => onTab('direct')}>
-            Give directly
-          </button>
-          <button type="button" aria-pressed={tab === 'game'} className={tab === 'game' ? 'active' : ''} onClick={() => onTab('game')}>
-            Play a game
-          </button>
-        </div>
+      {campaign.participation.direct && campaign.participation.game && !blocked ? (
+        <fieldset className="give-choice">
+          <legend>How would you like to help?</legend>
+          <label className={tab === 'direct' ? 'give-option selected' : 'give-option'}>
+            <input type="radio" name={`give-${campaign.id}`} checked={tab === 'direct'} onChange={() => onTab('direct')} />
+            <span>
+              <strong>Give an amount</strong>
+              <em>Choose an amount, review it, then confirm.</em>
+            </span>
+          </label>
+          <label className={tab === 'game' ? 'give-option selected' : 'give-option'}>
+            <input type="radio" name={`give-${campaign.id}`} checked={tab === 'game'} onChange={() => onTab('game')} />
+            <span>
+              <strong>Play {gameMeta(campaign.gameType).name}</strong>
+              <em>Each action suggests an amount. Review before you confirm.</em>
+            </span>
+          </label>
+        </fieldset>
       ) : null}
 
       {overGoal ? (
@@ -498,7 +512,11 @@ function GivePanel({
         <div className="play-cta">
           <strong>{gameMeta(campaign.gameType).name}</strong>
           <p className="small">{GAME_EXPLANATION}</p>
-          <p className="muted small">{gameActionAmounts(campaign.gameType, campaignGameSettings(campaign).ratePaise)}</p>
+          <ul className="game-rules small">
+            {gameAmountRules(campaign.gameType, campaignGameSettings(campaign)).map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
           <Link
             to={campaignPlayPath(campaign.id, campaign.gameType, base)}
             className="btn btn-primary btn-block btn-lg"

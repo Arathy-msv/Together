@@ -1,5 +1,5 @@
 import type { GameContribution } from '../hooks/useGameContribution.ts'
-import { formatPaise, gameActionAmounts, selectedPaise, shortNoun } from '../lib/gameContribution.ts'
+import { formatPaise, gameAmountRules, selectedPaise, shortNoun } from '../lib/gameContribution.ts'
 
 export function ContributionBar({ contribution }: { contribution: GameContribution }) {
   const { session, config, settings } = contribution
@@ -41,9 +41,9 @@ export function ContributionBar({ contribution }: { contribution: GameContributi
       <p className="gc-bar-note">
         {session
           ? session.capReached && session.capPaise != null
-            ? `Suggestion limit of ${formatPaise(session.capPaise)} reached. More actions won’t increase it.`
-            : 'No payment is taken while you play. You can review the amount before confirming.'
-          : `${gameActionAmounts(contribution.game, settings.ratePaise)} No payment is taken while you play.`}
+            ? `Giving limit of ${formatPaise(session.capPaise)} reached. Keep playing for fun — the suggestion won’t go higher.`
+            : `${settings.allowCustom ? 'Your final contribution is your choice.' : 'Your contribution is the amount the game suggests.'} No payment is taken while you play.`
+          : `${gameAmountRules(contribution.game, settings).join(' ')} No payment is taken while you play.`}
       </p>
     </section>
   )

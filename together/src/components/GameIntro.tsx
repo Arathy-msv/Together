@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useOrg } from './org/OrgContext.tsx'
 import { OrgGameBrand } from './org/OrgGameBrand.tsx'
 import { campaignDetailsPath } from '../lib/campaigns.ts'
-import { GAME_EXPLANATION, campaignGameSettings, gameActionAmounts } from '../lib/gameContribution.ts'
+import { GAME_EXPLANATION, campaignGameSettings, gameAmountRules } from '../lib/gameContribution.ts'
 import { GAME_THUMBS, gameMeta } from '../lib/games.ts'
 import type { CampaignView } from '../lib/types.ts'
 
@@ -36,7 +36,11 @@ export function GameIntro({ view, onStart }: { view: CampaignView; onStart: () =
             {meta.name}
           </h1>
           <p>{GAME_EXPLANATION}</p>
-          <p className="game-intro-amounts">{gameActionAmounts(campaign.gameType, campaignGameSettings(campaign).ratePaise)}</p>
+          <ul className="game-intro-amounts">
+            {gameAmountRules(campaign.gameType, campaignGameSettings(campaign)).map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
           <div className="inline-actions">
             <button type="button" className="btn btn-primary btn-lg" onClick={onStart}>
               Start playing
