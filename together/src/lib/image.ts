@@ -52,3 +52,19 @@ export async function readImageFile(
   if (data.length > limit) throw new Error('This image is still too large after compression. Try a simpler or smaller image.')
   return data
 }
+
+const VIDEO_TYPES = ['video/mp4', 'video/webm']
+export const VIDEO_ACCEPT = VIDEO_TYPES.join(',')
+/** Browser storage is only a few megabytes, so demo videos must be very short. */
+export const MAX_VIDEO_BYTES = 2.5 * 1024 * 1024
+
+export function readVideoFile(file: File): Promise<string> {
+  if (!VIDEO_TYPES.includes(file.type)) return Promise.reject(new Error('Use an MP4 or WebM video.'))
+  if (file.size > MAX_VIDEO_BYTES) return Promise.reject(new Error('Choose a video under 2.5 MB. Browser storage in this demo is very limited.'))
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => (typeof reader.result === 'string' ? resolve(reader.result) : reject(new Error('That video could not be read.')))
+    reader.onerror = () => reject(new Error('That video could not be read.'))
+    reader.readAsDataURL(file)
+  })
+}

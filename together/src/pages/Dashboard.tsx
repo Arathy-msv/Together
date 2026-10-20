@@ -356,9 +356,14 @@ function Row({
               Edit
             </Link>
           ) : (
-            <Link to={`${base}/campaigns/${campaign.id}`} className="btn btn-outline btn-sm">
-              View
-            </Link>
+            <>
+              <Link to={`${base}/dashboard/${campaign.id}`} className="btn btn-primary btn-sm">
+                Manage
+              </Link>
+              <Link to={`${base}/campaigns/${campaign.id}?view=details`} className="btn btn-outline btn-sm">
+                View
+              </Link>
+            </>
           )}
           {campaign.isDraft ? null : (
             <button type="button" className="btn btn-outline btn-sm" onClick={onCopy}>
