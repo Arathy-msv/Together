@@ -32,7 +32,7 @@ export const GAMES: { id: GameType; name: string; blurb: string; hint: string; s
     id: 'puzzle',
     name: 'Community Puzzle',
     blurb: 'Every piece brings us together.',
-    hint: 'Choose a piece, then place it in the right spot.',
+    hint: 'Three pieces are left. Choose one, then set it in place.',
     style: 'cartoon',
   },
   {
