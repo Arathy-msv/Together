@@ -1187,6 +1187,8 @@ html.low-data .hero-stack, html.low-data .play-side { display: none; }
 /* ---------- Sharing kit (QR, poster, WhatsApp, email, social images) ---------- */
 
 .share-kit-v2 { display: grid; gap: 14px; }
+.share-kit-status { min-height: 44px; display: grid; align-items: center; }
+.share-kit-status .notice { margin: 0; }
 .share-kit-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; flex-wrap: wrap; }
 .share-kit-head h2 { margin: 0 0 4px; }
 .share-kit-tabs { margin: 0; flex-wrap: wrap; }

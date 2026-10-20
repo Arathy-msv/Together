@@ -123,7 +123,22 @@ export function currencyGoalText(campaign: Campaign): string {
   return `${currencySymbol(campaign.currency)}${campaign.goalAmount.toLocaleString('en-IN')} ${campaign.currency}`
 }
 
-/** Triggers a browser download for a Blob and revokes the object URL once the click has fired. */
+/** Turns a `data:` URL into a Blob without leaving the current turn. */
+export function dataUrlToBlob(dataUrl: string): Blob {
+  const comma = dataUrl.indexOf(',')
+  if (comma < 0) throw new Error('This browser could not export the image.')
+  const mime = /:(.*?);/.exec(dataUrl.slice(0, comma))?.[1] || 'application/octet-stream'
+  const binary = atob(dataUrl.slice(comma + 1))
+  const bytes = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i)
+  return new Blob([bytes], { type: mime })
+}
+
+/**
+ * Triggers a browser download for a Blob. Call this directly from the click handler:
+ * starting the download after an `await` loses the user gesture, and Chrome then
+ * silently drops a second file from the same page.
+ */
 export function downloadBlob(blob: Blob, filename: string): void {
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
@@ -134,17 +149,4 @@ export function downloadBlob(blob: Blob, filename: string): void {
   link.click()
   document.body.removeChild(link)
   setTimeout(() => URL.revokeObjectURL(url), 1000)
-}
-
-export function canvasToBlob(canvas: HTMLCanvasElement, type = 'image/png', quality?: number): Promise<Blob> {
-  return new Promise((resolve, reject) => {
-    canvas.toBlob(
-      (blob) => {
-        if (blob) resolve(blob)
-        else reject(new Error('This browser could not export the image.'))
-      },
-      type,
-      quality,
-    )
-  })
 }

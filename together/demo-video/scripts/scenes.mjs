@@ -3,10 +3,77 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { createRequire } from 'node:module'
+
+const require = createRequire(path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../package.json'))
+const { PNG } = require('pngjs')
+const jsQR = require('jsqr')
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 const LOGO = path.resolve(here, '..', 'assets', 'greenwood-logo.png')
 const DOWNLOADS = path.resolve(here, '..', 'work', 'downloads')
+
+function decodeQrFile(file) {
+  const png = PNG.sync.read(fs.readFileSync(file))
+  const pixels = new Uint8ClampedArray(png.data.buffer, png.data.byteOffset, png.data.byteLength)
+  const result = jsQR(pixels, png.width, png.height)
+  return { text: result ? result.data : null, width: png.width, height: png.height }
+}
+
+function pngSize(file) {
+  const png = PNG.sync.read(fs.readFileSync(file))
+  return { width: png.width, height: png.height }
+}
+
+async function waitForDownload(pattern, timeout = 12000) {
+  const start = Date.now()
+  while (Date.now() - start < timeout) {
+    const names = fs.existsSync(DOWNLOADS) ? fs.readdirSync(DOWNLOADS) : []
+    const hit = names.find((name) => pattern.test(name) && !name.endsWith('.crdownload'))
+    if (hit) {
+      const file = path.join(DOWNLOADS, hit)
+      const size = fs.statSync(file).size
+      await new Promise((resolve) => setTimeout(resolve, 250))
+      if (fs.existsSync(file) && fs.statSync(file).size === size && size > 100) return file
+    }
+    await new Promise((resolve) => setTimeout(resolve, 150))
+  }
+  throw new Error(`No download matching ${pattern} in ${DOWNLOADS}`)
+}
+
+async function prepareDownloads(r) {
+  fs.rmSync(DOWNLOADS, { recursive: true, force: true })
+  fs.mkdirSync(DOWNLOADS, { recursive: true })
+  await r.browserCall('Browser.setDownloadBehavior', { behavior: 'allow', downloadPath: DOWNLOADS, eventsEnabled: true })
+}
+
+async function openShareKit(r) {
+  await r.scrollToSel('h2', { text: 'Share this campaign' }).catch(async () => {
+    await r.scrollToSel('h2', { text: 'My sharing kit' })
+  })
+  const closed = await r.ev(`[...document.querySelectorAll('button')].some(b => b.innerText.includes('Open sharing kit') && b.getBoundingClientRect().width > 0)`)
+  if (closed) {
+    await r.press('Open sharing kit', { selector: 'button' })
+    await r.sleep(600)
+  }
+  await r.waitFor('Link & QR')
+}
+
+async function waitEnabled(r, label) {
+  const start = Date.now()
+  while (Date.now() - start < 10000) {
+    const ready = await r.ev(`[...document.querySelectorAll('button')].some(b => b.innerText.includes(${JSON.stringify(label)}) && !b.disabled && b.getBoundingClientRect().width > 0)`)
+    if (ready) return
+    await new Promise((resolve) => setTimeout(resolve, 200))
+  }
+  throw new Error(`${label} never became available`)
+}
+
+async function showDownloadedImage(r, file) {
+  await r.call('Page.navigate', { url: `file://${file}` })
+  await r.waitFor('body', 8000)
+  await r.sleep(1800)
+}
 
 export const PEOPLE = {
   grace: 'Grace Mensah',
@@ -24,7 +91,9 @@ async function actAs(r, state, who) {
 
 /** Visible identity switch on the labelled demo identities page. */
 async function switchOnCamera(r, name) {
-  await r.nav('/demo-identities')
+  const origin = await r.ev('location.origin').catch(() => '')
+  if (origin !== new URL(r.base).origin) await r.go('/demo-identities')
+  else await r.nav('/demo-identities')
   await r.waitFor('Act as')
   await r.press(`Act as ${name.split(' ')[0]}`, { selector: 'button' })
   await r.sleep(500)
@@ -140,7 +209,11 @@ export const SCENES = [
       await r.click('label:has(#feature-partnerVouchers)')
       await r.sleep(700)
       await r.click('label.voucher-capability', { text: 'Contribution rewards' })
-      await r.sleep(1200)
+      await r.sleep(800)
+      await r.scrollToSel('label:has(#feature-shareKit)')
+      await r.expectText('Create QR codes, posters, and ready-to-copy sharing messages.')
+      if (!(await r.ev(`document.querySelector('#feature-shareKit').checked`))) throw new Error('The sharing kit should stay on with the recommended settings')
+      await r.sleep(2200)
       await r.press('Continue', { selector: 'button', exact: true })
       await r.waitFor('Step 3 of 5')
     },
@@ -280,7 +353,20 @@ export const SCENES = [
       await r.waitFor('Store access given.')
       await r.scrollToSel('.store-staff')
       await r.expectText(`${PEOPLE.leo} · all branches`)
-      await r.sleep(2500)
+      await r.sleep(1200)
+    },
+  },
+  {
+    id: 'oa-kit-settings',
+    chapter: 'orgadmin',
+    async run(r, state) {
+      await r.nav(`/workspace/${state.orgId}/features`)
+      await r.waitFor('Website features')
+      await r.sleep(800)
+      await r.expectText('Campaign sharing kit')
+      await r.scrollToSel('#feature-shareKit')
+      if (!(await r.ev(`document.querySelector('#feature-shareKit').checked`))) throw new Error('Sharing kit is missing from website features')
+      await r.sleep(2200)
     },
   },
   {
@@ -517,9 +603,191 @@ export const SCENES = [
       await r.sleep(1800)
       await r.press('View', { selector: 'a', within: row, exact: true })
       await r.waitFor('Support this campaign')
-      await r.sleep(2500)
+      await r.sleep(1800)
       await r.scrollBy(450)
+      await r.sleep(800)
+    },
+  },
+  {
+    id: 'og-share-qr',
+    chapter: 'organizer',
+    async run(r, state) {
+      await prepareDownloads(r)
+      await r.scrollToSel('#campaign-share-kit')
+      await openShareKit(r)
+      await r.sleep(800)
+      await r.waitFor('.qr-preview canvas')
+      await waitEnabled(r, 'Download PNG')
+      const campaignUrl = `${r.base}/o/greenwood-school/campaigns/${state.campaignId}`
+      const shown = await r.ev(`document.querySelector('.share-url-text')?.textContent?.trim()`)
+      if (shown !== campaignUrl) throw new Error('Sharing kit URL is not the original campaign: ' + shown)
+      if (shown.includes('/r/')) throw new Error('Original campaign kit must not carry a referral code')
+      await r.sleep(1200)
+      await r.press('Copy link', { selector: '.share-kit-panel button' })
+      await r.waitFor('Link copied.')
+      await r.sleep(700)
+      await r.press('Download PNG', { selector: 'button' })
+      await r.waitFor('Download started.')
+      const png = await waitForDownload(/-qr\.png$/)
+      const decoded = decodeQrFile(png)
+      if (decoded.text !== campaignUrl) throw new Error('QR decoded to ' + decoded.text)
+      state.campaignUrl = campaignUrl
+      await r.sleep(900)
+      await r.press('Download SVG', { selector: 'button' })
+      let svg
+      try {
+        svg = await waitForDownload(/-qr\.svg$/)
+      } catch (error) {
+        const names = fs.existsSync(DOWNLOADS) ? fs.readdirSync(DOWNLOADS).join(', ') : '(none)'
+        const note = await r.ev(`document.body.innerText.includes('SVG') ? document.body.innerText.slice(0, 400) : ''`).catch(() => '')
+        throw new Error(`${error.message}; folder: ${names}; page: ${note}`)
+      }
+      if (!fs.readFileSync(svg, 'utf8').includes('<svg')) throw new Error('QR SVG is not an SVG')
+      await r.sleep(1200)
+      await r.go(`/o/greenwood-school/campaigns/${state.campaignId}`)
+      await r.waitFor('Support this campaign')
+      await r.rejectText('is supporting')
       await r.sleep(1500)
+    },
+  },
+  {
+    id: 'og-share-poster',
+    chapter: 'organizer',
+    async run(r, state) {
+      await prepareDownloads(r)
+      await r.scrollToSel('#campaign-share-kit')
+      await openShareKit(r)
+      await r.press('Poster', { selector: '[role=tab]' })
+      await waitEnabled(r, 'Download poster PNG')
+      const posterCopy = await r.ev(`document.querySelector('.poster-print-sheet')?.textContent || ''`)
+      if (!posterCopy.includes('Scan to support') || !posterCopy.includes(state.campaignUrl)) throw new Error('Poster layout is missing the QR caption or the campaign link')
+      await r.sleep(1200)
+      await r.press('Download poster PNG', { selector: 'button' })
+      await r.waitFor('Download started.')
+      const poster = await waitForDownload(/-poster\.png$/)
+      const size = pngSize(poster)
+      if (size.width !== 2480 || size.height !== 3508) throw new Error(`Poster is ${size.width}x${size.height}`)
+      state.posterFile = poster
+      await r.sleep(800)
+      await showDownloadedImage(r, poster)
+      await r.go(`/o/greenwood-school/campaigns/${state.campaignId}`)
+      await r.waitFor('Support this campaign')
+      await r.scrollToSel('#campaign-share-kit')
+      await openShareKit(r)
+      await r.press('Poster', { selector: '[role=tab]' })
+      await r.sleep(600)
+      await r.hover('button', { text: 'Print / Save as PDF' })
+      await r.sleep(1500)
+    },
+  },
+  {
+    id: 'og-share-messages',
+    chapter: 'organizer',
+    async run(r, state) {
+      await r.scrollToSel('#campaign-share-kit')
+      await openShareKit(r)
+      await r.press('WhatsApp', { selector: '[role=tab]' })
+      await r.waitFor('WhatsApp message')
+      const message = await r.ev(`document.querySelector('.share-kit-panel textarea').value`)
+      if (!message.includes(state.campaignUrl) || message.includes('/r/')) throw new Error('WhatsApp draft has the wrong link')
+      await r.sleep(1200)
+      await r.press('Copy message', { selector: 'button' })
+      await r.waitFor('Message copied.')
+      const encoded = await r.ev(`'https://wa.me/?text=' + encodeURIComponent(document.querySelector('.share-kit-panel textarea').value)`)
+      if (!encoded.startsWith('https://wa.me/?text=') || !decodeURIComponent(encoded).includes(state.campaignUrl)) throw new Error('WhatsApp link is not encoded correctly')
+      await r.hover('button', { text: 'Open WhatsApp' })
+      await r.sleep(1200)
+      await r.press('Email', { selector: '[role=tab]' })
+      await r.waitFor('Email subject')
+      const subject = await r.ev(`document.querySelector('.share-kit-panel input').value`)
+      const body = await r.ev(`document.querySelector('.share-kit-panel textarea').value`)
+      if (!subject.startsWith('Help support ') || !body.includes(state.campaignUrl)) throw new Error('Email draft is incomplete')
+      await r.sleep(1000)
+      await r.press('Copy subject', { selector: 'button' })
+      await r.waitFor('Subject copied.')
+      await r.press('Copy body', { selector: 'button' })
+      await r.waitFor('Email body copied.')
+      await r.hover('button', { text: 'Open email app' })
+      await r.sleep(1500)
+    },
+  },
+  {
+    id: 'og-share-social',
+    chapter: 'organizer',
+    async run(r, state) {
+      await prepareDownloads(r)
+      await r.scrollToSel('#campaign-share-kit')
+      await openShareKit(r)
+      await r.press('Social images', { selector: '[role=tab]' })
+      await r.waitFor('Square')
+      await r.sleep(600)
+      await r.press('Portrait', { selector: '.social-size-picker button' })
+      await r.sleep(700)
+      await r.press('Story', { selector: '.social-size-picker button' })
+      await r.sleep(700)
+      await r.press('Square', { selector: '.social-size-picker button' })
+      await waitEnabled(r, 'Download Square PNG')
+      await r.sleep(800)
+      await r.press('Download Square PNG', { selector: 'button' })
+      await r.waitFor('Download started.')
+      const image = await waitForDownload(/social-square\.png$/)
+      const size = pngSize(image)
+      if (size.width !== 1080 || size.height !== 1080) throw new Error(`Social image is ${size.width}x${size.height}`)
+      await r.sleep(600)
+      await r.press('Copy caption', { selector: 'button' })
+      await r.waitFor('Caption copied.')
+      const caption = await r.ev('navigator.clipboard.readText()')
+      if (!caption.includes(state.campaignUrl)) throw new Error('Caption is missing the campaign link')
+      await r.sleep(800)
+      await showDownloadedImage(r, image)
+      await r.sleep(1200)
+      await r.go(`/o/greenwood-school/campaigns/${state.campaignId}`)
+      await r.waitFor('Support this campaign')
+    },
+  },
+  {
+    id: 'og-kit-off',
+    chapter: 'organizer',
+    async run(r, state) {
+      await switchOnCamera(r, PEOPLE.grace)
+      await r.nav(`/workspace/${state.orgId}/features`)
+      await r.waitFor('Website features')
+      await r.scrollToSel('#feature-shareKit')
+      await r.sleep(600)
+      if (await r.ev(`document.querySelector('#feature-shareKit').checked`)) await r.click('#feature-shareKit')
+      await r.sleep(500)
+      await r.expectText('Copying a campaign link still works.')
+      await r.hover('button.btn-primary')
+      await r.ev(`[...document.querySelectorAll('button')].find(b => b.innerText.trim() === 'Save changes' && !b.disabled)?.click()`)
+      await new Promise((resolve) => setTimeout(resolve, 500))
+      await r.ev(`[...document.querySelectorAll('button')].find(b => b.innerText.includes('Confirm and save') && !b.disabled)?.click()`)
+      await new Promise((resolve) => setTimeout(resolve, 700))
+      const turnedOff = await r.app(`const o = await import('/src/lib/orgStorage.ts'); return o.loadOrganizations().find(x => x.id === ${JSON.stringify(state.orgId)}).features.shareKit === false`)
+      if (!turnedOff) throw new Error('Sharing kit did not turn off')
+      await r.sleep(600)
+      await r.go(`/o/greenwood-school/campaigns/${state.campaignId}`)
+      await r.waitFor('Share campaign link')
+      await r.scrollToSel('h2', { text: 'Help spread the word' })
+      await r.rejectText('Open the full sharing kit')
+      await r.sleep(1600)
+      await r.go(`/workspace/${state.orgId}/features`)
+      await r.waitFor('Website features')
+      await r.scrollToSel('#feature-shareKit')
+      if (!(await r.ev(`document.querySelector('#feature-shareKit').checked`))) await r.click('#feature-shareKit')
+      await r.sleep(400)
+      const needsSave = await r.ev(`[...document.querySelectorAll('button')].some(b => b.innerText.trim() === 'Save changes' && !b.disabled)`)
+      if (needsSave) {
+        await r.hover('button.btn-primary')
+        await r.ev(`[...document.querySelectorAll('button')].find(b => b.innerText.trim() === 'Save changes' && !b.disabled)?.click()`)
+        await new Promise((resolve) => setTimeout(resolve, 500))
+        await r.ev(`[...document.querySelectorAll('button')].find(b => b.innerText.includes('Confirm and save') && !b.disabled)?.click()`)
+        await new Promise((resolve) => setTimeout(resolve, 700))
+      }
+      const turnedOn = await r.app(`const o = await import('/src/lib/orgStorage.ts'); return o.loadOrganizations().find(x => x.id === ${JSON.stringify(state.orgId)}).features.shareKit === true`)
+      if (!turnedOn) throw new Error('Sharing kit was not turned back on')
+      await r.sleep(800)
+      await switchOnCamera(r, PEOPLE.olivia)
+      await r.sleep(600)
     },
   },
   {
@@ -733,15 +1001,72 @@ export const SCENES = [
       await r.fillLabel('Short personal headline', 'Help me fill Year 3’s pencil pots', { delay: 18 })
       await r.fillLabel('Why I support this campaign', 'My daughter is in Year 3. Every classroom deserves full shelves and sharp pencils.', { delay: 10 })
       await r.fillLabel('My sharing goal', '5000')
+      await prepareDownloads(r)
       await r.press('Create my sharing page', { selector: 'button.btn-primary' })
-      await r.waitFor('Campaign sharing kit')
-      await r.sleep(1500)
-      await r.scrollToSel('#share-kit-title')
-      await r.expectText('Demo QR')
-      await r.sleep(2500)
+      await r.waitFor('My sharing kit')
+      state.referralUrl = (await r.ev(`document.querySelector('.share-link-card code')?.textContent || ''`)).trim()
+      const campaignUrl = `${r.base}/o/greenwood-school/campaigns/${state.campaignId}`
+      if (!state.referralUrl.includes('/r/') || !state.referralUrl.startsWith(campaignUrl)) throw new Error('Personal link is wrong: ' + state.referralUrl)
+      await r.sleep(1000)
+      await openShareKit(r)
+      await r.waitFor('.qr-preview canvas')
+      const kitUrl = (await r.ev(`document.querySelector('.share-url-text')?.textContent || ''`)).trim()
+      if (kitUrl !== state.referralUrl) throw new Error('Kit URL does not match the personal link')
+      await r.sleep(900)
+      await r.press('Download PNG', { selector: 'button' })
+      await r.waitFor('Download started.')
+      const qr = await waitForDownload(/mia-patel-qr\.png$/)
+      const decoded = decodeQrFile(qr)
+      if (decoded.text !== state.referralUrl) throw new Error('Personal QR decoded to ' + decoded.text)
+      await r.sleep(700)
+      await r.press('Poster', { selector: '[role=tab]' })
+      await waitEnabled(r, 'Download poster PNG')
+      const posterText = await r.ev(`document.querySelector('.poster-print-sheet')?.textContent || ''`)
+      if (!posterText.includes('Mia Patel is supporting this campaign') || !posterText.includes(state.referralUrl)) throw new Error('Personal poster is missing Mia or her link')
       await r.press('Copy poster text', { selector: 'button' })
       await r.waitFor('Poster text copied.')
+      await r.sleep(600)
+      await r.press('Social images', { selector: '[role=tab]' })
+      await waitEnabled(r, 'Download Square PNG')
+      await r.press('Copy caption', { selector: 'button' })
+      await r.waitFor('Caption copied.')
+      const caption = await r.ev('navigator.clipboard.readText()')
+      if (!caption.includes(state.referralUrl)) throw new Error('Personal caption is missing the referral link')
       await r.sleep(1500)
+    },
+  },
+  {
+    id: 'sp-referral-gift',
+    chapter: 'supporter',
+    async run(r, state) {
+      await switchOnCamera(r, PEOPLE.ben)
+      await r.go(state.referralUrl.replace(r.base, ''))
+      await r.waitFor('Mia Patel', 15000)
+      await r.expectText('personal introduction')
+      await r.sleep(1200)
+      await r.scrollToSel('h2', { text: 'Support this campaign' })
+      await r.press('₹100', { selector: 'button.amount-choice' })
+      await r.sleep(700)
+      await r.press('Continue to review', { selector: 'button, a' })
+      await r.waitFor('Confirm your contribution')
+      await r.expectText('No payment will be collected.')
+      await r.sleep(1000)
+      await r.press('Confirm simulated contribution', { selector: 'button' })
+      await r.waitFor('Thank you for supporting')
+      await r.expectText('₹800 of ₹60,000')
+      const credit = await r.app(`
+        const s = await import('/src/lib/storage.ts')
+        const referrals = await import('/src/lib/referrals.ts')
+        const campaigns = await import('/src/lib/campaigns.ts')
+        const store = s.loadStore()
+        const referral = store.referrals.find(item => item.campaignId === ${JSON.stringify(state.campaignId)} && item.displayName === 'Mia Patel')
+        const credited = referrals.referralTotals(referral, store.contributions)
+        return { raised: campaigns.raisedOf(${JSON.stringify(state.campaignId)}, store.contributions), credited: credited.amount, count: credited.count }
+      `)
+      if (credit.raised !== 800 || credit.credited !== 100 || credit.count !== 1) throw new Error('Referral attribution is wrong: ' + JSON.stringify(credit))
+      await r.sleep(1800)
+      await switchOnCamera(r, PEOPLE.mia)
+      await r.sleep(600)
     },
   },
   {

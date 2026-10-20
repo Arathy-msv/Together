@@ -4,7 +4,7 @@ import { test } from 'node:test'
 import { PNG } from 'pngjs'
 import jsQR from 'jsqr'
 
-const { buildShareContent, shareAssetFilename } = await import('../src/lib/sharing.ts')
+const { buildShareContent, dataUrlToBlob, shareAssetFilename } = await import('../src/lib/sharing.ts')
 const { qrPngDataUrl, qrSvgString } = await import('../src/lib/qr.ts')
 const { DEFAULT_BRANDING } = await import('../src/lib/theme.ts')
 import type { Campaign, Organization, Referral } from '../src/lib/types.ts'
@@ -171,6 +171,14 @@ test('WhatsApp and email drafts keep line breaks and special characters intact f
   const encodedWa = encodeURIComponent(content.whatsapp)
   assert.ok(decodeURIComponent(encodedWa) === content.whatsapp, 'round-tripping through encodeURIComponent is lossless')
   assert.ok(content.whatsapp.includes('élan'), 'accented characters survive unescaped in the draft')
+})
+
+test('a PNG data URL converts back to the same bytes', async () => {
+  const bytes = Uint8Array.from([137, 80, 78, 71, 13, 10, 26, 10, 0, 1])
+  const dataUrl = `data:image/png;base64,${Buffer.from(bytes).toString('base64')}`
+  const blob = dataUrlToBlob(dataUrl)
+  assert.equal(blob.type, 'image/png')
+  assert.deepEqual([...(new Uint8Array(await blob.arrayBuffer()))], [...bytes])
 })
 
 test('download filenames are descriptive and filesystem-safe', () => {

@@ -67,6 +67,8 @@ The website address follows the name, and the app checks that it is free.
 
 ## oa-features
 Next, she chooses the features the school needs: sponsor-funded play, review before publishing, and partner vouchers with contribution rewards.
+The campaign sharing kit is already included. It prepares QR codes, posters and ready-to-copy messages.
+Grace leaves it switched on.
 
 ## oa-look
 She sets the school's green, picks a homepage image, and writes a headline and introduction.
@@ -92,6 +94,9 @@ She saves it as a draft, reviews the terms, and then activates it.
 
 ## oa-store-staff
 Finally, she gives Leo, who works at the shop, access to its branches, so he can redeem vouchers.
+
+## oa-kit-settings
+In Website features, the sharing kit is listed with the school's other choices.
 
 # chapter organizer | Campaign Organizer
 
@@ -134,6 +139,27 @@ He adds a note, approves the revision, and the campaign is published.
 Back as Olivia, she copies the campaign link and checks the public page.
 In this prototype, links and records live in this browser; they don't carry over to other devices.
 
+## og-share-qr
+Organizers share the campaign with one link, used by the QR code, the poster and every message.
+The QR code is real. It opens this campaign, with no referral attached.
+Campaign data saved only in this browser will not appear on another device.
+
+## og-share-poster
+The poster is an A4 image with the school's name, the purpose, the target and the same QR code.
+Saving a PDF uses the browser's print dialog. This recording leaves that dialog closed.
+
+## og-share-messages
+Channel-specific drafts make sharing easier, while the sender stays in control of what goes out.
+Nothing is sent automatically, and no recipient is chosen. Opening WhatsApp or email stays a click away.
+
+## og-share-social
+Social images come in square, portrait and story sizes.
+A link painted into an image can't be clicked, so the caption carries the campaign address.
+
+## og-kit-off
+Grace turns the sharing kit off. Posters and QR downloads disappear, and copying the link still works.
+She switches it back on for Greenwood.
+
 ## og-duplicate
 She can also reuse last term's campaign.
 The copy is a clean draft with nothing raised. Past contributions stay with the original campaign.
@@ -172,9 +198,13 @@ At the end, the suggestion is only a starting point. She changes it to {₹200|t
 The campaign total now shows {₹700|seven hundred rupees}.
 
 ## sp-share
-Mia creates her own sharing page, with a personal goal.
-Her page shows her own story alongside the campaign.
-The sharing kit includes ready-made poster text. The QR code shown is a placeholder in this prototype.
+Mia creates her own sharing page, with a personal goal and a short introduction.
+Her link is different from the campaign link, and her QR code, poster and caption all use that personal link.
+Contributions through it still support the original campaign.
+
+## sp-referral-gift
+Ben, a different supporter, opens Mia's link and confirms one simulated contribution.
+The campaign total increases once, and Mia's page is credited. That credit is part of the total, not extra money.
 
 ## sp-vouchers
 My vouchers holds her reward code.

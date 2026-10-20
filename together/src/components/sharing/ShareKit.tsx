@@ -3,7 +3,7 @@ import { campaignCoverSrc } from '../../data/covers.ts'
 import { canUseFeature } from '../../lib/features.ts'
 import { AssetRenderError, SOCIAL_SIZES, renderPoster, renderSocialImage, type SocialSizeId } from '../../lib/canvasAssets.ts'
 import { loadImageElement, qrPngDataUrl, qrSvgString, renderQrToCanvas, QrGenerationError } from '../../lib/qr.ts'
-import { buildShareContent, canvasToBlob, downloadBlob, shareAssetFilename, type ShareContent, type ShareMode } from '../../lib/sharing.ts'
+import { buildShareContent, dataUrlToBlob, downloadBlob, shareAssetFilename, type ShareContent, type ShareMode } from '../../lib/sharing.ts'
 import type { Campaign, Organization, Referral } from '../../lib/types.ts'
 
 /**
@@ -128,11 +128,13 @@ export function ShareKit({
               </button>
             ))}
           </div>
-          {notice ? (
-            <div className={`notice ${notice.tone} compact`} role={notice.tone === 'error' ? 'alert' : 'status'}>
-              {notice.text}
-            </div>
-          ) : null}
+          <div className="share-kit-status" aria-live="polite">
+            {notice ? (
+              <div className={`notice ${notice.tone} compact`} role={notice.tone === 'error' ? 'alert' : 'status'}>
+                {notice.text}
+              </div>
+            ) : null}
+          </div>
           <div className="share-kit-panel">
             {tab === 'link' ? (
               <LinkAndQrSection content={content} onCopy={copyText} onAnnounce={announce} filenameBase={{ title: campaign.title, personName }} />
@@ -189,47 +191,38 @@ function LinkAndQrSection({
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const [error, setError] = useState('')
-  const [busy, setBusy] = useState(false)
   const [attempt, setAttempt] = useState(0)
+  const [downloads, setDownloads] = useState<{ png: Blob; svg: Blob } | null>(null)
 
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
+    let cancelled = false
     setError('')
-    renderQrToCanvas(canvas, content.url, { size: 240, margin: 4 }).catch((problem) => {
-      setError(problem instanceof QrGenerationError ? problem.message : 'The QR code could not be generated in this browser.')
-    })
+    setDownloads(null)
+    renderQrToCanvas(canvas, content.url, { size: 240, margin: 4 })
+      .then(async () => {
+        const dataUrl = await qrPngDataUrl(content.url, { size: 1024, margin: 4 })
+        const svg = await qrSvgString(content.url, { size: 1024, margin: 4 })
+        if (cancelled) return
+        setDownloads({
+          png: dataUrlToBlob(dataUrl),
+          // octet-stream keeps the .svg filename in browsers that refuse to download image/svg+xml.
+          svg: new Blob([svg], { type: 'application/octet-stream' }),
+        })
+      })
+      .catch((problem) => {
+        if (!cancelled) setError(problem instanceof QrGenerationError ? problem.message : 'The QR code could not be generated in this browser.')
+      })
+    return () => {
+      cancelled = true
+    }
   }, [content.url, attempt])
 
-  async function downloadPng() {
-    if (busy) return
-    setBusy(true)
-    try {
-      const dataUrl = await qrPngDataUrl(content.url, { size: 1024, margin: 4 })
-      const response = await fetch(dataUrl)
-      const blob = await response.blob()
-      downloadBlob(blob, shareAssetFilename(filenameBase.title, 'qr', 'png', filenameBase.personName))
-      onAnnounce('success', 'Download started.')
-    } catch {
-      setError('The PNG could not be generated. Try again.')
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  async function downloadSvg() {
-    if (busy) return
-    setBusy(true)
-    try {
-      const svg = await qrSvgString(content.url, { size: 1024, margin: 4 })
-      const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' })
-      downloadBlob(blob, shareAssetFilename(filenameBase.title, 'qr', 'svg', filenameBase.personName))
-      onAnnounce('success', 'Download started.')
-    } catch {
-      setError('The SVG could not be generated. Try again.')
-    } finally {
-      setBusy(false)
-    }
+  function saveQr(kind: 'png' | 'svg') {
+    if (!downloads) return
+    downloadBlob(downloads[kind], shareAssetFilename(filenameBase.title, 'qr', kind, filenameBase.personName))
+    onAnnounce('success', 'Download started.')
   }
 
   return (
@@ -256,10 +249,10 @@ function LinkAndQrSection({
           </div>
         ) : null}
         <div className="inline-actions">
-          <button type="button" className="btn btn-primary btn-sm" disabled={Boolean(error) || busy} onClick={() => void downloadPng()}>
+          <button type="button" className="btn btn-primary btn-sm" disabled={Boolean(error) || !downloads} onClick={() => saveQr('png')}>
             Download PNG
           </button>
-          <button type="button" className="btn btn-outline btn-sm" disabled={Boolean(error) || busy} onClick={() => void downloadSvg()}>
+          <button type="button" className="btn btn-outline btn-sm" disabled={Boolean(error) || !downloads} onClick={() => saveQr('svg')}>
             Download SVG
           </button>
           <button type="button" className="btn btn-outline btn-sm" onClick={() => void onCopy(content.url, 'Link copied.')}>
@@ -305,7 +298,7 @@ function PosterSection({
   const [status, setStatus] = useState<'idle' | 'rendering' | 'ready' | 'error'>('idle')
   const [error, setError] = useState('')
   const [qrImgSrc, setQrImgSrc] = useState('')
-  const [busy, setBusy] = useState(false)
+  const [exportBlob, setExportBlob] = useState<Blob | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -322,6 +315,7 @@ function PosterSection({
     if (!canvas || !qrImgSrc) return
     let cancelled = false
     setStatus('rendering')
+    setExportBlob(null)
     setError('')
     ;(async () => {
       const qr = await loadImageElement(qrImgSrc)
@@ -334,7 +328,9 @@ function PosterSection({
           qr,
           images: { logo: logoImage, cover: includeImage ? coverImage : null },
         })
-        if (!cancelled) setStatus('ready')
+        if (cancelled) return
+        setExportBlob(dataUrlToBlob(canvas.toDataURL('image/png')))
+        setStatus('ready')
       } catch (problem) {
         if (cancelled) return
         if (problem instanceof AssetRenderError && problem.imageRelated) {
@@ -351,19 +347,10 @@ function PosterSection({
     }
   }, [org, campaign, content, qrImgSrc, logoImage, coverImage, includeImage, onAnnounce])
 
-  async function downloadPoster() {
-    const canvas = canvasRef.current
-    if (!canvas || status !== 'ready' || busy) return
-    setBusy(true)
-    try {
-      const blob = await canvasToBlob(canvas, 'image/png')
-      downloadBlob(blob, shareAssetFilename(campaign.title, 'poster', 'png', personName))
-      onAnnounce('success', 'Download started.')
-    } catch {
-      onAnnounce('error', 'The poster PNG could not be exported.')
-    } finally {
-      setBusy(false)
-    }
+  function downloadPoster() {
+    if (!exportBlob || status !== 'ready') return
+    downloadBlob(exportBlob, shareAssetFilename(campaign.title, 'poster', 'png', personName))
+    onAnnounce('success', 'Download started.')
   }
 
   function printPoster() {
@@ -398,7 +385,7 @@ function PosterSection({
           </div>
         ) : null}
         <div className="inline-actions">
-          <button type="button" className="btn btn-primary btn-sm" disabled={status !== 'ready' || busy} onClick={() => void downloadPoster()}>
+          <button type="button" className="btn btn-primary btn-sm" disabled={status !== 'ready' || !exportBlob} onClick={downloadPoster}>
             Download poster PNG
           </button>
           <button type="button" className="btn btn-outline btn-sm" onClick={printPoster}>
@@ -613,7 +600,7 @@ function SocialSection({
   const [error, setError] = useState('')
   const [qrImgSrc, setQrImgSrc] = useState('')
   const [caption, setCaption] = useState(content.socialCaption)
-  const [busy, setBusy] = useState(false)
+  const [exportBlob, setExportBlob] = useState<Blob | null>(null)
   const captionId = useId()
 
   useEffect(() => setCaption(content.socialCaption), [content.socialCaption])
@@ -633,6 +620,7 @@ function SocialSection({
     if (!canvas || !qrImgSrc) return
     let cancelled = false
     setStatus('rendering')
+    setExportBlob(null)
     setError('')
     ;(async () => {
       const qr = await loadImageElement(qrImgSrc)
@@ -647,7 +635,9 @@ function SocialSection({
           size,
           includeQr,
         })
-        if (!cancelled) setStatus('ready')
+        if (cancelled) return
+        setExportBlob(dataUrlToBlob(canvas.toDataURL('image/png')))
+        setStatus('ready')
       } catch (problem) {
         if (cancelled) return
         if (problem instanceof AssetRenderError && problem.imageRelated) {
@@ -664,19 +654,10 @@ function SocialSection({
     }
   }, [org, campaign, content, qrImgSrc, logoImage, coverImage, includeImage, includeQr, size, onAnnounce])
 
-  async function download() {
-    const canvas = canvasRef.current
-    if (!canvas || status !== 'ready' || busy) return
-    setBusy(true)
-    try {
-      const blob = await canvasToBlob(canvas, 'image/png')
-      downloadBlob(blob, shareAssetFilename(campaign.title, `social-${size}`, 'png', personName))
-      onAnnounce('success', 'Download started.')
-    } catch {
-      onAnnounce('error', 'The image could not be exported.')
-    } finally {
-      setBusy(false)
-    }
+  function download() {
+    if (!exportBlob || status !== 'ready') return
+    downloadBlob(exportBlob, shareAssetFilename(campaign.title, `social-${size}`, 'png', personName))
+    onAnnounce('success', 'Download started.')
   }
 
   const dims = SOCIAL_SIZES[size]
@@ -718,7 +699,7 @@ function SocialSection({
             {error}
           </div>
         ) : null}
-        <button type="button" className="btn btn-primary btn-sm" disabled={status !== 'ready' || busy} onClick={() => void download()}>
+        <button type="button" className="btn btn-primary btn-sm" disabled={status !== 'ready' || !exportBlob} onClick={download}>
           Download {SOCIAL_SIZES[size].label} PNG
         </button>
         <div className="field">

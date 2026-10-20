@@ -43,7 +43,14 @@ export async function createRecorder({ profile, port = 9555, base, workDir, widt
     if (String(error.message).startsWith('Port')) throw error
   }
   fs.rmSync(profile, { recursive: true, force: true })
-  const chrome = spawn('google-chrome', ['--headless=new', '--no-sandbox', '--hide-scrollbars', '--mute-audio', '--disable-gpu', '--force-color-profile=srgb', '--font-render-hinting=none', `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`, `--window-size=${width},${height}`, 'about:blank'], { stdio: 'ignore' })
+  const prefsDir = path.join(profile, 'Default')
+  fs.mkdirSync(prefsDir, { recursive: true })
+  fs.writeFileSync(path.join(prefsDir, 'Preferences'), JSON.stringify({
+    download: { prompt_for_download: false, directory_upgrade: true },
+    profile: { default_content_setting_values: { automatic_downloads: 1 } },
+    safebrowsing: { enabled: false },
+  }))
+  const chrome = spawn('google-chrome', ['--headless=new', '--no-sandbox', '--hide-scrollbars', '--mute-audio', '--disable-gpu', '--force-color-profile=srgb', '--font-render-hinting=none', '--disable-features=DownloadBubble,DownloadBubbleV2', `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`, `--window-size=${width},${height}`, 'about:blank'], { stdio: 'ignore' })
   process.on('exit', () => chrome.kill())
   let version
   for (let i = 0; i < 60; i += 1) {
@@ -158,7 +165,7 @@ export async function createRecorder({ profile, port = 9555, base, workDir, widt
         const matches = want === null ? all : all.filter(e => { const t = norm(e.innerText || e.value || e.getAttribute('aria-label')); return ${exact} ? t === want : t.includes(want) })
         return matches[${index}] || null
       })()`
-      const found = await r.ev(`(()=>{ const e = ${finder}; if (!e) return false; const b=e.getBoundingClientRect(); if (b.top < 150 || b.bottom > innerHeight - 40) e.scrollIntoView({ block: 'center', behavior: 'smooth' }); return true })()`)
+      const found = await r.ev(`(()=>{ const e = ${finder}; if (!e) return false; const b=e.getBoundingClientRect(); if (b.top < 150 || b.bottom > innerHeight - 40) e.scrollIntoView({ block: 'center', behavior: 'instant' }); return true })()`)
       if (!found) throw new Error(`Could not find ${selector}${text ? ` with text "${text}"` : ''} on ${await r.ev('location.pathname')}`)
       await sleep(500)
       lastFinder = finder
@@ -188,16 +195,20 @@ export async function createRecorder({ profile, port = 9555, base, workDir, widt
     },
     async click(selector, options = {}) {
       let point = await r.locate(selector, options)
-      await r.moveTo(point.x, point.y)
-      for (let i = 0; i < 6; i += 1) {
+      for (let i = 0; i < 5; i += 1) {
+        await r.moveTo(point.x, point.y, i === 0 ? 450 : 140)
+        await sleep(90)
         const now = await r.measure()
         if (!now) throw new Error(`${selector} disappeared before it could be clicked`)
-        if (Math.abs(now.x - point.x) < 3 && Math.abs(now.y - point.y) < 3) break
+        const drifted = Math.abs(now.x - point.x) > 2 || Math.abs(now.y - point.y) > 2
         point = now
-        await sleep(250)
-        await r.moveTo(point.x, point.y, 200)
+        if (!drifted) break
       }
-      await r.clickAt(point.x, point.y)
+      await call('Input.dispatchMouseEvent', { type: 'mousePressed', x: point.x, y: point.y, button: 'left', clickCount: 1 })
+      await sleep(70)
+      await call('Input.dispatchMouseEvent', { type: 'mouseReleased', x: point.x, y: point.y, button: 'left', clickCount: 1 })
+      pointer = { x: point.x, y: point.y }
+      await sleep(200)
     },
     /** Clicks a button or link by its visible text. */
     async press(text, options = {}) {
