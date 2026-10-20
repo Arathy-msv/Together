@@ -477,7 +477,7 @@ function StoryStep({
           <RadioCard
             checked={form.access === 'closed'}
             title="Private group"
-            text="Only people with the demo access code can open it."
+            text="People join with a demo code and their name. The group keeps a leadership board and referrals."
             onSelect={() => onChange({ access: 'closed' })}
           />
         </div>
@@ -491,7 +491,9 @@ function StoryStep({
               aria-invalid={Boolean(errors.accessCode)}
               onChange={(event) => onChange({ accessCode: event.target.value.toUpperCase() })}
             />
-            <p className="help">A demo code only — not secure access control.</p>
+            <p className="help">
+              A demo code only — not secure access control. Players keep their names, get a referral, and earn points when someone contributes through it.
+            </p>
             {errors.accessCode ? <p className="error-text">{errors.accessCode}</p> : null}
           </div>
         ) : null}

@@ -52,6 +52,11 @@ export interface Contribution {
   createdAt: string
   status: 'success'
   detail?: string
+  /** Named player in a private group who made this contribution. */
+  playerId?: string
+  playerName?: string
+  /** Another player's referral code, when this gift came through them. */
+  referralCode?: string
 }
 
 export interface DemoStore {
@@ -93,6 +98,9 @@ export interface PendingDonation {
   method: ContributionMethod
   detail?: string
   flowers?: Array<FlowerKind | null>
+  playerId?: string
+  playerName?: string
+  referralCode?: string
 }
 
 export interface CampaignView {

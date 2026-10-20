@@ -21,6 +21,7 @@ import { readLedger, writeLedger } from '../lib/gameLedger.ts'
 import { gameMeta } from '../lib/games.ts'
 import { formatINR } from '../lib/format.ts'
 import { clearPending, getPending } from '../lib/pending.ts'
+import { activeReferral, currentPlayer } from '../lib/players.ts'
 import { loadStore } from '../lib/storage.ts'
 import type { CampaignView } from '../lib/types.ts'
 import { NotFoundPage } from './NotFound.tsx'
@@ -115,6 +116,7 @@ function GameConfirm({ view, sessionId }: { view: CampaignView; sessionId: strin
     lock.current = true
     setSubmitting(true)
     try {
+      const giver = currentPlayer(campaign.id)
       const savedContribution = addContribution({
         id: sessionId,
         campaignId: campaign.id,
@@ -123,6 +125,9 @@ function GameConfirm({ view, sessionId }: { view: CampaignView; sessionId: strin
         detail: `${gameMeta(campaign.gameType).name} · ${actionBreakdown(session!, config)} · suggestion ${formatPaise(
           session!.suggestedPaise,
         )}${custom ? ` · chosen ${formatPaise(amountPaise)}` : ''}`,
+        playerId: giver?.id,
+        playerName: giver?.name,
+        referralCode: activeReferral(campaign.id, giver?.id),
       })
       writeLedger(settleConfirmed(latestLedger, sessionId))
       navigate(`/campaigns/${campaign.id}/success/${savedContribution.id}`, { replace: true })
@@ -293,6 +298,9 @@ function DirectConfirm({ view }: { view: CampaignView }) {
         amount: current.amount,
         method: current.method,
         detail: current.detail,
+        playerId: current.playerId,
+        playerName: current.playerName,
+        referralCode: current.referralCode,
       })
       clearPending()
       navigate(`/campaigns/${campaign.id}/success/${saved.id}`)

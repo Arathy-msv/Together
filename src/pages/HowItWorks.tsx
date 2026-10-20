@@ -21,7 +21,7 @@ const FAQ = [
   },
   {
     q: 'Can a campaign be private?',
-    a: 'Yes. Private campaigns ask for a demo access code. It is a demonstration only, not secure access control.',
+    a: 'Yes. A private group asks for a demo access code and each player’s name. Names stay on the leadership board. When someone contributes through your referral, you earn points.',
   },
   {
     q: 'Are vouchers available?',

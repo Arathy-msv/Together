@@ -1,5 +1,6 @@
 import { createSeed } from '../data/seed.ts'
 import { normalizeGameSettings } from './gameContribution.ts'
+import { clearPlayers, ensureSampleRoster } from './players.ts'
 import { isGameType } from './games.ts'
 import type { Campaign, Contribution, DemoStore } from './types.ts'
 
@@ -101,6 +102,7 @@ export function loadStore(): DemoStore {
     if (!raw) {
       const seeded = createSeed()
       localStorage.setItem(STORAGE_KEY, JSON.stringify(seeded))
+      ensureSampleRoster(seeded.campaigns.map((campaign) => campaign.id))
       return seeded
     }
     const parsed: unknown = JSON.parse(raw)
@@ -123,6 +125,7 @@ export function loadStore(): DemoStore {
         // Keep the filtered list in memory.
       }
     }
+    ensureSampleRoster(store.campaigns.map((campaign) => campaign.id))
     return store
   } catch {
     return recover()
@@ -147,7 +150,13 @@ function withDefaultCampaigns(store: DemoStore): DemoStore {
   const present = new Set(campaigns.map((campaign) => campaign.id))
   const missing = seeded.campaigns.filter((campaign) => !present.has(campaign.id))
   if (!changed && missing.length === 0) return store
-  const next: DemoStore = { ...store, campaigns: [...campaigns, ...missing] }
+  const circleIsNew = missing.some((campaign) => campaign.id === 'cmp_circle')
+  const circleGifts = circleIsNew ? seeded.contributions.filter((contribution) => contribution.campaignId === 'cmp_circle') : []
+  const next: DemoStore = {
+    ...store,
+    campaigns: [...campaigns, ...missing],
+    contributions: [...store.contributions, ...circleGifts],
+  }
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
   } catch {
@@ -163,6 +172,7 @@ function recover(): DemoStore {
   } catch {
     // Ignore quota or private-mode failures and keep the in-memory seed.
   }
+  ensureSampleRoster(seeded.campaigns.map((campaign) => campaign.id))
   return seeded
 }
 
@@ -172,6 +182,8 @@ export function saveStore(store: DemoStore): void {
 
 export function resetStore(): DemoStore {
   const seeded = createSeed()
+  clearPlayers()
+  ensureSampleRoster(seeded.campaigns.map((campaign) => campaign.id))
   write(seeded)
   return seeded
 }

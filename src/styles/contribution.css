@@ -293,5 +293,47 @@
   .game-settings-grid { grid-template-columns: 1fr; }
   .memory-grid.small { width: auto; }
 }
+
+.leaderboard { margin-top: 22px; padding: 18px; display: grid; gap: 14px; }
+.leaderboard.compact { margin: 0 16px 12px; }
+.leaderboard-head h2 { font-size: 1.25rem; margin-bottom: 4px; }
+.referral-card {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 18px;
+  background: #fbfaf7;
+  border: 1px solid #e6e3db;
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+.referral-code { letter-spacing: 0.08em; font-variant-numeric: tabular-nums; }
+.leader-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.leader-list li {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  background: #fff;
+  border: 1px solid #e6e3db;
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+.leader-list li.mine { border-color: #17493b; box-shadow: inset 0 0 0 1px #17493b; }
+.rank {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #e8f1ec;
+  color: #17493b;
+  font-weight: 800;
+}
+.leader-list li:first-child .rank { background: #fbf1d7; color: #6e4e0c; }
+.leader-name { display: grid; gap: 2px; min-width: 0; }
+.leader-name strong { overflow: hidden; text-overflow: ellipsis; }
+.leader-points { text-align: right; display: grid; }
+.leader-points strong { font-size: 1.15rem; }
 .flow-shell:has(.dragging), .flow-scene { -webkit-user-select: none; user-select: none; }
 .flow-brand { text-decoration: none; }

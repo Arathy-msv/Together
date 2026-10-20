@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { AmountPicker } from '../components/AmountPicker.tsx'
 import { CampaignCover, OrgLogo } from '../components/CampaignImage.tsx'
+import { Leaderboard } from '../components/Leaderboard.tsx'
 import { ProgressBar } from '../components/ProgressBar.tsx'
 import { StatusBadge } from '../components/StatusBadge.tsx'
 import { useCampaignView } from '../hooks/useDemoStore.ts'
@@ -9,6 +10,7 @@ import { formatDateRange, formatINR, parseWholeRupees } from '../lib/format.ts'
 import { campaignGameSettings, gameIntroSentence } from '../lib/gameContribution.ts'
 import { GAME_THUMBS, gameMeta } from '../lib/games.ts'
 import { getPending, isUnlocked, newToken, setPending, unlockCampaign } from '../lib/pending.ts'
+import { activeReferral, currentPlayer, joinPlayer, rememberReferral } from '../lib/players.ts'
 import type { CampaignView } from '../lib/types.ts'
 import { NotFoundPage } from './NotFound.tsx'
 
@@ -24,6 +26,11 @@ export function CampaignPage() {
     if (view) document.title = `${view.campaign.title} — Together`
   }, [view])
 
+  useEffect(() => {
+    const ref = params.get('ref')
+    if (id && ref) rememberReferral(id, ref)
+  }, [id, params])
+
   if (!view) return <NotFoundPage />
 
   const { campaign } = view
@@ -32,8 +39,10 @@ export function CampaignPage() {
   const playPath = `/campaigns/${campaign.id}/play/${campaign.gameType}`
   const contribution = campaignGameSettings(campaign)
   const gameIntro = gameIntroSentence(campaign.gameType, contribution.ratePaise)
+  const player = campaign.access === 'closed' ? currentPlayer(campaign.id) : null
+  const needsName = campaign.access === 'closed' && !campaign.isDraft && !needsCode && !player
 
-  if (campaign.participation.game && !campaign.isDraft && !needsCode && params.get('view') !== 'details') {
+  if (campaign.participation.game && !campaign.isDraft && !needsCode && !needsName && params.get('view') !== 'details') {
     return <Navigate to={playPath} replace />
   }
 
@@ -61,6 +70,7 @@ export function CampaignPage() {
             <span className="muted small">{formatDateRange(campaign.opensAt, campaign.closesAt)}</span>
           </div>
           <p className="campaign-story">{campaign.description}</p>
+          {campaign.access === 'closed' && !needsCode ? <Leaderboard campaignId={campaign.id} /> : null}
         </div>
 
         <aside className="panel support-panel">
@@ -76,14 +86,25 @@ export function CampaignPage() {
           <div className="divider" />
           {needsCode ? (
             <AccessGate
-              onUnlock={(code) => {
-                if (campaign.accessCode && code.trim().toUpperCase() === campaign.accessCode.toUpperCase()) {
-                  unlockCampaign(campaign.id)
-                  setUnlocked(true)
-                  if (campaign.participation.game) navigate(playPath)
-                  return true
+              onUnlock={(code, name) => {
+                if (!campaign.accessCode || code.trim().toUpperCase() !== campaign.accessCode.toUpperCase()) {
+                  return 'That code does not match. Check the code on the organiser dashboard.'
                 }
-                return false
+                const joined = joinPlayer(campaign.id, name)
+                if (!joined) return 'Add the name you want kept on this private group’s player list.'
+                unlockCampaign(campaign.id)
+                setUnlocked(true)
+                if (campaign.participation.game) navigate(playPath)
+                return null
+              }}
+            />
+          ) : needsName ? (
+            <NameGate
+              onJoin={(name) => {
+                const joined = joinPlayer(campaign.id, name)
+                if (!joined) return false
+                if (campaign.participation.game && params.get('view') !== 'details') navigate(playPath)
+                return true
               }}
             />
           ) : (
@@ -94,11 +115,15 @@ export function CampaignPage() {
               onTab={setTab}
               onContinue={(amount) => {
                 const pending = getPending(campaign.id)
+                const giver = currentPlayer(campaign.id)
                 setPending({
                   token: pending?.method === 'direct' ? pending.token : newToken(),
                   campaignId: campaign.id,
                   amount,
                   method: 'direct',
+                  playerId: giver?.id,
+                  playerName: giver?.name,
+                  referralCode: activeReferral(campaign.id, giver?.id),
                 })
                 navigate(`/campaigns/${campaign.id}/confirm`)
               }}
@@ -268,26 +293,58 @@ function blockMessage(status: string, opensAt: string): { title: string; body: s
   }
 }
 
-function AccessGate({ onUnlock }: { onUnlock: (code: string) => boolean }) {
+function AccessGate({ onUnlock }: { onUnlock: (code: string, name: string) => string | null }) {
   const [code, setCode] = useState('')
+  const [name, setName] = useState('')
   const [error, setError] = useState('')
   return (
     <form
       className="access-gate"
-      onSubmit={(event) => {
+      onSubmit={(event: FormEvent) => {
         event.preventDefault()
-        if (!onUnlock(code)) setError('That code does not match. Check the code on the organiser dashboard.')
+        setError(onUnlock(code, name) ?? '')
       }}
     >
-      <strong>Private campaign</strong>
-      <p className="muted small">Enter the demo access code from the organiser. This is not secure access control.</p>
+      <strong>Private group</strong>
+      <p className="muted small">
+        Enter the demo access code and the name to keep on this group’s player list. This is not secure access control.
+      </p>
+      <label className="field-label" htmlFor="player-name">
+        Your name
+      </label>
+      <input id="player-name" value={name} autoComplete="name" onChange={(event) => setName(event.target.value)} />
       <label className="field-label" htmlFor="demo-code">
         Access code
       </label>
       <input id="demo-code" value={code} autoComplete="off" onChange={(event) => setCode(event.target.value.toUpperCase())} />
       {error ? <p className="error-text">{error}</p> : null}
       <button type="submit" className="btn btn-primary btn-block">
-        Continue
+        Join group
+      </button>
+    </form>
+  )
+}
+
+function NameGate({ onJoin }: { onJoin: (name: string) => boolean }) {
+  const [name, setName] = useState('')
+  const [error, setError] = useState('')
+  return (
+    <form
+      className="access-gate"
+      onSubmit={(event: FormEvent) => {
+        event.preventDefault()
+        if (!onJoin(name)) setError('Add a name of at least 2 characters. It stays on this private group’s player list.')
+      }}
+    >
+      <strong>Add your name</strong>
+      <p className="muted small">Private groups keep every player’s name for the leadership board and referrals.</p>
+      <label className="field-label" htmlFor="join-name">
+        Your name
+      </label>
+      <input id="join-name" value={name} autoComplete="name" onChange={(event) => setName(event.target.value)} />
+      {error ? <p className="error-text">{error}</p> : null}
+      <button type="submit" className="btn btn-primary btn-block">
+        Join the board
       </button>
     </form>
   )

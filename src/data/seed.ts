@@ -100,6 +100,25 @@ export function createSeed(): DemoStore {
       gameType: 'jacket',
       createdAt: shiftLocal(-5, 14),
     },
+    {
+      id: 'cmp_circle',
+      title: 'Class Circle',
+      description:
+        'A private group for one class. Players keep their names, share a referral, and climb the leadership board when someone contributes through them.',
+      coverImageId: 'sports',
+      organizerName: 'Riverside School PTA',
+      access: 'closed',
+      accessCode: 'CLASS1',
+      goalAmount: 10000,
+      donationMode: 'fixed',
+      fixedAmounts: [100, 250, 500],
+      opensAt: shiftLocal(-6, 9),
+      closesAt: shiftLocal(40, 18),
+      autoCloseOnGoal: false,
+      participation: { direct: true, game: true },
+      gameType: 'garden',
+      createdAt: shiftLocal(-7, 11),
+    },
   ]
 
   const contributions: Contribution[] = [
@@ -123,6 +142,17 @@ export function createSeed(): DemoStore {
         10 - index,
       ),
     ),
+    {
+      ...contribution('ctb_circle_rohan', 'cmp_circle', 250, 'direct', 'DEMO-1101', 3),
+      playerId: 'player_rohan',
+      playerName: 'Rohan Iyer',
+      referralCode: 'ASHA01',
+    },
+    {
+      ...contribution('ctb_circle_meera', 'cmp_circle', 100, 'game', 'DEMO-1102', 1),
+      playerId: 'player_meera',
+      playerName: 'Meera Shah',
+    },
   ]
 
   return { version: 1, campaigns, contributions }

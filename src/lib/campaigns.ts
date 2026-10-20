@@ -1,6 +1,7 @@
 import { progressPercent } from './format.ts'
 import { clearGameData } from './gameLedger.ts'
 import { clearCampaignSession } from './pending.ts'
+import { clearPlayers } from './players.ts'
 import { loadStore, saveStore } from './storage.ts'
 import type {
   Campaign,
@@ -73,6 +74,7 @@ export function deleteCampaign(id: string): void {
   removeCampaign(id)
   clearCampaignSession(id)
   clearGameData(id)
+  clearPlayers(id)
 }
 
 export function closeCampaign(id: string): void {
@@ -87,6 +89,9 @@ export interface NewContribution {
   amount: number
   method: ContributionMethod
   detail?: string
+  playerId?: string
+  playerName?: string
+  referralCode?: string
 }
 
 function nextReference(contributions: Contribution[]): string {
@@ -108,6 +113,9 @@ export function addContribution(input: NewContribution): Contribution {
     amount: input.amount,
     method: input.method,
     detail: input.detail,
+    playerId: input.playerId,
+    playerName: input.playerName,
+    referralCode: input.referralCode,
     reference: nextReference(store.contributions),
     createdAt: new Date().toISOString(),
     status: 'success',

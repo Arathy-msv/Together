@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { ContributionBar } from '../../components/ContributionBar.tsx'
+import { Leaderboard } from '../../components/Leaderboard.tsx'
 import { ContributionLayer } from '../../components/ContributionDialogs.tsx'
 import { LeafMark } from '../../components/illustrations.tsx'
 import type { GameContribution } from '../../hooks/useGameContribution.ts'
@@ -63,7 +64,10 @@ export function GameFrame({
         </header>
         <div className="play-stage">
           {children}
-          <div className="play-side">{side}</div>
+          <div className="play-side">
+            {side}
+            {campaign.access === 'closed' ? <Leaderboard campaignId={campaign.id} compact /> : null}
+          </div>
         </div>
         {view.canGive || preview ? null : (
           <p className="play-closed-note">

@@ -8,6 +8,7 @@ import {
 } from 'react'
 import { Link } from 'react-router-dom'
 import { ContributionBar } from '../../components/ContributionBar.tsx'
+import { Leaderboard } from '../../components/Leaderboard.tsx'
 import { ContributionLayer } from '../../components/ContributionDialogs.tsx'
 import { useGameContribution } from '../../hooks/useGameContribution.ts'
 import { campaignDetailsPath } from '../../lib/campaigns.ts'
@@ -312,6 +313,7 @@ export function StagedFlowGame({
             </div>
           </div>
         </div>
+        {view.campaign.access === 'closed' ? <Leaderboard campaignId={campaignId} compact /> : null}
         <ContributionBar contribution={contribution} />
       </div>
       <ContributionLayer contribution={contribution} onNextRound={nextRound} />
