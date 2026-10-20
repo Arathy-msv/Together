@@ -880,7 +880,7 @@ function SettingsStep({
             </button>
             <span>
               <strong>Sponsor-funded play for this campaign</strong>
-              <em>Supporters can unlock a suggested contribution from a participating sponsor. Configure the sponsor when you manage the campaign.</em>
+              <em>Shows supporters that a sponsor supports play. Sponsor rules, budgets and allocations are not tracked in this prototype.</em>
             </span>
           </label>
         ) : null}

@@ -149,7 +149,7 @@ function CampaignDetails({ view, referral }: { view: CampaignView; referral?: Re
           ) : null}
           {campaignUsesSponsor(org, campaign) ? (
             <p className="sponsor-banner notice success compact">
-              <strong>Sponsor-funded play is on.</strong> You can unlock a suggested contribution from a participating sponsor, or give directly.
+              <strong>Sponsor-funded play is on.</strong> The organization has confirmed a sponsor for play. Sponsor amounts are not tracked or received in this prototype — what you confirm is your own simulated contribution.
             </p>
           ) : null}
           <div className="mobile-support" aria-label="Campaign progress">
@@ -435,7 +435,7 @@ function GivePanel({
             Start playing
           </Link>
           {sponsorPlay ? (
-            <p className="muted small">A participating sponsor can cover your suggested amount in this demo — continue through the game, then confirm as usual. No real payment is taken.</p>
+            <p className="muted small">Sponsor allocations aren’t tracked in this prototype. Play, then review and confirm your own simulated contribution. No real payment is taken.</p>
           ) : null}
           {campaign.participation.direct ? (
             <button type="button" className="link-button center-block" onClick={() => onTab('direct')}>

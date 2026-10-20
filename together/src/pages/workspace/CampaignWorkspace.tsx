@@ -164,7 +164,11 @@ function Overview({ campaign, view, store }: WorkspaceProps) {
         <ul className="status-lines">
           <li>
             <strong>Fundraising:</strong>{' '}
-            {view.raised >= campaign.goalAmount
+            {campaign.isDraft
+              ? view.status === 'pending_review'
+                ? 'Not open yet — waiting for an Organization Admin to approve it.'
+                : 'Not open yet — this campaign is a draft.'
+              : view.raised >= campaign.goalAmount
               ? 'Goal reached.'
               : fundraisingOpen
                 ? `In progress — ${view.percent}% of the goal raised.`
