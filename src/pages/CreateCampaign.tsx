@@ -706,8 +706,24 @@ function GameGallery({
           className={!form.game ? 'game-choice selected none-choice' : 'game-choice none-choice'}
           onClick={() => onChange({ game: false })}
         >
-          <strong>No game</strong>
-          <span>Direct giving only</span>
+          <span className="none-art" aria-hidden="true">
+            <svg viewBox="0 0 160 100" className="none-scene">
+              <circle cx="118" cy="22" r="16" fill="#f6e2a8" />
+              <circle cx="28" cy="78" r="18" fill="#d7eadc" />
+              <rect x="46" y="22" width="68" height="56" rx="14" fill="#fffdf8" />
+              <rect x="46" y="22" width="68" height="56" rx="14" fill="none" stroke="#17493b" strokeWidth="1.5" />
+              <text x="80" y="58" textAnchor="middle" fill="#17493b" fontSize="26" fontWeight="700" fontFamily="Georgia, serif">
+                ₹
+              </text>
+              <path d="M122 70c6-8 14-10 18-8-6 8-12 14-18 14-4 0-6-2-6-6 0 0 2 2 6 0Z" fill="#8FCB6A" />
+              <path d="M126 76c-2 6-1 12 2 16" fill="none" stroke="#e6b84b" strokeWidth="1.6" strokeLinecap="round" />
+            </svg>
+          </span>
+          <span className="none-copy">
+            <strong>No game</strong>
+            <span>Direct giving only</span>
+          </span>
+          <span className="none-foot">A simple contribution</span>
         </button>
       </div>
 
