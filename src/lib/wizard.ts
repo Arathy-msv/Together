@@ -225,6 +225,9 @@ export function validateSettings(form: CampaignForm): FormErrors {
       if (cap == null) errors.gameCap = 'Enter a cap like 500, or leave it empty.'
       else if (rate != null && cap < rate) errors.gameCap = 'The cap needs to be at least one action’s rate.'
     }
+    if (form.gameType === 'puzzle' && !form.puzzleImageData.startsWith('data:image/')) {
+      errors.puzzleImageData = 'Upload an image for the Community Puzzle. Supporters piece that picture together.'
+    }
   }
   return errors
 }

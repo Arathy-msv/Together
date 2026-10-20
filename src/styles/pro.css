@@ -373,7 +373,41 @@ html { scroll-padding-top: 84px; }
   overflow: hidden;
   border: 1px solid var(--p-line);
 }
-.puzzle-upload-preview img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; }
+.puzzle-upload.is-error { border-color: #b42318; }
+.puzzle-upload .required-mark {
+  margin-left: 8px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #17493b;
+  color: #fff;
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  vertical-align: 2px;
+}
+.puzzle-upload-empty {
+  display: grid;
+  place-items: center;
+  min-height: 140px;
+  width: min(280px, 100%);
+  border: 1.5px dashed #17493b;
+  border-radius: 12px;
+  background: #fff;
+  color: #17493b;
+  font-weight: 750;
+  cursor: pointer;
+}
+.puzzle-upload-empty:hover { background: #e8f1ec; }
+.puzzle-upload-empty:focus-visible { outline: 3px solid #17493b; outline-offset: 2px; }
+.puzzle-upload-preview img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
+.puzzle-review-art {
+  display: block;
+  width: min(280px, 100%);
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 12px;
+  margin: 12px 0;
+}
 .game-preview-backdrop {
   position: fixed;
   inset: 0;

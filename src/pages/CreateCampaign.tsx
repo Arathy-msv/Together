@@ -499,7 +499,7 @@ function StoryStep({
         ) : null}
       </div>
 
-      <GameGallery form={form} onChange={onChange} />
+      <GameGallery form={form} errors={errors} onChange={onChange} />
     </div>
   )
 }
@@ -647,7 +647,7 @@ function SettingsStep({
             <span className="muted small">Thank-you vouchers from local partners.</span>
           </div>
         </div>
-        {form.game ? <GameGallery form={form} onChange={onChange} /> : null}
+        {form.game ? <GameGallery form={form} errors={errors} onChange={onChange} /> : null}
         {form.game ? <GameContributionSettingsPanel form={form} errors={errors} onChange={onChange} /> : null}
       </section>
     </div>
@@ -656,9 +656,11 @@ function SettingsStep({
 
 function GameGallery({
   form,
+  errors,
   onChange,
 }: {
   form: CampaignForm
+  errors: FormErrors
   onChange: (patch: Partial<CampaignForm>) => void
 }) {
   const [previewGame, setPreviewGame] = useState<GameType | null>(null)
@@ -741,28 +743,33 @@ function GameGallery({
       </div>
 
       {form.game && form.gameType === 'puzzle' ? (
-        <div className="puzzle-upload">
+        <div className={errors.puzzleImageData ? 'puzzle-upload is-error' : 'puzzle-upload'} id="puzzle-image">
           {puzzle.input}
           <div className="puzzle-upload-row">
             <div>
-              <strong>Puzzle image</strong>
-              <p className="help">Upload a custom image, or keep the default artwork.</p>
+              <strong>
+                Puzzle image <span className="required-mark">Required</span>
+              </strong>
+              <p className="help">
+                Upload the picture supporters will piece together. JPG, PNG, WebP or GIF, up to 8 MB. It is saved with this campaign.
+              </p>
             </div>
-            <div className="inline-actions">
-              <button type="button" className="btn btn-outline btn-sm" onClick={puzzle.open} disabled={puzzle.busy}>
-                {puzzle.busy ? 'Uploading…' : form.puzzleImageData ? 'Replace image' : 'Upload image'}
-              </button>
-              {form.puzzleImageData ? (
-                <button type="button" className="btn btn-outline btn-sm" onClick={() => onChange({ puzzleImageData: '' })}>
-                  Use default
-                </button>
-              ) : null}
+            <button type="button" className="btn btn-primary btn-sm" onClick={puzzle.open} disabled={puzzle.busy}>
+              {puzzle.busy ? 'Uploading…' : form.puzzleImageData ? 'Replace image' : 'Upload image'}
+            </button>
+          </div>
+          {form.puzzleImageData ? (
+            <div className="puzzle-upload-preview">
+              <img src={form.puzzleImageData} alt="Uploaded puzzle artwork" />
             </div>
-          </div>
-          <div className="puzzle-upload-preview">
-            <img src={form.puzzleImageData || '/games/puzzle-art.jpg'} alt="Puzzle artwork preview" />
-          </div>
-          {puzzle.error ? <p className="error-text">{puzzle.error}</p> : null}
+          ) : (
+            <button type="button" className="puzzle-upload-empty" onClick={puzzle.open} disabled={puzzle.busy}>
+              Choose a picture for the Community Puzzle
+            </button>
+          )}
+          {puzzle.error || errors.puzzleImageData ? (
+            <p className="error-text">{puzzle.error || errors.puzzleImageData}</p>
+          ) : null}
         </div>
       ) : null}
 
@@ -914,6 +921,9 @@ function ReviewStep({ form, onEdit }: { form: CampaignForm; onEdit: (step: numbe
         settings.allowCustom ? 'supporters can edit the total' : 'game-calculated amount only'
       }`,
     ])
+    if (form.gameType === 'puzzle') {
+      rows.push(['Puzzle image', form.puzzleImageData ? 'Uploaded by you' : 'Still needed'])
+    }
   }
   return (
     <div className="review-grid">
@@ -926,6 +936,9 @@ function ReviewStep({ form, onEdit }: { form: CampaignForm; onEdit: (step: numbe
           </div>
           <h2>{form.title.trim() || 'Untitled campaign'}</h2>
           <p className="muted">{form.description.trim()}</p>
+          {form.game && form.gameType === 'puzzle' && form.puzzleImageData ? (
+            <img className="puzzle-review-art" src={form.puzzleImageData} alt="Community Puzzle artwork" />
+          ) : null}
           <button type="button" className="link-button" onClick={() => onEdit(1)}>
             Edit story
           </button>
