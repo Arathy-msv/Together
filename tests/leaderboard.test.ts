@@ -20,7 +20,7 @@ class MemoryStorage {
 const storage = new MemoryStorage()
 Object.assign(globalThis, { localStorage: storage })
 
-const { joinPlayer, leaderboard, listPlayers, activeReferral, rememberReferral } = await import('../src/lib/players.ts')
+const { joinPlayer, leaderboard, listPlayers, activeReferral, rememberReferral, standing } = await import('../src/lib/players.ts')
 import type { Contribution } from '../src/lib/types.ts'
 
 function gift(partial: Partial<Contribution> & Pick<Contribution, 'id' | 'amount'>): Contribution {
@@ -79,4 +79,26 @@ test('using your own referral does not award referral points twice', () => {
   ])
   assert.equal(rows[0].points, 80)
   assert.equal(rows[0].referralCount, 0)
+})
+
+test('standing measures rank against the current leader', () => {
+  const players = [
+    { id: 'asha', campaignId: 'cmp', name: 'Asha Menon', referralCode: 'ASHA01', createdAt: '2026-10-01T00:00:00.000Z' },
+    { id: 'rohan', campaignId: 'cmp', name: 'Rohan Iyer', referralCode: 'ROHAN1', createdAt: '2026-10-02T00:00:00.000Z' },
+    { id: 'meera', campaignId: 'cmp', name: 'Meera Shah', referralCode: 'MEERA1', createdAt: '2026-10-03T00:00:00.000Z' },
+  ]
+  const rows = leaderboard(players, [
+    gift({ id: '1', amount: 250, playerId: 'rohan' }),
+    gift({ id: '2', amount: 250, playerId: 'asha' }),
+    gift({ id: '3', amount: 100, playerId: 'meera' }),
+  ])
+  const asha = standing(rows, 'asha')
+  const meera = standing(rows, 'meera')
+  assert.equal(asha?.rank, 1)
+  assert.equal(asha?.behindLeader, 0)
+  assert.equal(meera?.rank, 3)
+  assert.equal(meera?.behindLeader, 150)
+  assert.equal(meera?.leader.player.name, 'Asha Menon')
+  assert.equal(standing(rows, 'missing'), null)
+  assert.equal(standing([], 'asha'), null)
 })

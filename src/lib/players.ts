@@ -183,6 +183,29 @@ export function leaderboard(players: Player[], contributions: Contribution[]): L
     .sort((a, b) => b.points - a.points || a.player.name.localeCompare(b.player.name))
 }
 
+export interface Standing {
+  rank: number
+  row: LeaderRow
+  leader: LeaderRow
+  /** Points between this player and the current #1. Zero when they lead or are level on points. */
+  behindLeader: number
+}
+
+/** Where a player sits against the current #1. */
+export function standing(rows: LeaderRow[], playerId?: string): Standing | null {
+  if (!playerId || rows.length === 0) return null
+  const index = rows.findIndex((row) => row.player.id === playerId)
+  if (index < 0) return null
+  const row = rows[index]
+  const leader = rows[0]
+  return {
+    rank: index + 1,
+    row,
+    leader,
+    behindLeader: Math.max(0, leader.points - row.points),
+  }
+}
+
 const SAMPLE_PLAYERS: Player[] = [
   {
     id: 'player_asha',

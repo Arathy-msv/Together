@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { AmountPicker } from '../components/AmountPicker.tsx'
 import { CampaignCover, OrgLogo } from '../components/CampaignImage.tsx'
-import { Leaderboard } from '../components/Leaderboard.tsx'
+import { Leaderboard, RankBanner } from '../components/Leaderboard.tsx'
 import { ProgressBar } from '../components/ProgressBar.tsx'
 import { StatusBadge } from '../components/StatusBadge.tsx'
 import { useCampaignView } from '../hooks/useDemoStore.ts'
@@ -53,6 +53,7 @@ export function CampaignPage() {
         <span>/</span>
         <span>{campaign.title}</span>
       </nav>
+      {campaign.access === 'closed' && !needsCode ? <RankBanner campaignId={campaign.id} contributeHref="#support" /> : null}
       <div className="campaign-grid">
         <div>
           <CampaignCover campaign={campaign} className="campaign-hero" />
@@ -73,7 +74,7 @@ export function CampaignPage() {
           {campaign.access === 'closed' && !needsCode ? <Leaderboard campaignId={campaign.id} /> : null}
         </div>
 
-        <aside className="panel support-panel">
+        <aside className="panel support-panel" id="support">
           <h2>Support this campaign</h2>
           <div className="money-row big">
             <span>

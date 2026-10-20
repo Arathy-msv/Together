@@ -8,7 +8,7 @@ import {
 } from 'react'
 import { Link } from 'react-router-dom'
 import { ContributionBar } from '../../components/ContributionBar.tsx'
-import { Leaderboard } from '../../components/Leaderboard.tsx'
+import { Leaderboard, RankBanner } from '../../components/Leaderboard.tsx'
 import { ContributionLayer } from '../../components/ContributionDialogs.tsx'
 import { useGameContribution } from '../../hooks/useGameContribution.ts'
 import { campaignDetailsPath } from '../../lib/campaigns.ts'
@@ -263,6 +263,11 @@ export function StagedFlowGame({
           )}
           <span className="flow-demo">{preview ? 'Preview' : 'Demo campaign'}</span>
         </header>
+        {view.campaign.access === 'closed' && !preview ? (
+          <div className="play-rank">
+            <RankBanner campaignId={campaignId} />
+          </div>
+        ) : null}
         <div className="flow-main">
           <div className="flow-stage">
             <div className="flow-copy">

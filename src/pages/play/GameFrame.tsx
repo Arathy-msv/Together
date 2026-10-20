@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { ContributionBar } from '../../components/ContributionBar.tsx'
-import { Leaderboard } from '../../components/Leaderboard.tsx'
+import { Leaderboard, RankBanner } from '../../components/Leaderboard.tsx'
 import { ContributionLayer } from '../../components/ContributionDialogs.tsx'
 import { LeafMark } from '../../components/illustrations.tsx'
 import type { GameContribution } from '../../hooks/useGameContribution.ts'
@@ -62,6 +62,11 @@ export function GameFrame({
             </>
           )}
         </header>
+        {campaign.access === 'closed' && !preview ? (
+          <div className="play-rank">
+            <RankBanner campaignId={campaign.id} />
+          </div>
+        ) : null}
         <div className="play-stage">
           {children}
           <div className="play-side">
