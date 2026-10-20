@@ -22,6 +22,7 @@ export function DemoOrgSwitcher() {
         onChange={(event) => {
           const next = organizations.find((item) => item.id === event.target.value)
           if (!next) return
+          if (document.querySelector('.save-state.dirty') && !window.confirm('Switch organization and discard unsaved brand settings?')) return
           setActiveOrgId(next.id)
           const section = organizerSection(pathname, base) ?? 'dashboard'
           navigate(`${orgBase(next.slug)}/${section === 'create' ? 'create?new=1' : section}`)
