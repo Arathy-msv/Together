@@ -4,7 +4,7 @@ export const CARTOON_GAMES: GameType[] = ['garden', 'memory', 'puzzle']
 export const FLOW_GAMES: GameType[] = ['jacket']
 
 export const GAME_THUMBS: Record<GameType, string> = {
-  garden: '/games/garden-bg.jpg',
+  garden: '/giving-tree/thumb.webp',
   memory: '/games/memory-bg.jpg',
   puzzle: '/games/puzzle-art.jpg',
   jacket: '/games/jacket-zipped.jpg',
@@ -13,9 +13,9 @@ export const GAME_THUMBS: Record<GameType, string> = {
 export const GAMES: { id: GameType; name: string; blurb: string; hint: string; style: 'cartoon' | 'flow' }[] = [
   {
     id: 'garden',
-    name: 'Grow Our Garden',
-    blurb: 'Plant a little encouragement.',
-    hint: 'Choose a flower, then select a plot.',
+    name: 'Grow a Giving Tree',
+    blurb: 'Care for your plant and grow the shared tree together.',
+    hint: 'Plant a seed, then water, fertilize and give it sunlight.',
     style: 'cartoon',
   },
   {

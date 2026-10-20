@@ -175,7 +175,7 @@ export function HowItWorksPage() {
           </div>
           <div className="game-showcase">
             <div className="game-shot">
-              <img src={GAME_THUMBS.garden} alt="The Grow Our Garden game" />
+              <img src={GAME_THUMBS.garden} alt="The Grow a Giving Tree game" />
               <span className="free-pill">
                 <Icon name="game" size={14} /> ₹50 per plant
               </span>
