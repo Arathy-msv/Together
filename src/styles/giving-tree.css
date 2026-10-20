@@ -829,33 +829,61 @@ a.gt-back:hover { color: var(--gt-ink); text-decoration: underline; text-underli
 .gt-panel { display: grid; gap: 16px; }
 .gt-panel h2 { font-size: 27px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; padding-right: 40px; outline: none; }
 .gt-panel-lead { color: #3f5a4f; font-size: 15.5px; line-height: 1.5; margin-top: -6px; }
-.gt-lines { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.gt-lines { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .gt-lines li, .gt-points-row {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 12px 16px;
+  gap: 12px;
+  min-width: 0;
+  padding: 11px 14px;
   border: 1px solid #e2ddcf;
   border-radius: 12px;
   background: #fff;
+  color: #183a2f;
 }
-.gt-points-row { background: #f3f1e8; border-color: transparent; }
-.gt-line-icon { display: grid; place-items: center; width: 36px; height: 36px; flex: none; }
+.gt-points-row {
+  background: #faf8f2;
+  border-color: #e6e3db;
+}
+.gt-line-icon {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  flex: none;
+  border-radius: 999px;
+  background: #e6ecdf;
+  color: #123d36;
+  overflow: hidden;
+}
 .gt-line-name { display: grid; gap: 1px; flex: 1; min-width: 0; }
-.gt-line-name strong { font-size: 16px; font-weight: 600; }
-.gt-line-name span { font-size: 13.5px; color: #6f7d74; }
-.gt-line-total { font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.gt-line-name strong { font-size: 15px; font-weight: 600; overflow-wrap: anywhere; }
+.gt-line-name span { font-size: 13px; color: #6f7d74; }
+.gt-line-total {
+  flex: none;
+  font-size: 15.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #123d36;
+}
 .gt-total-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 18px;
+  gap: 12px;
+  padding: 14px 16px;
   border-radius: 12px;
   background: #e6ecdf;
-  font-size: 18px;
+  color: #123d36;
+  font-size: 16px;
   font-weight: 600;
 }
-.gt-total-row strong { font-size: 26px; font-weight: 700; }
+.gt-total-row strong {
+  font-size: 1.35rem;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
 .gt-with-icon { display: inline-flex; align-items: center; gap: 10px; }
 .gt-note { display: flex; gap: 10px; align-items: flex-start; font-size: 13.5px; color: #4f6359; line-height: 1.45; }
 .gt-note svg { flex: none; margin-top: 2px; }

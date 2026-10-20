@@ -180,24 +180,35 @@ function GameConfirm({ view, sessionId }: { view: CampaignView; sessionId: strin
         </section>
         <section className="panel gc-checkout">
           <h2>Action breakdown</h2>
-          <ul className="gc-action-list">
-            {session.actions.map((action) => (
-              <li key={action.id}>
-                <span>{action.label}</span>
-                <strong>{formatPaise(action.amountPaise)}</strong>
-              </li>
-            ))}
-          </ul>
-          <dl className="detail-list">
-            <div>
-              <dt>{actionBreakdown(session, config)}</dt>
-              <dd>Game suggestion {formatPaise(session.suggestedPaise)}</dd>
+          {session.actions.length === 0 ? (
+            <p className="gc-action-empty">No care actions in this suggestion yet.</p>
+          ) : (
+            <ul className="gc-action-list">
+              {session.actions.map((action) => (
+                <li key={action.id}>
+                  <span className="gc-action-mark" aria-hidden="true">
+                    <Icon name="check" size={14} />
+                  </span>
+                  <span className="gc-action-label">{action.label}</span>
+                  <strong className="gc-action-amount">{formatPaise(action.amountPaise)}</strong>
+                </li>
+              ))}
+            </ul>
+          )}
+          <div className="gc-breakdown-foot">
+            <div className="gc-suggest-row">
+              <span className="gc-suggest-label">{actionBreakdown(session, config)}</span>
+              <span className="gc-suggest-value">
+                {amountPaise === session.suggestedPaise
+                  ? 'Game suggestion'
+                  : `Game suggestion ${formatPaise(session.suggestedPaise)}`}
+              </span>
             </div>
-            <div>
-              <dt>Final chosen amount</dt>
-              <dd>{formatPaise(amountPaise)}</dd>
+            <div className="gc-total-row">
+              <span>{amountPaise === session.suggestedPaise ? 'Total' : 'Final chosen amount'}</span>
+              <strong>{formatPaise(amountPaise)}</strong>
             </div>
-          </dl>
+          </div>
           {session.capReached && session.capPaise != null ? (
             <p className="muted small">The game suggestion reached its cap of {formatPaise(session.capPaise)}.</p>
           ) : null}

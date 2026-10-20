@@ -60,7 +60,7 @@ export function CartReview({
             {lines.map((line) => (
               <li key={line.kind}>
                 <span className="gt-line-icon">
-                  <CareIcon kind={line.kind} size={26} />
+                  <CareIcon kind={line.kind} size={22} />
                 </span>
                 <span className="gt-line-name">
                   <strong>{line.item}</strong>
@@ -78,7 +78,7 @@ export function CartReview({
           </div>
           <div className="gt-points-row">
             <span className="gt-line-icon">
-              <LeafPoints size={26} />
+              <LeafPoints size={22} />
             </span>
             <span className="gt-line-name">
               <strong>Care points</strong>
