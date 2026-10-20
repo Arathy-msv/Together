@@ -65,7 +65,7 @@ export function shortNoun(game: GameType): string {
 
 export function gameIntroSentence(game: GameType, ratePaise: number): string {
   if (game === 'jacket') {
-    return 'Zip the jacket and add a warm lining for ₹50 each, then attach a kindness tag for ₹25. You can edit the total before confirming. Nothing is charged while playing.'
+    return 'Add a warm lining and zip the jacket for ₹50 each, then attach a kindness tag for ₹25. You can edit the total before confirming. Nothing is charged while playing.'
   }
   return `Each completed ${shortNoun(game)} adds ${formatPaise(ratePaise)} to your suggested contribution. You can edit the total before confirming. Nothing is charged while playing.`
 }

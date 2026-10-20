@@ -1,8 +1,8 @@
 import { PAISE_PER_RUPEE } from './gameContribution.ts'
 
 export const WARMTH_ACTIONS = [
-  { id: 'zip', label: 'Zip jacket', pricePaise: 50 * PAISE_PER_RUPEE },
   { id: 'lining', label: 'Add warm lining', pricePaise: 50 * PAISE_PER_RUPEE },
+  { id: 'zip', label: 'Zip jacket', pricePaise: 50 * PAISE_PER_RUPEE },
   { id: 'tag', label: 'Attach kindness tag', pricePaise: 25 * PAISE_PER_RUPEE },
 ] as const
 
@@ -32,4 +32,27 @@ export function nextWarmthAction(done: readonly WarmthActionId[]): WarmthActionI
 
 export function isJacketColor(value: unknown): value is JacketColor {
   return value === 'navy' || value === 'forest' || value === 'coral'
+}
+
+export function jacketImage(color: JacketColor, kind: 'open' | 'zipped' | 'lining' | 'folded'): string {
+  if (color === 'navy' && kind === 'open') return '/games/jacket-open.jpg'
+  if (color === 'navy' && kind === 'zipped') return '/games/jacket-zipped.jpg'
+  return `/games/warmth/jacket-${color}-${kind}.jpg`
+}
+
+export function jacketColorFromDetail(detail?: string): JacketColor | null {
+  const match = detail?.match(/colour (navy|forest|coral)/)
+  return match && isJacketColor(match[1]) ? match[1] : null
+}
+
+export interface WarmthProgress {
+  roundId: string
+  color: JacketColor
+}
+
+export function parseWarmthProgress(value: unknown): WarmthProgress | null {
+  if (!value || typeof value !== 'object') return null
+  const raw = value as WarmthProgress
+  if (typeof raw.roundId !== 'string' || raw.roundId.length < 4 || !isJacketColor(raw.color)) return null
+  return { roundId: raw.roundId, color: raw.color }
 }

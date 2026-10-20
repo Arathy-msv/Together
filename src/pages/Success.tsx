@@ -7,6 +7,7 @@ import { useCampaignView, useDemoStore } from '../hooks/useDemoStore.ts'
 import { campaignDetailsPath, goalReached } from '../lib/campaigns.ts'
 import { GoalGesture } from '../components/GoalGesture.tsx'
 import { formatINR } from '../lib/format.ts'
+import { jacketColorFromDetail, jacketImage } from '../lib/warmth.ts'
 import { NotFoundPage } from './NotFound.tsx'
 
 export function SuccessPage() {
@@ -36,6 +37,8 @@ export function SuccessPage() {
 
   const exactPercent = view.campaign.goalAmount > 0 ? Math.min(100, (view.raised / view.campaign.goalAmount) * 100) : 0
   const finished = goalReached(view.raised, view.campaign.goalAmount)
+  const jacketColor =
+    contribution.method === 'game' && view.campaign.gameType === 'jacket' ? jacketColorFromDetail(contribution.detail) : null
 
   return (
     <div className="container narrow page-pad success">
@@ -55,6 +58,13 @@ export function SuccessPage() {
       <p className="center">
         <span className="success-pill">Contribution successful</span>
       </p>
+      {jacketColor ? (
+        <img
+          className="success-jacket"
+          src={jacketImage(jacketColor, 'folded')}
+          alt={`Your ${jacketColor} jacket, folded and tied with a ribbon`}
+        />
+      ) : null}
       <section className="panel receipt-card">
         <div className="receipt-top">
           <CampaignCover campaign={view.campaign} />

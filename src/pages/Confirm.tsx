@@ -17,7 +17,8 @@ import {
   settleConfirmed,
   type GameLedger,
 } from '../lib/gameContribution.ts'
-import { readLedger, writeLedger } from '../lib/gameLedger.ts'
+import { readLedger, readProgress, writeLedger } from '../lib/gameLedger.ts'
+import { parseWarmthProgress } from '../lib/warmth.ts'
 import { gameMeta } from '../lib/games.ts'
 import { formatINR } from '../lib/format.ts'
 import { clearPending, getPending } from '../lib/pending.ts'
@@ -117,6 +118,8 @@ function GameConfirm({ view, sessionId }: { view: CampaignView; sessionId: strin
     setSubmitting(true)
     try {
       const giver = currentPlayer(campaign.id)
+      const jacketColor =
+        campaign.gameType === 'jacket' ? readProgress(campaign.id, 'jacket', parseWarmthProgress)?.color : undefined
       const savedContribution = addContribution({
         id: sessionId,
         campaignId: campaign.id,
@@ -124,7 +127,7 @@ function GameConfirm({ view, sessionId }: { view: CampaignView; sessionId: strin
         method: 'game',
         detail: `${gameMeta(campaign.gameType).name} · ${actionBreakdown(session!, config)} · suggestion ${formatPaise(
           session!.suggestedPaise,
-        )}${custom ? ` · chosen ${formatPaise(amountPaise)}` : ''}`,
+        )}${custom ? ` · chosen ${formatPaise(amountPaise)}` : ''}${jacketColor ? ` · colour ${jacketColor}` : ''}`,
         playerId: giver?.id,
         playerName: giver?.name,
         referralCode: activeReferral(campaign.id, giver?.id),

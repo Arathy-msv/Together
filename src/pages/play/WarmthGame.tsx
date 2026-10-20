@@ -21,33 +21,16 @@ import {
   JACKET_COLORS,
   WARMTH_ACTIONS,
   WARMTH_QUICK_RUPEES,
-  isJacketColor,
+  jacketImage,
+  parseWarmthProgress,
   warmthAction,
-  type JacketColor,
   type WarmthActionId,
+  type WarmthProgress,
 } from '../../lib/warmth.ts'
 import '../../styles/warmth.css'
 
-interface WarmthProgress {
-  roundId: string
-  color: JacketColor
-}
-
-function parseProgress(value: unknown): WarmthProgress | null {
-  if (!value || typeof value !== 'object') return null
-  const raw = value as WarmthProgress
-  if (typeof raw.roundId !== 'string' || raw.roundId.length < 4 || !isJacketColor(raw.color)) return null
-  return { roundId: raw.roundId, color: raw.color }
-}
-
 function freshProgress(): WarmthProgress {
   return { roundId: newRoundId(), color: 'navy' }
-}
-
-function jacketSrc(color: JacketColor, kind: 'open' | 'zipped' | 'lining' | 'folded'): string {
-  if (color === 'navy' && kind === 'open') return '/games/jacket-open.jpg'
-  if (color === 'navy' && kind === 'zipped') return '/games/jacket-zipped.jpg'
-  return `/games/warmth/jacket-${color}-${kind}.jpg`
 }
 
 function useReducedMotion(): boolean {
@@ -71,7 +54,7 @@ export function WarmthGame({ view, preview = false }: { view: CampaignView; prev
   const campaignId = campaign.id
   const [progress, setProgress] = useState<WarmthProgress>(() => {
     if (preview) return freshProgress()
-    return readProgress(campaignId, 'jacket', parseProgress) ?? freshProgress()
+    return readProgress(campaignId, 'jacket', parseWarmthProgress) ?? freshProgress()
   })
   const [zip, setZipState] = useState(0)
   const zipRef = useRef(0)
@@ -228,11 +211,11 @@ export function WarmthGame({ view, preview = false }: { view: CampaignView; prev
     ? { kicker: 'Ready to share', title: 'A little care makes a difference.', body: 'Your jacket is folded and ready. Review the suggestion whenever you like.' }
     : tagged
       ? { kicker: 'Kindness tag', title: 'A little care makes a difference.', body: 'The tag is a reminder that someone cared. Nothing has been delivered.' }
-      : lined
+      : zipped
         ? { kicker: 'Stage 03', title: 'A thoughtful finishing touch.', body: 'A small tag makes this jacket feel extra special.' }
-        : zipped
-          ? { kicker: 'Stage 02', title: 'Add a little comfort.', body: 'A soft inner lining helps keep someone warmer through colder days.' }
-          : { kicker: 'Choose a little warmth', title: 'Small actions. A little more warmth.', body: 'Choose a colour, then prepare your gift.' }
+        : lined
+          ? { kicker: 'Stage 02', title: 'Zip it with care.', body: 'Zip it up to add warmth and keep out the cold.' }
+          : { kicker: 'Choose a little warmth', title: 'Small actions. A little more warmth.', body: 'Choose a colour, then add a warm lining.' }
 
   if (finished) {
     return (
@@ -299,25 +282,25 @@ export function WarmthGame({ view, preview = false }: { view: CampaignView; prev
           <p className="wm-lead">{copy.body}</p>
           <div className="wm-jacket" ref={jacketRef}>
             <img
-              src={jacketSrc(progress.color, 'open')}
+              src={jacketImage(progress.color, 'open')}
               alt=""
-              style={{ opacity: lined || wrapped ? 0 : 1 - zip }}
+              style={{ opacity: !lined && !zipped && !wrapped ? 1 : 0 }}
               draggable={false}
             />
             <img
-              src={jacketSrc(progress.color, 'zipped')}
-              alt={wrapped ? '' : `${progress.color} jacket`}
-              style={{ opacity: lined || wrapped ? 0 : zip }}
+              src={jacketImage(progress.color, 'lining')}
+              alt={lined && !zipped && !wrapped ? `${progress.color} jacket with a sage quilted lining` : ''}
+              style={{ opacity: lined && !zipped && !wrapped ? 1 : 0 }}
               draggable={false}
             />
             <img
-              src={jacketSrc(progress.color, 'lining')}
-              alt={lined && !wrapped ? `${progress.color} jacket with a sage quilted lining` : ''}
-              style={{ opacity: lined && !wrapped ? 1 : 0 }}
+              src={jacketImage(progress.color, 'zipped')}
+              alt={zipped && !wrapped ? `Zipped ${progress.color} jacket` : ''}
+              style={{ opacity: zipped && !wrapped ? 1 : 0 }}
               draggable={false}
             />
             <img
-              src={jacketSrc(progress.color, 'folded')}
+              src={jacketImage(progress.color, 'folded')}
               alt={wrapped ? `Folded ${progress.color} jacket tied with a ribbon` : ''}
               style={{ opacity: wrapped ? 1 : 0 }}
               draggable={false}
@@ -328,7 +311,7 @@ export function WarmthGame({ view, preview = false }: { view: CampaignView; prev
                 <i />
               </span>
             ) : null}
-            {zipped ? null : (
+            {lined && !zipped ? (
               <div
                 className={dragging ? 'wm-zip is-dragging' : 'wm-zip'}
                 style={{ ['--zip' as string]: String(zip) }}
@@ -343,7 +326,7 @@ export function WarmthGame({ view, preview = false }: { view: CampaignView; prev
                   onPointerCancel={onZipUp}
                 />
               </div>
-            )}
+            ) : null}
           </div>
           {review ? null : (
             <>
@@ -363,15 +346,15 @@ export function WarmthGame({ view, preview = false }: { view: CampaignView; prev
                 ))}
               </div>
               <div className="wm-actions">
-                <button type="button" className="wm-chip" disabled={zipped} onClick={completeZip}>
-                  <strong>Zip</strong>
-                  <span>₹50</span>
-                </button>
-                <button type="button" className="wm-chip" disabled={!zipped || lined} onClick={() => addAction('lining', jacketPoint)}>
+                <button type="button" className="wm-chip" disabled={lined} onClick={() => addAction('lining', jacketPoint)}>
                   <strong>Warm lining</strong>
                   <span>₹50</span>
                 </button>
-                <button type="button" className="wm-chip" disabled={!lined || tagged} onClick={() => addAction('tag', jacketPoint)}>
+                <button type="button" className="wm-chip" disabled={!lined || zipped} onClick={completeZip}>
+                  <strong>Zip</strong>
+                  <span>₹50</span>
+                </button>
+                <button type="button" className="wm-chip" disabled={!zipped || tagged} onClick={() => addAction('tag', jacketPoint)}>
                   <strong>Kindness tag</strong>
                   <span>₹25</span>
                 </button>

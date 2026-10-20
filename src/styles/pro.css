@@ -507,6 +507,7 @@ html { scroll-padding-top: 84px; }
 .presenter-row-pro { display: flex; justify-content: center; align-items: center; gap: 12px; margin-top: 22px; }
 
 .success-check { width: 96px; height: 96px; border-radius: 50%; background: var(--p-green-soft); color: var(--p-green); display: grid; place-items: center; margin: 8px auto 18px; }
+.success-jacket { display: block; width: min(420px, 100%); margin: 0 auto 18px; border-radius: 18px; background: #faf8f2; }
 .success h1 { font-size: clamp(1.7rem, 3.4vw, 2.3rem); font-weight: 800; margin-bottom: 12px; }
 .success-pill { display: inline-block; font-size: 0.9rem; padding: 6px 14px; }
 .pro .receipt-card { padding: 18px; margin: 24px 0; }

@@ -36,7 +36,7 @@ export const GAMES: { id: GameType; name: string; blurb: string; hint: string; s
     id: 'jacket',
     name: 'Wrap Someone in Warmth',
     blurb: 'Small actions. A little more warmth.',
-    hint: 'Choose a colour, zip the jacket, add a lining and a kindness tag.',
+    hint: 'Choose a colour, add a lining, zip the jacket and attach a kindness tag.',
     style: 'flow',
   },
 ]
