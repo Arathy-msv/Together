@@ -22,6 +22,7 @@ import {
   recordCare,
   suggestedPaise,
   treeStage,
+  visibleTreeStage,
   type CareKind,
   type GivingTreeState,
 } from '../../../lib/givingTree.ts'
@@ -138,7 +139,8 @@ export function GivingTreeGame({ view, preview = false }: { view: CampaignView; 
   const goal = campaign.goalAmount
   const finished = goalReached(raised, goal)
   const percent = campaignPercent(raised, goal)
-  const sharedStage = treeStage(raised, goal)
+  const campaignStage = treeStage(raised, goal)
+  const sharedStage = visibleTreeStage(campaignStage, state, finished)
   sharedStageRef.current = sharedStage
   const recommended = recommendedCare(state)
   const summary: CampaignSummary = { title: campaign.title, raised, goal, percent }
@@ -568,7 +570,7 @@ export function GivingTreeGame({ view, preview = false }: { view: CampaignView; 
       ) : null}
       {panel === 'growth' ? (
         <Sheet labelledBy="gt-growth-title" onClose={() => setPanel(null)} variant="modal">
-          <GrowthReference campaign={summary} stage={sharedStage} />
+          <GrowthReference campaign={summary} stage={campaignStage} />
         </Sheet>
       ) : null}
     </>

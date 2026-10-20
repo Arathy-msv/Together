@@ -230,6 +230,30 @@ export function treeStage(raised: number, goal: number): number {
   return stage
 }
 
+/**
+ * How far this visit's care has grown the one tree.
+ * The fully grown stage is kept for the moment the campaign reaches its goal.
+ */
+export function careTreeStage(state: Pick<GivingTreeState, 'seedPlanted' | 'carePoints'>): number {
+  if (!state.seedPlanted) return 0
+  if (state.carePoints >= 70) return 4
+  if (state.carePoints >= 60) return 3
+  if (state.carePoints >= 30) return 2
+  return 1
+}
+
+/** The tree on screen. Care can grow it, and confirmed campaign progress never shrinks it. */
+export function visibleTreeStage(
+  campaignStage: number,
+  state: Pick<GivingTreeState, 'seedPlanted' | 'carePoints'>,
+  goalMet: boolean,
+): number {
+  const last = TREE_MILESTONES.length - 1
+  if (goalMet) return last
+  const cared = state.seedPlanted ? careTreeStage(state) : 0
+  return Math.min(last, Math.max(0, campaignStage, cared))
+}
+
 export function formatPercent(percent: number): string {
   return `${Number.isInteger(percent) ? percent : percent.toFixed(1)}%`
 }
