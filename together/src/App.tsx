@@ -1,6 +1,7 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { OrgLayout } from './components/org/OrgLayout.tsx'
-import { CampaignPage } from './pages/Campaign.tsx'
+import { CampaignPage, ReferralCampaignPage } from './pages/Campaign.tsx'
+import { ShareWorkspacePage } from './pages/ShareWorkspace.tsx'
 import { ConfirmPage } from './pages/Confirm.tsx'
 import { CreateCampaignPage } from './pages/CreateCampaign.tsx'
 import { DashboardPage } from './pages/Dashboard.tsx'
@@ -28,6 +29,9 @@ export default function App() {
             <Route path="play" element={<PlayPage />} />
             <Route path="confirm" element={<ConfirmPage />} />
             <Route path="success/:contributionId" element={<SuccessPage />} />
+            <Route path="r/:code" element={<ReferralCampaignPage />} />
+            <Route path="share" element={<ShareWorkspacePage />} />
+            <Route path="share/:code" element={<ShareWorkspacePage />} />
           </Route>
           <Route path="how-it-works" element={<HowItWorksPage />} />
           <Route path="dashboard" element={<DashboardPage />} />

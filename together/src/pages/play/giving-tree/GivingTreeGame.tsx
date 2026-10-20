@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useOrgBase } from '../../../components/org/OrgContext.tsx'
 import { OrgGameBrand } from '../../../components/org/OrgGameBrand.tsx'
+import { useCampaignBackPath } from '../../../hooks/useBackPath.ts'
 import { GoalGesture } from '../../../components/GoalGesture.tsx'
 import { Leaderboard, RankBanner } from '../../../components/Leaderboard.tsx'
 import { contributionAvailability } from '../../../lib/availability.ts'
-import { addContribution, campaignDetailsPath, findContribution, goalReached } from '../../../lib/campaigns.ts'
+import { addContribution, findContribution, goalReached } from '../../../lib/campaigns.ts'
 import { PAISE_PER_RUPEE, campaignGameSettings, formatPaise } from '../../../lib/gameContribution.ts'
 import { readProgress, writeProgress } from '../../../lib/gameLedger.ts'
 import {
@@ -31,6 +31,8 @@ import {
 import { formatINR, plural } from '../../../lib/format.ts'
 import { activeReferral, currentPlayer } from '../../../lib/players.ts'
 import { loadStore } from '../../../lib/storage.ts'
+import { checkoutReferral, snapshotReferral } from '../../../lib/attribution.ts'
+import { ReferralCredit } from '../../../components/referral/ReferralCredit.tsx'
 import type { CampaignView } from '../../../lib/types.ts'
 import { CoinFlight, type Point } from './CoinFlight.tsx'
 import { GardenScene, type SceneEffect } from './GardenScene.tsx'
@@ -138,7 +140,7 @@ export function GivingTreeGame({ view, preview = false }: { view: CampaignView; 
 
   const raised = view.raised
   const goal = campaign.goalAmount
-  const base = useOrgBase()
+  const backPath = useCampaignBackPath(campaignId)
   const finished = goalReached(raised, goal)
   const percent = campaignPercent(raised, goal)
   const sharedStage = treeStage(raised, goal)
@@ -148,7 +150,7 @@ export function GivingTreeGame({ view, preview = false }: { view: CampaignView; 
 
   const shownCart = flying ? state.cart.filter((record) => record.id !== flying.id) : state.cart
   const shownPaise = shownCart.reduce((sum, record) => sum + record.pricePaise, 0)
-  const backTo = preview ? undefined : campaignDetailsPath(campaignId, base)
+  const backTo = preview ? undefined : backPath
 
   const blockedReason = useMemo(() => {
     if (preview) return 'Preview only — publish the campaign to try the demo contribution.'
@@ -229,6 +231,7 @@ export function GivingTreeGame({ view, preview = false }: { view: CampaignView; 
 
   function openCart() {
     if (busy || finished) return
+    snapshotReferral(stateRef.current.checkoutId, campaignId)
     setPanel('cart')
   }
 
@@ -261,6 +264,7 @@ export function GivingTreeGame({ view, preview = false }: { view: CampaignView; 
         playerId: giver?.id,
         playerName: giver?.name,
         referralCode: activeReferral(campaignId, giver?.id),
+        referralId: snapshotReferral(current.checkoutId, campaignId),
       })
       commit(confirmCart(current, saved.id, amountPaise))
       setPanel(null)
@@ -540,6 +544,7 @@ export function GivingTreeGame({ view, preview = false }: { view: CampaignView; 
 
       {panel === 'cart' ? (
         <Sheet labelledBy="gt-cart-title" onClose={() => setPanel(null)}>
+          <ReferralCredit referralId={checkoutReferral(state.checkoutId, campaignId)} />
           <CartReview
             state={state}
             onReview={() => setPanel('amount')}
@@ -550,6 +555,7 @@ export function GivingTreeGame({ view, preview = false }: { view: CampaignView; 
       ) : null}
       {panel === 'amount' ? (
         <Sheet labelledBy="gt-amount-title" onClose={() => setPanel(null)} initialFocus="#gt-amount">
+          <ReferralCredit referralId={checkoutReferral(state.checkoutId, campaignId)} />
           <AmountChooser
             state={state}
             campaign={summary}

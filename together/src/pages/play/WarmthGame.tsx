@@ -2,11 +2,12 @@ import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointer
 import { Link } from 'react-router-dom'
 import { LeafMark } from '../../components/illustrations.tsx'
 import { OrgGameBrand } from '../../components/org/OrgGameBrand.tsx'
+import { useCampaignBackPath } from '../../hooks/useBackPath.ts'
 import { useOrgBase } from '../../components/org/OrgContext.tsx'
 import { CoinFlight, type Point } from './giving-tree/CoinFlight.tsx'
 import { useGameContribution } from '../../hooks/useGameContribution.ts'
 import { contributionAvailability } from '../../lib/availability.ts'
-import { campaignDetailsPath, goalReached } from '../../lib/campaigns.ts'
+import { goalReached } from '../../lib/campaigns.ts'
 import {
   contributionRuleMessage,
   formatPaise,
@@ -55,6 +56,7 @@ export function WarmthGame({ view, preview = false }: { view: CampaignView; prev
   const campaign = view.campaign
   const campaignId = campaign.id
   const base = useOrgBase()
+  const backPath = useCampaignBackPath(campaignId)
   const [progress, setProgress] = useState<WarmthProgress>(() => {
     if (preview) return freshProgress()
     return readProgress(campaignId, 'jacket', parseWarmthProgress) ?? freshProgress()
@@ -223,7 +225,7 @@ export function WarmthGame({ view, preview = false }: { view: CampaignView; prev
   if (finished) {
     return (
       <div className="wm-shell">
-        <WarmthHeader backTo={preview ? undefined : campaignDetailsPath(campaignId, base)} preview={preview} />
+        <WarmthHeader backTo={preview ? undefined : backPath} preview={preview} />
         <section className="wm-goal">
           <img src="/games/warmth/clothing-rail.jpg" alt="A rail of navy and forest jackets above folded sweaters" />
           <div>
@@ -236,7 +238,7 @@ export function WarmthGame({ view, preview = false }: { view: CampaignView; prev
             </p>
             <p className="wm-goal-note">This clothing rail is a symbol of the goal. It is not a count of garments bought or delivered.</p>
             <div className="wm-goal-actions">
-              <Link className="wm-btn" to={campaignDetailsPath(campaignId, base)}>
+              <Link className="wm-btn" to={backPath}>
                 View campaign story
               </Link>
               <Link className="wm-btn wm-btn-ghost" to={`${base}/campaigns`}>
@@ -251,7 +253,7 @@ export function WarmthGame({ view, preview = false }: { view: CampaignView; prev
 
   return (
     <div className={`wm-shell${review ? ' is-review' : ''}`}>
-      <WarmthHeader backTo={preview ? undefined : campaignDetailsPath(campaignId, base)} preview={preview} />
+      <WarmthHeader backTo={preview ? undefined : backPath} preview={preview} />
       <div className="wm-strip">
         <div className="wm-campaign">
           <LeafMark size={18} />

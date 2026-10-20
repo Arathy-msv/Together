@@ -15,3 +15,7 @@ export function coverTemplate(id: string) {
   const resolved = LEGACY[id] ?? id
   return COVERS.find((cover) => cover.id === resolved) ?? COVERS[0]
 }
+
+export function campaignCoverSrc(campaign: { coverImageId: string; coverImageData?: string }): string {
+  return campaign.coverImageId === UPLOADED_COVER_ID && campaign.coverImageData ? campaign.coverImageData : coverTemplate(campaign.coverImageId).src
+}

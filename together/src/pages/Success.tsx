@@ -1,13 +1,16 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { CampaignCover } from '../components/CampaignImage.tsx'
 import { Icon } from '../components/illustrations.tsx'
 import { ProgressBar } from '../components/ProgressBar.tsx'
 import { useCampaignView, useDemoStore } from '../hooks/useDemoStore.ts'
-import { campaignDetailsPath, campaignPlayPath, goalReached } from '../lib/campaigns.ts'
+import { campaignPlayPath, goalReached } from '../lib/campaigns.ts'
 import { useOrgBase } from '../components/org/OrgContext.tsx'
 import { GoalGesture } from '../components/GoalGesture.tsx'
-import { formatINR } from '../lib/format.ts'
+import { formatDate, formatDateTime, formatINR } from '../lib/format.ts'
+import { useCampaignBackPath } from '../hooks/useBackPath.ts'
+import { followedAt, setFollowing } from '../lib/follows.ts'
+import { updatesSince } from '../lib/transparency.ts'
 import { jacketColorFromDetail, jacketImage } from '../lib/warmth.ts'
 import { NotFoundPage } from './NotFound.tsx'
 
@@ -16,6 +19,8 @@ export function SuccessPage() {
   const view = useCampaignView(id)
   const base = useOrgBase()
   const store = useDemoStore()
+  const backPath = useCampaignBackPath(id)
+  const [following, setFollowingState] = useState(() => Boolean(followedAt(id)))
   const contribution = store.contributions.find((item) => item.id === contributionId && item.campaignId === id)
 
   useEffect(() => {
@@ -29,7 +34,7 @@ export function SuccessPage() {
         <div className="panel empty">
           <h1>We couldn’t find that contribution</h1>
           <p className="muted">It may belong to another browser, or the demo data was reset.</p>
-          <Link to={campaignDetailsPath(view.campaign.id, base)} className="btn btn-primary">
+          <Link to={backPath} className="btn btn-primary">
             Back to campaign
           </Link>
         </div>
@@ -37,6 +42,8 @@ export function SuccessPage() {
     )
   }
 
+  const creditedReferral = contribution.referralId ? store.referrals.find((item) => item.id === contribution.referralId) : undefined
+  const since = updatesSince(store, view.campaign.id, contribution.createdAt)
   const exactPercent = view.campaign.goalAmount > 0 ? Math.min(100, (view.raised / view.campaign.goalAmount) * 100) : 0
   const finished = goalReached(view.raised, view.campaign.goalAmount)
   const jacketColor =
@@ -86,6 +93,11 @@ export function SuccessPage() {
           </div>
         </div>
         {contribution.detail ? <p className="muted small">{contribution.detail}</p> : null}
+        {creditedReferral ? (
+          <p className="referral-credit">
+            Credited to <strong>{creditedReferral.displayName}’s sharing page</strong>. Your contribution went to the original campaign and is counted once.
+          </p>
+        ) : null}
         <div className="divider" />
         <div className="money-row big">
           <span>
@@ -96,6 +108,36 @@ export function SuccessPage() {
         <ProgressBar value={exactPercent} tone="gold" />
         <p className="muted small">{view.supporters === 1 ? '1 simulated contribution' : `${view.supporters} simulated contributions`}</p>
       </section>
+      <section className="panel since-card" aria-labelledby="since-title">
+        <h2 id="since-title">Updates since your contribution</h2>
+        {since.length === 0 ? (
+          <p className="muted small">No updates yet since {formatDateTime(contribution.createdAt)}. Organizers post milestones, spending and photos on the campaign’s Updates tab.</p>
+        ) : (
+          <ul className="plain-list">
+            {since.map((update) => (
+              <li key={update.id}>
+                <strong>{update.title}</strong> <span className="muted small">· {formatDate(update.date)}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+        <div className="inline-actions">
+          <Link to={`${backPath}${backPath.includes('?') ? '&' : '?'}tab=updates`} className="btn btn-outline btn-sm">
+            See campaign updates
+          </Link>
+          <button
+            type="button"
+            className="btn btn-outline btn-sm"
+            aria-pressed={following}
+            onClick={() => {
+              if (setFollowing(view.campaign.id, !following)) setFollowingState(!following)
+            }}
+          >
+            {following ? 'Following on this device' : 'Follow updates on this device'}
+          </button>
+        </div>
+        <p className="muted small">Following is a local bookmark in this browser. No emails or notifications are sent.</p>
+      </section>
       <div className="center-actions">
         {contribution.method === 'game' && view.campaign.participation.game && !finished ? (
           <Link to={campaignPlayPath(view.campaign.id, view.campaign.gameType, base)} className="btn btn-primary btn-lg">
@@ -103,7 +145,7 @@ export function SuccessPage() {
           </Link>
         ) : null}
         <Link
-          to={campaignDetailsPath(view.campaign.id, base)}
+          to={backPath}
           className={contribution.method === 'game' ? 'btn btn-outline btn-lg' : 'btn btn-primary btn-lg'}
         >
           Back to campaign

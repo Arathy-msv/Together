@@ -25,6 +25,8 @@ import { formatINR } from '../lib/format.ts'
 import { clearPending, getPending } from '../lib/pending.ts'
 import { activeReferral, currentPlayer } from '../lib/players.ts'
 import { loadStore } from '../lib/storage.ts'
+import { checkoutReferral, snapshotReferral } from '../lib/attribution.ts'
+import { ReferralCredit } from '../components/referral/ReferralCredit.tsx'
 import type { CampaignView } from '../lib/types.ts'
 import { NotFoundPage } from './NotFound.tsx'
 
@@ -133,6 +135,7 @@ function GameConfirm({ view, sessionId }: { view: CampaignView; sessionId: strin
         playerId: giver?.id,
         playerName: giver?.name,
         referralCode: activeReferral(campaign.id, giver?.id),
+        referralId: snapshotReferral(sessionId, campaign.id),
       })
       writeLedger(settleConfirmed(latestLedger, sessionId))
       navigate(`${base}/campaigns/${campaign.id}/success/${savedContribution.id}`, { replace: true })
@@ -162,6 +165,7 @@ function GameConfirm({ view, sessionId }: { view: CampaignView; sessionId: strin
           <h1>Review your game contribution</h1>
           <p className="muted">Check the details, then confirm. No real money will be collected.</p>
         </header>
+        <ReferralCredit referralId={checkoutReferral(sessionId, campaign.id)} />
         <section className="panel confirm-summary-card">
           <div className="confirm-campaign">
             <CampaignCover campaign={campaign} />
@@ -318,6 +322,7 @@ function DirectConfirm({ view }: { view: CampaignView }) {
         playerId: current.playerId,
         playerName: current.playerName,
         referralCode: current.referralCode,
+        referralId: current.referralId,
       })
       clearPending()
       navigate(`${base}/campaigns/${campaign.id}/success/${saved.id}`)
@@ -347,6 +352,7 @@ function DirectConfirm({ view }: { view: CampaignView }) {
             Please review the details below and confirm.
           </p>
         </header>
+        <ReferralCredit referralId={pending?.referralId} />
         {pending ? (
           <>
             <section className="panel confirm-summary-card">

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useOrgBase } from '../components/org/OrgContext.tsx'
+import { snapshotReferral } from '../lib/attribution.ts'
 import { contributionAvailability } from '../lib/availability.ts'
 import { findContribution } from '../lib/campaigns.ts'
 import {
@@ -156,6 +157,7 @@ export function useGameContribution({
     if (!availability.ok) return availability.reason
     let next = setCustomAmount(ledgerRef.current, choice)
     next = beginCheckout(next, session.id)
+    snapshotReferral(session.id, campaignId)
     commit(next)
     setDialog(null)
     navigate(`${base}/campaigns/${campaignId}/confirm?session=${encodeURIComponent(session.id)}`)

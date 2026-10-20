@@ -5,10 +5,10 @@ import { GoalGesture } from '../../components/GoalGesture.tsx'
 import { Leaderboard, RankBanner } from '../../components/Leaderboard.tsx'
 import { ContributionLayer } from '../../components/ContributionDialogs.tsx'
 import { LeafMark } from '../../components/illustrations.tsx'
-import { useOrgBase } from '../../components/org/OrgContext.tsx'
 import { OrgGameBrand } from '../../components/org/OrgGameBrand.tsx'
+import { useCampaignBackPath } from '../../hooks/useBackPath.ts'
 import type { GameContribution } from '../../hooks/useGameContribution.ts'
-import { campaignDetailsPath, goalReached } from '../../lib/campaigns.ts'
+import { goalReached } from '../../lib/campaigns.ts'
 import { gameMeta } from '../../lib/games.ts'
 import type { CampaignView, GameType } from '../../lib/types.ts'
 
@@ -30,7 +30,7 @@ export function GameFrame({
   preview?: boolean
 }) {
   const { campaign } = view
-  const base = useOrgBase()
+  const backTo = useCampaignBackPath(campaign.id)
   const finished = !preview && goalReached(view.raised, campaign.goalAmount)
 
   return (
@@ -47,7 +47,7 @@ export function GameFrame({
             {gameMeta(game).name}
           </p>
           <div className="play-header-actions">
-            {preview ? null : <Link to={campaignDetailsPath(campaign.id, base)}>About this campaign</Link>}
+            {preview ? null : <Link to={backTo}>About this campaign</Link>}
             <span className="demo-pill sun">{preview ? 'Preview' : 'Demo'}</span>
           </div>
         </header>
@@ -68,7 +68,7 @@ export function GameFrame({
             <GoalGesture
               campaignTitle={campaign.title}
               goal={campaign.goalAmount}
-              backTo={campaignDetailsPath(campaign.id, base)}
+              backTo={backTo}
               resting="This game rests here. Thank you for helping the campaign grow."
             />
           ) : null}
