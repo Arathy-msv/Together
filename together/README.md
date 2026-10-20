@@ -23,7 +23,7 @@ npm run lint
 npm test
 ```
 
-`npm test` runs the contribution rules, stage gating, checkout, organization, theming, storage migration, assistant, referral attribution, fund summary, trust and draft tests with Node’s built-in test runner.
+`npm test` runs the contribution rules, stage gating, checkout, organization, theming, storage migration, assistant, referral attribution, fund summary, trust, draft and AI-preview tests with Node’s built-in test runner.
 
 ## Organizations
 
@@ -93,12 +93,30 @@ Category templates (Education, Clothing & essential supplies, Environment, Sport
 
 The campaign form and the assistant autosave drafts on this device (“Saving…”, “Saved on this device”, or a visible “Not saved” error). Returning shows **Continue your campaign draft?** with Continue, Start another and Discard. Drafts have stable IDs per organization and starting another never overwrites one. Progress counts required fields only.
 
+## AI preview · Simulated
+
+The AI-assisted features are deterministic mocks. No model, API or credentials are involved, and every panel is labelled **AI preview · Simulated**. Suggestions stay separate from saved data until you apply them. Nothing is published, contributed, verified or used to change totals automatically.
+
+All features go through one small typed interface, `AssistantService` in `src/lib/ai/service.ts`. The mock (`mockAssistant`) adds a short simulated latency and supports cancellation, and newer requests always win over older ones. To use a real model later, implement the same interface behind a secure server. Campaign text and documents are passed as data, never as instructions. Readiness rules, money calculations, validation and permissions stay in application code.
+
+| Feature | Where | How the mock works |
+| --- | --- | --- |
+| Conversational campaign creator | `/o/:slug/assistant` | Opens with “Tell me what you’re raising funds for…”. Picks out only an explicit amount with a currency (e.g. ₹50,000, 2 lakh rupees) and *suggests* a category for you to confirm. Asks one question at a time and accepts corrections. Your target answer wins once given. Has a setup sidebar, live preview, “Save and exit”, autosave and resume. Draft suggestions (summary, story, suggested milestones, game, missing information) are applied one by one with undo. Creating needs explicit confirmation and uses the existing validation and save flow. |
+| Campaign readiness | Form review, assistant review, workspace overview | Transparent rules grouped into *Required before publishing* (the form’s real validation), *Recommended* and *Optional*. Each result links to its field; some have an editable suggestion. No scores, fraud labels or verification. |
+| Update writer | Workspace → Updates, and beside each milestone | Uses only the facts you enter plus the selected milestone, published expenses and public evidence. Milestone wording comes from the organizer’s status, so plans never read as completed. Placeholders block use until you fill them. Offers Apply to editor, Save as draft and Discard; publishing is still explicit. |
+| Final report writer | Workspace → Final report | Figures come from `fundSummary`. Unfinished milestones and expenses without evidence stay visible. Publishing needs placeholders replaced and a review tick. |
+| Referral message | Sharing page editor | Up to three options built from your own reason and connection plus the campaign title and organizer. Offers Apply, Shorten and Reset. |
+| Ask about this campaign | Supporter campaign pages | Answers a fixed set of questions from a public snapshot of one campaign. Anything unpublished gets “This information has not been published yet.”; other questions get a demo-limitation message. |
+| Receipt assistance | Workspace → Expenses | Three fictional sample receipts map to fixed values (no OCR). Values need review and only become an expense when you save or publish. Other currencies are not converted. |
+| Translation preview | Story, updates, sharing pages | Malayalam prepared by hand for the seeded sample content. For anything else, live translation is “not connected” and a manual field is offered. Translations are stored separately and shown publicly only after review. |
+| Suggest a setup | Campaign form, assistant | Category-based template, available game, milestones, expense categories and cover, each accepted individually. |
+
 ## Storage
 
 | Key | Contents |
 | --- | --- |
 | `together.organizations.v1` | Organization configurations |
-| `together.demo.v1` | Format version 3: campaigns, contributions (optional `referralId`), referrals, milestones, campaignUpdates, expenses, supportingDocuments |
+| `together.demo.v1` | Format version 4 (adds optional reviewed `translations` on campaigns, updates and sharing pages): campaigns, contributions (optional `referralId`), referrals, milestones, campaignUpdates, expenses, supportingDocuments |
 | `together.campaignDrafts.v1` | Form and assistant drafts, each with a stable ID and organization |
 | `together.followed.v1` | Campaigns followed on this device |
 | `together.myReferrals.v1` | Sharing pages created on this device (demo editing only) |

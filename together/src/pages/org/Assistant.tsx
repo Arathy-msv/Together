@@ -177,6 +177,7 @@ function AssistantChat({ org, start }: { org: Organization; start: ChatStart }) 
   const checklist = requiredChecklist(form, allowedGames)
   const [showPreview, setShowPreview] = useState(false)
   const [confirmed, setConfirmed] = useState(false)
+  const [goalConfirmed, setGoalConfirmed] = useState(() => start.stage === 'review' || ASSISTANT_STEPS.indexOf(start.stage as AssistantStepId) > ASSISTANT_STEPS.indexOf('goal'))
   const currentRef = useRef<HTMLDivElement>(null)
 
   setDisplayCurrency(form.currency)
@@ -211,7 +212,8 @@ function AssistantChat({ org, start }: { org: Organization; start: ChatStart }) 
       // Only explicit facts are picked up; the organizer confirms them on later questions.
       const parsed = parseCampaignMessage(form.description)
       const patch: Partial<CampaignForm> = {}
-      if (parsed.amount) {
+      // Once the organizer has answered the target question, their answer wins; mismatches are flagged instead.
+      if (parsed.amount && !goalConfirmed) {
         patch.goalAmount = String(parsed.amount)
         if (parsed.currency) patch.currency = parsed.currency
       }
@@ -229,6 +231,7 @@ function AssistantChat({ org, start }: { org: Organization; start: ChatStart }) 
       goTo('review')
       return
     }
+    if (step === 'goal') setGoalConfirmed(true)
     goTo(nextStep(step, current))
   }
 
