@@ -8,7 +8,8 @@ import { MilestoneTimeline, StatusPill } from '../../components/campaign/PublicS
 import { useOrg } from '../../components/org/OrgContext.tsx'
 import { Select, TextArea, TextInput } from '../../components/workspace/fields.tsx'
 import { useCampaignView, useDemoStore } from '../../hooks/useDemoStore.ts'
-import { campaignDetailsPath, closeCampaign } from '../../lib/campaigns.ts'
+import { campaignDetailsPath, campaignSharePath, closeCampaign } from '../../lib/campaigns.ts'
+import { ShareKit } from '../../components/sharing/ShareKit.tsx'
 import { RevisionReview } from '../../components/campaign/RevisionReview.tsx'
 import { AccessDenied } from '../../components/identity/AccessDenied.tsx'
 import { useCurrentUser } from '../../hooks/useIdentity.ts'
@@ -288,56 +289,60 @@ function Overview({ campaign, view, store }: WorkspaceProps) {
 }
 
 function ReferralsPanel({ campaign, store }: WorkspaceProps) {
-  const { base } = useOrg()
+  const { base, org } = useOrg()
   const referrals = store.referrals.filter((item) => item.campaignId === campaign.id)
+  const campaignUrl = `${window.location.origin}${campaignSharePath(campaign.id, base)}`
   return (
-    <section className="panel ws-card wide">
-      <h2>Sharing pages</h2>
-      <p className="muted small">
-        Supporters create sharing pages with a personal introduction. They cannot change the campaign’s facts, goal, currency or where money goes. Credited
-        amounts are already included in the campaign total. Donor names are never shown here.
-      </p>
-      {referrals.length === 0 ? (
-        <p className="awaiting">No sharing pages yet. Supporters can create one from the campaign page.</p>
-      ) : (
-        <table className="ws-table">
-          <thead>
-            <tr>
-              <th>Shared by</th>
-              <th>Credited</th>
-              <th>Contributions</th>
-              <th>Sharing goal</th>
-              <th>
-                <span className="sr-only">Actions</span>
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {referrals.map((referral) => {
-              const totals = referralTotals(referral, store.contributions)
-              return (
-                <tr key={referral.id}>
-                  <td data-label="Shared by">
-                    <strong>{referral.displayName}</strong>
-                    <span className="muted small"> /{referral.code}</span>
-                  </td>
-                  <td data-label="Credited">{formatMoney(totals.amount, campaign.currency)}</td>
-                  <td data-label="Contributions">{totals.count}</td>
-                  <td data-label="Sharing goal">
-                    {referral.personalTarget ? `${formatMoney(referral.personalTarget, campaign.currency)} · ${totals.percent}%` : '—'}
-                  </td>
-                  <td>
-                    <Link to={referralPath(base, campaign.id, referral.code)} className="btn btn-outline btn-sm">
-                      Open
-                    </Link>
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
-      )}
-    </section>
+    <>
+      <ShareKit org={org} campaign={campaign} url={campaignUrl} mode="campaign" title="Share this campaign" defaultOpen={false} />
+      <section className="panel ws-card wide">
+        <h2>Sharing pages</h2>
+        <p className="muted small">
+          Supporters create sharing pages with a personal introduction. They cannot change the campaign’s facts, goal, currency or where money goes. Credited
+          amounts are already included in the campaign total. Donor names are never shown here.
+        </p>
+        {referrals.length === 0 ? (
+          <p className="awaiting">No sharing pages yet. Supporters can create one from the campaign page.</p>
+        ) : (
+          <table className="ws-table">
+            <thead>
+              <tr>
+                <th>Shared by</th>
+                <th>Credited</th>
+                <th>Contributions</th>
+                <th>Sharing goal</th>
+                <th>
+                  <span className="sr-only">Actions</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {referrals.map((referral) => {
+                const totals = referralTotals(referral, store.contributions)
+                return (
+                  <tr key={referral.id}>
+                    <td data-label="Shared by">
+                      <strong>{referral.displayName}</strong>
+                      <span className="muted small"> /{referral.code}</span>
+                    </td>
+                    <td data-label="Credited">{formatMoney(totals.amount, campaign.currency)}</td>
+                    <td data-label="Contributions">{totals.count}</td>
+                    <td data-label="Sharing goal">
+                      {referral.personalTarget ? `${formatMoney(referral.personalTarget, campaign.currency)} · ${totals.percent}%` : '—'}
+                    </td>
+                    <td>
+                      <Link to={referralPath(base, campaign.id, referral.code)} className="btn btn-outline btn-sm">
+                        Open
+                      </Link>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        )}
+      </section>
+    </>
   )
 }
 

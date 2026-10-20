@@ -8,15 +8,16 @@ import { StatusBadge } from '../components/StatusBadge.tsx'
 import { useOrg } from '../components/org/OrgContext.tsx'
 import { FundUseTab, StoryTab, TrustTab, UpdatesTab } from '../components/campaign/PublicSections.tsx'
 import { ReferralIntro } from '../components/referral/ReferralIntro.tsx'
+import { ShareKit } from '../components/sharing/ShareKit.tsx'
 import { CampaignQuestions } from '../components/ai/CampaignQuestions.tsx'
 import { useCampaignView, useDemoStore } from '../hooks/useDemoStore.ts'
-import { campaignDetailsPath, campaignPlayPath } from '../lib/campaigns.ts'
+import { campaignDetailsPath, campaignPlayPath, campaignSharePath } from '../lib/campaigns.ts'
 import { followedAt, setFollowing } from '../lib/follows.ts'
 import { setShareContext } from '../lib/attribution.ts'
 import { canHaveSharingPages, shareWorkspacePath } from '../lib/referrals.ts'
 import { campaignMilestones, deliverySummary, latestUpdateDate } from '../lib/transparency.ts'
 import { OrgNotFound } from './org/OrgNotFound.tsx'
-import { formatDate, formatDateRange, formatINR, parseWholeRupees } from '../lib/format.ts'
+import { formatDate, formatDateRange, formatINR, parseWholeRupees, shortPurpose } from '../lib/format.ts'
 import { canUseFeature, campaignUsesSponsor } from '../lib/features.ts'
 import { CampaignPartnerOffers } from './org/PartnerOffersPublic.tsx'
 import { GAME_EXPLANATION, campaignGameSettings, gameActionAmounts } from '../lib/gameContribution.ts'
@@ -50,13 +51,6 @@ const SECTION_TABS: Array<{ id: SectionTab; label: string }> = [
   { id: 'updates', label: 'Updates' },
   { id: 'fund', label: 'How funds are used' },
 ]
-
-/** The first sentence of the description, kept short enough to read at a glance. */
-function shortPurpose(text: string): string {
-  const trimmed = text.trim()
-  const sentence = trimmed.match(/^.+?[.!?](\s|$)/)?.[0].trim() ?? trimmed
-  return sentence.length > 180 ? `${sentence.slice(0, 177).trimEnd()}…` : sentence
-}
 
 function CampaignDetails({ view, referral }: { view: CampaignView; referral?: Referral }) {
   const { campaign } = view
@@ -104,6 +98,7 @@ function CampaignDetails({ view, referral }: { view: CampaignView; referral?: Re
   }
 
   const purpose = shortPurpose(campaign.description)
+  const campaignUrl = `${window.location.origin}${campaignSharePath(campaign.id, base)}`
 
   const followButton = <FollowButton campaignId={campaign.id} />
 
@@ -274,7 +269,7 @@ function CampaignDetails({ view, referral }: { view: CampaignView; referral?: Re
           <DeliverySnapshot campaign={campaign} store={store} onOpen={() => openSection('updates')} />
           <div className="panel aside-card share-card">
             <h2 className="aside-title">Help spread the word</h2>
-            <ShareLinkButton url={`${window.location.origin}${campaignDetailsPath(campaign.id, base).split('?')[0]}`} />
+            <ShareLinkButton url={campaignUrl} />
             {canHaveSharingPages(view) ? (
               <>
                 <Link to={shareWorkspacePath(base, campaign.id)} className="btn btn-outline btn-block">
@@ -283,12 +278,19 @@ function CampaignDetails({ view, referral }: { view: CampaignView; referral?: Re
                 <span className="muted small">Add your message and get your own link to this campaign.</span>
               </>
             ) : null}
+            {canUseFeature(org, 'shareKit') ? (
+              <a href="#campaign-share-kit" className="link-button small">
+                Open the full sharing kit — QR code, poster, WhatsApp, email, social images
+              </a>
+            ) : null}
           </div>
           <CampaignPartnerOffers campaign={campaign} />
           <div className="panel aside-card">{followButton}</div>
         </aside>
       </div>
-
+      <div id="campaign-share-kit">
+        <ShareKit org={org} campaign={campaign} url={campaignUrl} mode="campaign" defaultOpen={false} title="Share this campaign" />
+      </div>
     </div>
   )
 }

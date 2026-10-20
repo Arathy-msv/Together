@@ -1,6 +1,6 @@
 import { useEffect, useId, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
-import { ShareKit } from '../components/org/ShareKit.tsx'
+import { ShareKit } from '../components/sharing/ShareKit.tsx'
 import { useOrg } from '../components/org/OrgContext.tsx'
 import { AiButton } from '../components/ai/AiUI.tsx'
 import { ReferralWriter } from '../components/ai/ReferralWriter.tsx'
@@ -206,7 +206,7 @@ function ShareEditor({ existing, mine }: { existing?: Referral; mine: Referral[]
         </section>
       ) : null}
 
-      {existing ? <ShareKit org={org} campaign={campaign} shareUrl={shareUrl} /> : null}
+      {existing ? <ShareKit org={org} campaign={campaign} url={shareUrl} mode="referral" referral={existing} title="My sharing kit" defaultOpen={false} /> : null}
 
       <div className="share-grid">
         <form

@@ -82,6 +82,13 @@ export function progressPercent(raised: number, goal: number): number {
   return Math.min(100, Math.round((raised / goal) * 100))
 }
 
+/** The first sentence of a longer text, kept short enough to read at a glance. */
+export function shortPurpose(text: string): string {
+  const trimmed = text.trim()
+  const sentence = trimmed.match(/^.+?[.!?](\s|$)/)?.[0].trim() ?? trimmed
+  return sentence.length > 180 ? `${sentence.slice(0, 177).trimEnd()}…` : sentence
+}
+
 export function truncate(text: string, max: number): string {
   const trimmed = text.trim()
   if (trimmed.length <= max) return trimmed
