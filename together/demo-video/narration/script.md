@@ -24,7 +24,7 @@ Please note: this is a product prototype. Payments and selected services are sim
 Greenwood School has its own website, with its logo, colours and campaigns.
 
 ## op-game
-Supporters can give directly, or play a short game such as Memory Match.
+Supporters choose how to help: give an amount, or play a short game such as Memory Match.
 Nothing is charged while they play.
 
 ## op-offer
@@ -66,7 +66,8 @@ She enters the school's name, type, short description and public contact details
 The website address follows the name, and the app checks that it is free.
 
 ## oa-features
-Next, she chooses the features the school needs: sponsor-funded play, review before publishing, and partner vouchers with contribution rewards.
+Next come features. Grace can keep the recommended settings for a school, or choose each one herself.
+She chooses individually, and adds sponsor-funded play, review before publishing, and partner vouchers with contribution rewards.
 The campaign sharing kit is already included. It prepares QR codes, posters and ready-to-copy messages.
 Grace leaves it switched on.
 
@@ -81,7 +82,7 @@ Then she previews the website on desktop and on mobile.
 
 ## oa-publish
 She confirms the simulated subscription and publishes.
-The website is live, in this browser only.
+The website is ready, in this browser only, and the next step is clear: create the first campaign, or open the website.
 
 ## oa-members
 In Members, Grace adds Daniel as a second organization admin, and Olivia as a campaign organizer.
@@ -113,7 +114,7 @@ She describes the campaign in her own words.
 The assistant is simulated. It follows fixed rules and is not connected to an {AI|A I} service.
 It suggests a setup, and Olivia adds who the campaign helps, what it pays for, and what happens next.
 Then she confirms the target, the dates, who can take part, both ways to contribute, the Memory Match game, and a cover image.
-Every answer can still be changed in the full form.
+The assistant and the full form share one setup indicator and one review summary, so every answer can still be changed in the form.
 
 ## og-ai-suggest
 Draft suggestions appear for her to review. Nothing is applied automatically, and text in square brackets must be replaced before use.
@@ -133,7 +134,8 @@ She can't approve her own work.
 
 ## og-approve
 Daniel, a different organization admin, sees that Olivia submitted it.
-He adds a note, approves the revision, and the campaign is published.
+He adds a note and approves the revision. Approval does not publish anything by itself.
+Publishing is a separate, deliberate step, so Daniel then publishes the approved campaign.
 
 ## og-copy-link
 Back as Olivia, she copies the campaign link and checks the public page.
@@ -190,11 +192,12 @@ The review screen says clearly that no payment will be collected, and she confir
 Her contribution qualifies for the partner reward, so she claims the voucher.
 
 ## sp-game
-She also plays Memory Match. Each matched pair adds to a suggested amount, but nothing is charged during play.
-She matches three pairs, and can stop and review whenever she likes.
+She also plays Memory Match. The rules are stated up front: each matched pair suggests {₹50|fifty rupees}, and the final contribution is her choice.
+Each pair shows a short message without interrupting play. Nothing is charged.
+A new board keeps her suggestion. Only starting a new session clears it, and that asks first.
 
 ## sp-game-confirm
-At the end, the suggestion is only a starting point. She changes it to {₹200|two hundred rupees}, reviews it, and confirms.
+When she's ready, she opens the review. The suggestion is only a starting point. She changes it to {₹200|two hundred rupees}, reviews it, and confirms.
 The campaign total now shows {₹700|seven hundred rupees}.
 
 ## sp-share
@@ -207,11 +210,11 @@ Ben, a different supporter, opens Mia's link and confirms one simulated contribu
 The campaign total increases once, and Mia's page is credited. That credit is part of the total, not extra money.
 
 ## sp-vouchers
-My vouchers holds her reward code.
-Her impact history lists the campaigns she has supported.
+My vouchers holds her reward as a card. Show voucher opens a large code and QR for the shop counter.
+My activity brings together her contributions, the campaigns she follows, and her vouchers.
 
 ## sp-lowdata
-For slow connections, a low-data page removes large images and animations.
+For slow connections, low-data mode holds back photos and video until she asks, and turns off animations.
 She switches it back off when she's done.
 
 # chapter merchant | Merchant
@@ -257,9 +260,9 @@ Because delivery isn't finished, Grace saves it as a draft. It is not public.
 As an organization admin, she can export the campaign records as a file. Supporter profiles are not included.
 
 ## fn-public
-On the public page, the target is reached, but delivery shows one of four milestones complete.
-Reaching the goal does not mean delivery is done.
-Supporters can see each organizer-reported expense, and the amount not yet spent.
+On the public page, the funding goal is reached and fundraising has closed, so the contribution panel becomes a funded summary.
+Delivery is reported separately: one of four milestones is complete. Reaching the goal does not mean delivery is done.
+Each milestone links to its expenses, receipts and updates. From Purchase materials, supporters jump straight to that expense, and the amount not yet spent.
 
 # chapter end | Together
 

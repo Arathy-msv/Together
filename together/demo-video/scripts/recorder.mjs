@@ -204,6 +204,11 @@ export async function createRecorder({ profile, port = 9555, base, workDir, widt
         point = now
         if (!drifted) break
       }
+      // Late layout growth (panels, images) can push the target below the fold after it was scrolled to.
+      if (point.y < 0 || point.y > (await r.ev('innerHeight'))) {
+        point = await r.locate(selector, options)
+        await r.moveTo(point.x, point.y, 200)
+      }
       await call('Input.dispatchMouseEvent', { type: 'mousePressed', x: point.x, y: point.y, button: 'left', clickCount: 1 })
       await sleep(70)
       await call('Input.dispatchMouseEvent', { type: 'mouseReleased', x: point.x, y: point.y, button: 'left', clickCount: 1 })

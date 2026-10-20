@@ -198,6 +198,10 @@ export const SCENES = [
     chapter: 'orgadmin',
     async run(r) {
       await r.sleep(1200)
+      await r.expectText('Included with the recommended settings')
+      await r.sleep(1800)
+      await r.click('label.feature-mode-option', { text: 'Choose individually' })
+      await r.sleep(900)
       await r.scrollToSel('label:has(#feature-sponsorPlay)')
       await r.sleep(800)
       await r.click('label:has(#feature-sponsorPlay)')
@@ -266,7 +270,8 @@ export const SCENES = [
     chapter: 'orgadmin',
     async run(r, state) {
       await r.press('Confirm simulated subscription and publish', { selector: 'button' })
-      await r.waitFor('is live in this browser')
+      await r.waitFor('Your website is ready.')
+      await r.expectText('Create your first campaign')
       state.orgId = await r.app(`const m = await import('/src/lib/orgStorage.ts'); return m.loadOrganizations().find(o => o.slug === 'greenwood-school')?.id`)
       if (!state.orgId) throw new Error('Greenwood School was not saved')
       await r.sleep(2500)
@@ -399,6 +404,7 @@ export const SCENES = [
         const pending = campaigns.getCampaign(campaign.id)
         identity.switchIdentity(${JSON.stringify(u.daniel)})
         actions.reviewRevision(campaign.id, pending.pendingRevision.id, 'approve', 'Approved for Reading Week.')
+        actions.publishApprovedRevision(campaign.id, pending.pendingRevision.id)
         let n = 0
         for (const [who, rupees] of [[${JSON.stringify(u.ben)}, 6000], [null, 8500], [${JSON.stringify(u.ben)}, 5500]]) {
           identity.switchIdentity(who)
@@ -518,7 +524,7 @@ export const SCENES = [
       await r.press('Fine-tune in the full form', { selector: 'button' })
       await r.waitFor('Submit for review')
       await r.sleep(1200)
-      await r.press('Goal and dates', { selector: 'button[aria-label="Back to Goal and dates"]' })
+      await r.press('Goal and dates', { selector: '.setup-indicator button' })
       await r.waitFor('#next-update')
       await r.scrollToSel('#next-update')
       const nextUpdate = await r.ev(`(()=>{const d=new Date(Date.now()+7*864e5); return d.toISOString().slice(0,10)})()`)
@@ -556,7 +562,7 @@ export const SCENES = [
       await r.press('Manage · Waiting for review', { selector: 'a' })
       await r.waitFor('Waiting for review')
       await r.expectText('An Organization Admin will review it.')
-      await r.rejectText('Approve this revision and publish')
+      await r.rejectText('Approve this revision')
       await r.sleep(2500)
     },
   },
@@ -571,17 +577,24 @@ export const SCENES = [
       await r.waitFor('Manage · Waiting for review')
       await r.sleep(1500)
       await r.press('Manage · Waiting for review', { selector: 'a' })
-      await r.waitFor('Approve this revision and publish')
-      await r.expectText(`Revision submitted by ${PEOPLE.olivia}`)
+      await r.waitFor('Approve this revision')
+      await r.expectText('Approving does not publish')
+      await r.expectText('Submitted by')
+      await r.expectText(`${PEOPLE.olivia} · `)
       await r.sleep(1500)
       await r.fill('#revision-note, .field textarea', 'Approved. Thank you, Olivia — please post the first update next week.', { delay: 12 }).catch(async () => {
         await r.fill('section[aria-labelledby="revision-title"] textarea', 'Approved. Thank you, Olivia — please post the first update next week.', { delay: 12 })
       })
-      await r.press('Approve this revision and publish', { selector: 'button' })
+      await r.press('Approve this revision', { selector: 'button', exact: true })
+      await r.waitFor('Approved · ready to publish')
+      const stillHidden = await r.app(`const c = await import('/src/lib/campaigns.ts'); return c.getCampaign(${JSON.stringify(state.campaignId)}).isDraft`)
+      if (!stillHidden) throw new Error('Approval alone should not publish the campaign')
+      await r.sleep(2500)
+      await r.press('Publish approved campaign', { selector: 'button' })
       await r.sleep(1200)
-      await r.rejectText('Approve this revision and publish')
+      await r.rejectText('Approved · ready to publish')
       const live = await r.app(`const c = await import('/src/lib/campaigns.ts'); const x = c.getCampaign(${JSON.stringify(state.campaignId)}); return !x.isDraft && !x.pendingRevision`)
-      if (!live) throw new Error('Campaign was not published by approval')
+      if (!live) throw new Error('Campaign was not published after approval')
       await r.sleep(2500)
     },
   },
@@ -850,7 +863,7 @@ export const SCENES = [
     },
     async run(r) {
       await r.scrollToSel('h2', { text: 'Support this campaign' })
-      await r.press('Play a game', { selector: '[role=tab], button', exact: true })
+      await r.click('label.give-option', { text: 'Play Memory Match' })
       await r.sleep(900)
       await r.press('Start playing', { selector: 'a, button' })
       await r.waitFor('.mem-card')
@@ -904,7 +917,7 @@ export const SCENES = [
     chapter: 'supporter',
     async run(r) {
       await r.scrollToSel('h2', { text: 'Support this campaign' })
-      await r.press('Give directly', { selector: '[role=tab], button', exact: true }).catch(() => {})
+      await r.click('label.give-option', { text: 'Give an amount' }).catch(() => {})
       await r.sleep(800)
       await r.press('₹250', { selector: 'button.amount-choice' })
       await r.sleep(900)
@@ -941,7 +954,7 @@ export const SCENES = [
       await r.nav(`/o/greenwood-school/campaigns/${state.campaignId}`)
       await r.waitFor('Support this campaign')
       await r.scrollToSel('h2', { text: 'Support this campaign' })
-      await r.press('Play a game', { selector: '[role=tab], button', exact: true })
+      await r.click('label.give-option', { text: 'Play Memory Match' })
       await r.sleep(1000)
       await r.press('Start playing', { selector: 'a, button' })
       await r.waitFor('.mem-card')
@@ -954,15 +967,18 @@ export const SCENES = [
         if (seen.has(faces[i])) continue
         seen.add(faces[i])
         const j = faces.indexOf(faces[i], i + 1)
-        if (pairs > 0) { await r.press('Keep playing', { selector: 'button' }); await r.sleep(500) }
         await r.click('.mem-card', { index: i })
         await r.sleep(350)
         await r.click('.mem-card', { index: j })
-        await r.waitFor('Keep playing', 8000)
-        await r.sleep(1200)
+        await r.waitFor(`suggestion now ₹${(pairs + 1) * 50}`, 8000)
+        await r.sleep(1600)
         pairs += 1
       }
       await r.waitFor('3 matched pairs')
+      await r.sleep(1500)
+      await r.press('↻ New board', { selector: 'button' })
+      await r.sleep(900)
+      await r.expectText('₹150')
       await r.sleep(1500)
     },
   },
@@ -970,6 +986,8 @@ export const SCENES = [
     id: 'sp-game-confirm',
     chapter: 'supporter',
     async run(r) {
+      await r.press('Review & contribute', { selector: 'button.gc-review' })
+      await r.waitFor('Your final amount')
       await r.fillLabel('Your final amount', '200', { within: '.gc-modal, [role=dialog], body' })
       await r.sleep(1200)
       await r.press('Review & contribute — ₹200', { selector: 'button' })
@@ -1076,11 +1094,18 @@ export const SCENES = [
       await r.nav('/o/greenwood-school/my-vouchers')
       await r.waitFor('10% off school supplies')
       state.voucherCode = await r.app(`const v = await import('/src/lib/vouchers.ts'); const s = v.loadVoucherStore ? v.loadVoucherStore() : null; return JSON.stringify(s ? s.vouchers.map(x => x.code) : [])`).catch(() => null)
+      await r.sleep(1500)
+      await r.press('Show voucher', { selector: 'button' })
+      await r.waitFor('.voucher-present[open]')
       await r.sleep(3000)
-      await r.nav('/o/greenwood-school/my-history')
-      await r.sleep(1200)
+      await r.press('Done', { selector: '.voucher-present button', exact: true })
+      await r.sleep(800)
+      await r.press('My activity', { selector: '.oh-nav a', exact: true })
+      await r.waitFor('Contributions')
       await r.expectText('School supplies for every Greenwood pupil')
-      await r.sleep(3000)
+      await r.sleep(2000)
+      await r.scrollToSel('h2', { text: 'Partner vouchers' })
+      await r.sleep(2000)
     },
   },
   {
@@ -1090,14 +1115,14 @@ export const SCENES = [
       await r.press('Home', { selector: '.oh-nav a', exact: true })
       await r.waitFor('Help Greenwood School stock every classroom')
       await r.sleep(1500)
-      await r.click('label', { text: 'Low-data page' })
+      await r.click('label', { text: 'Low-data mode' })
       await r.sleep(800)
       if (!(await r.ev(`document.documentElement.classList.contains('low-data')`))) throw new Error('Low-data mode did not turn on')
       await r.sleep(2500)
       await r.scrollBy(400)
       await r.sleep(1500)
       await r.scrollTop()
-      await r.click('label', { text: 'Low-data page' })
+      await r.click('label', { text: 'Low-data mode' })
       await r.sleep(1200)
     },
   },
@@ -1297,20 +1322,21 @@ export const SCENES = [
     async before(r, state) {
       await r.switchTo(null)
       await r.go(`/o/greenwood-school/campaigns/${state.campaignId}`)
-      await r.waitFor('Support this campaign').catch(() => r.waitFor('Goal reached'))
+      await r.waitFor('Funding goal reached')
     },
     async run(r) {
       await r.expectText('₹61,200 of ₹60,000')
-      await r.sleep(2500)
-      await r.scrollToSel('.section-tabs')
-      await r.press('Updates', { selector: '[role=tab]', exact: true })
+      await r.waitFor('.funded-panel')
+      await r.expectText('Reaching the goal does not mean the work is done.')
+      await r.sleep(3500)
+      await r.press('See what happens next', { selector: '.funded-panel button' })
       await r.waitFor('Delivery progress')
       await r.scrollToSel('h3', { text: 'Delivery progress' })
       await r.expectText('Reaching the fundraising goal does not mean delivery is complete.')
       await r.expectText('1 of 4 milestones reported complete')
+      await r.scrollToSel('ol.linked-records[aria-label="Records linked to Purchase materials"]')
       await r.sleep(3500)
-      await r.scrollToSel('.section-tabs')
-      await r.press('How funds are used', { selector: '[role=tab]', exact: true })
+      await r.click('ol.linked-records[aria-label="Records linked to Purchase materials"] button', { text: '₹18,400' })
       await r.waitFor('Organizer-reported expenses')
       await r.sleep(2500)
       await r.scrollToSel('h3', { text: 'Organizer-reported expenses' })
