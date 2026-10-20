@@ -279,9 +279,9 @@ function AssistantChat({ org, start }: { org: Organization; start: ChatStart }) 
     goTo('review')
   }
 
-  function openFullForm() {
+  function openFullForm(step = 4) {
     try {
-      saveDraft({ id: start.draftId, organizationId: org.id, kind: 'form', form, step: '3' })
+      saveDraft({ id: start.draftId, organizationId: org.id, kind: 'form', form, step: String(step) })
     } catch {
       setNotice({ tone: 'error', text: 'This browser could not save the draft, so it was not moved to the form.' })
       return
@@ -326,6 +326,14 @@ function AssistantChat({ org, start }: { org: Organization; start: ChatStart }) 
 
   return (
     <div className="container page-pad assistant">
+      <div className="inline-actions assistant-links">
+        <Link to={`${workspace}/campaigns`} className="back-link page-back">
+          ← Back to campaigns
+        </Link>
+        <button type="button" className="link-button" onClick={() => openFullForm(1)}>
+          Prefer a form? Switch to the form
+        </button>
+      </div>
       <div className="assistant-head">
         <div className="assistant-title">
           <OrgLogoMark org={org} size={48} />
@@ -413,7 +421,7 @@ function AssistantChat({ org, start }: { org: Organization; start: ChatStart }) 
           <ol className="chat-log" aria-live="polite">
             <li className="chat-pair">
               <BotBubble org={org}>
-                Let’s create a campaign for {org.name}. I’ve prefilled what I know: organiser name, {org.defaults.currency} as the default currency, suggested amounts and the games
+                Let’s create a campaign for {org.name}. I’ve prefilled what I know: organizer name, {org.defaults.currency} as the default currency, suggested amounts and the games
                 turned on for you. You can change any of it.
               </BotBubble>
             </li>
@@ -500,7 +508,7 @@ function AssistantChat({ org, start }: { org: Organization; start: ChatStart }) 
             )}
           </div>
           {stage === 'review' ? (
-            <button type="button" className="link-button" onClick={openFullForm}>
+            <button type="button" className="link-button" onClick={() => openFullForm()}>
               Fine-tune in the full form (game rates, logo, auto-close)
             </button>
           ) : null}
@@ -1005,7 +1013,7 @@ function ReviewCard({
       </dl>
       <div className="field">
         <label className="field-label" htmlFor="a-organizer">
-          Organiser name shown to supporters
+          Organizer name shown to supporters
         </label>
         <input
           id="a-organizer"

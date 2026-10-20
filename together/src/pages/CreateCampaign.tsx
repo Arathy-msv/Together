@@ -14,7 +14,7 @@ import { deleteDraft, listDrafts, newDraftId, readDraft, saveDraft } from '../li
 import { currencySymbol, formatDateTime, formatINR, setDisplayCurrency } from '../lib/format.ts'
 import { formatPaise, gameConfig } from '../lib/gameContribution.ts'
 import { GAMES, gameMeta } from '../lib/games.ts'
-import { COMING_SOON_GAMES, selectableGames } from '../lib/organizations.ts'
+import { selectableGames } from '../lib/organizations.ts'
 import { StorageFullError } from '../lib/storage.ts'
 import type { CampaignForm, GameType, Organization } from '../lib/types.ts'
 import {
@@ -521,7 +521,7 @@ function StoryStep({
   )
   const logoField = (
         <div className="field">
-          <span className="field-label">Organisation logo</span>
+          <span className="field-label">Organization logo</span>
           <div className="logo-row">
             <OrgLogo name={form.organizerName || 'Together'} logoData={form.logoData} size={48} />
             <button type="button" className="btn btn-outline btn-sm" onClick={logo.open}>
@@ -665,7 +665,7 @@ function StoryStep({
       </div>
 
       <div className="two-col">
-        <Field label="Organiser name" htmlFor="organizer" error={errors.organizerName}>
+        <Field label="Organizer name" htmlFor="organizer" error={errors.organizerName}>
           <input
             id="organizer"
             maxLength={60}
@@ -936,15 +936,6 @@ function GameGallery({
           </span>
           <span className="none-foot">A simple contribution</span>
         </button>
-        {COMING_SOON_GAMES.map((game) => (
-          <div key={game.id} className="game-choice soon-choice" aria-disabled="true">
-            <span className="soon-art" aria-hidden="true">
-              <Icon name="spark" size={26} />
-            </span>
-            <strong>{game.name}</strong>
-            <span className="soon-pill">Coming soon</span>
-          </div>
-        ))}
       </div>
 
       {form.game && form.gameType === 'puzzle' ? (
@@ -1112,7 +1103,7 @@ function safeStamp(value: string): string {
 function ReviewStep({ form, onEdit }: { form: CampaignForm; onEdit: (step: number) => void }) {
   const goal = Number(form.goalAmount)
   const rows: Array<[string, string]> = [
-    ['Organiser', form.organizerName],
+    ['Organizer', form.organizerName],
     ['Goal', Number.isFinite(goal) ? formatINR(goal, form.currency) : '—'],
     ['Group type', form.access === 'open' ? 'Open group' : `Private · code ${form.accessCode}`],
     [

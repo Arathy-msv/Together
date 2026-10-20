@@ -129,7 +129,7 @@ function CampaignDetails({ view, referral }: { view: CampaignView; referral?: Re
             <div className="org-line">
               <OrgLogo name={campaign.organizerName} logoData={campaign.logoData} size={36} />
               <span>
-                {referral ? 'Original campaign organised by' : 'Organised by'} <strong>{campaign.organizerName}</strong> · {org.name}
+                {referral ? 'Original campaign organized by' : 'Organized by'} <strong>{campaign.organizerName}</strong> · {org.name}
               </span>
             </div>
             <span className="muted small">{formatDateRange(campaign.opensAt, campaign.closesAt)}</span>
@@ -216,7 +216,7 @@ function CampaignDetails({ view, referral }: { view: CampaignView; referral?: Re
               <AccessGate
                 onUnlock={(code, name) => {
                   if (!campaign.accessCode || code.trim().toUpperCase() !== campaign.accessCode.toUpperCase()) {
-                    return 'That code does not match. Check the code on the organiser dashboard.'
+                    return 'That code doesn’t match. Ask the organizer for the group’s access code.'
                   }
                   const joined = joinPlayer(campaign.id, name)
                   if (!joined) return 'Add the name you want kept on this private group’s player list.'
@@ -262,14 +262,19 @@ function CampaignDetails({ view, referral }: { view: CampaignView; referral?: Re
             {referral ? <p className="muted small">Your contribution goes to the original campaign. {referral.displayName}’s page is credited for sharing it.</p> : null}
           </div>
           <DeliverySnapshot campaign={campaign} store={store} onOpen={() => openSection('updates')} />
-          <div className="panel aside-card">
-            {followButton}
+          <div className="panel aside-card share-card">
+            <h2 className="aside-title">Help spread the word</h2>
+            <ShareLinkButton url={`${window.location.origin}${campaignDetailsPath(campaign.id, base).split('?')[0]}`} />
             {canHaveSharingPages(view) ? (
-              <Link to={shareWorkspacePath(base, campaign.id)} className="btn btn-outline btn-block">
-                Create my sharing page
-              </Link>
+              <>
+                <Link to={shareWorkspacePath(base, campaign.id)} className="btn btn-outline btn-block">
+                  Create my sharing page
+                </Link>
+                <span className="muted small">Add your message and get your own link to this campaign.</span>
+              </>
             ) : null}
           </div>
+          <div className="panel aside-card">{followButton}</div>
         </aside>
       </div>
 
@@ -302,6 +307,31 @@ function DeliverySnapshot({ campaign, store, onOpen }: { campaign: Campaign; sto
         See updates and timeline
       </button>
     </div>
+  )
+}
+
+function ShareLinkButton({ url }: { url: string }) {
+  const [status, setStatus] = useState<'idle' | 'copied' | 'failed'>('idle')
+  return (
+    <>
+      <button
+        type="button"
+        className="btn btn-primary btn-block"
+        onClick={async () => {
+          try {
+            await navigator.clipboard.writeText(url)
+            setStatus('copied')
+          } catch {
+            setStatus('failed')
+          }
+        }}
+      >
+        {status === 'copied' ? 'Link copied.' : 'Share campaign link'}
+      </button>
+      <span className={status === 'failed' ? 'error-text small' : 'sr-only'} role="status">
+        {status === 'copied' ? 'Link copied.' : status === 'failed' ? `Copy failed. Copy this link instead: ${url}` : ''}
+      </span>
+    </>
   )
 }
 
@@ -512,7 +542,7 @@ function NameGate({ onJoin }: { onJoin: (name: string) => boolean }) {
       }}
     >
       <strong>Add your name</strong>
-      <p className="muted small">Private groups keep every player’s name for the leadership board and referrals.</p>
+      <p className="muted small">Private groups show each player’s name on the group’s leaderboard.</p>
       <label className="field-label" htmlFor="join-name">
         Your name
       </label>

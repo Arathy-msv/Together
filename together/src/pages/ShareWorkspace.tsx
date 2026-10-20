@@ -1,5 +1,5 @@
 import { useEffect, useId, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useOrg } from '../components/org/OrgContext.tsx'
 import { AiButton } from '../components/ai/AiUI.tsx'
 import { ReferralWriter } from '../components/ai/ReferralWriter.tsx'
@@ -49,8 +49,7 @@ export function ShareWorkspacePage() {
         <div className="panel empty">
           <h1>This sharing page was created on another device</h1>
           <p className="muted">
-            In this demo, a sharing page can only be edited on the device that created it. That is a demo convenience, not a security control — a referral
-            code is attribution, not an editing password.
+            In this demo, a sharing page can only be edited on the device that created it.
           </p>
           <Link to={referralPath(base, id, existing.code)} className="btn btn-primary">
             Open the sharing page
@@ -80,6 +79,7 @@ function ShareEditor({ existing, mine }: { existing?: Referral; mine: Referral[]
   const view = useCampaignView(id)!
   const store = useDemoStore()
   const navigate = useNavigate()
+  const location = useLocation()
   const { base } = useOrg()
   const campaign = view.campaign
   const [input, setInput] = useState<ReferralInput>(() => ({
@@ -92,7 +92,9 @@ function ShareEditor({ existing, mine }: { existing?: Referral; mine: Referral[]
   }))
   const [targetText, setTargetText] = useState(existing?.personalTarget ? String(existing.personalTarget) : '')
   const [errors, setErrors] = useState<ReferralErrors>({})
-  const [notice, setNotice] = useState<{ tone: 'success' | 'error'; text: string } | null>(null)
+  const [notice, setNotice] = useState<{ tone: 'success' | 'error'; text: string } | null>(() =>
+    (location.state as { created?: boolean } | null)?.created ? { tone: 'success', text: 'Your sharing page is ready. Copy your link and send it to friends.' } : null,
+  )
   const [copied, setCopied] = useState(false)
   const [writing, setWriting] = useState(false)
   const avatar = useImagePicker((data) => setInput((current) => ({ ...current, avatarData: data })), {
@@ -129,7 +131,7 @@ function ShareEditor({ existing, mine }: { existing?: Referral; mine: Referral[]
         setNotice({ tone: 'success', text: 'Your sharing page is updated.' })
       } else {
         const created = createReferral(campaign.id, input)
-        navigate(shareWorkspacePath(base, campaign.id, created.code), { replace: true })
+        navigate(shareWorkspacePath(base, campaign.id, created.code), { replace: true, state: { created: true } })
       }
     } catch (problem) {
       setNotice({
@@ -143,18 +145,13 @@ function ShareEditor({ existing, mine }: { existing?: Referral; mine: Referral[]
 
   return (
     <div className="container page-pad share-workspace">
-      <nav className="crumbs" aria-label="Breadcrumb">
-        <Link to={campaignDetailsPath(campaign.id, base)}>{campaign.title}</Link>
-        <span>/</span>
-        <span>{existing ? 'Edit my sharing page' : 'Create my sharing page'}</span>
-      </nav>
+      <Link to={campaignDetailsPath(campaign.id, base)} className="back-link page-back">
+        ← Back to campaign
+      </Link>
       <div className="page-head">
         <div>
-          <p className="settings-kicker">
-            <span className="demo-badge">Demo control</span> A referral code is attribution, not an editing password.
-          </p>
           <h1>{existing ? 'Edit my sharing page' : 'Create my sharing page'}</h1>
-          <p className="muted">Add a personal introduction to {campaign.title}. Everything else on the page comes from the original campaign.</p>
+          <p className="muted">Add your message and get your own link to {campaign.title}. Everything else on the page comes from the original campaign. Saved on this device.</p>
         </div>
       </div>
       {notice ? (
@@ -188,11 +185,22 @@ function ShareEditor({ existing, mine }: { existing?: Referral; mine: Referral[]
                 }
               }}
             >
-              {copied ? 'Link copied' : 'Copy link'}
+              {copied ? 'Link copied.' : 'Copy my link'}
             </button>
             <Link to={referralPath(base, campaign.id, existing.code)} className="btn btn-outline btn-sm">
-              Open my page
+              Preview
             </Link>
+            <button
+              type="button"
+              className="btn btn-outline btn-sm"
+              onClick={() => {
+                const field = document.getElementById(ids.message)
+                field?.scrollIntoView({ block: 'center' })
+                field?.focus()
+              }}
+            >
+              Edit my message
+            </button>
           </div>
         </section>
       ) : null}

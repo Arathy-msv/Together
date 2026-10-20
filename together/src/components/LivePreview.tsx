@@ -20,8 +20,8 @@ export function LivePreview({ form }: { form: CampaignForm }) {
         <span className="preview-overlay">{title}</span>
       </div>
       <div className="org-line">
-        <OrgLogo name={form.organizerName || 'Organiser'} logoData={form.logoData} size={30} />
-        <span className="muted small">{form.organizerName || 'Organiser'}</span>
+        <OrgLogo name={form.organizerName || 'Organizer'} logoData={form.logoData} size={30} />
+        <span className="muted small">{form.organizerName || 'Organizer'}</span>
       </div>
       <h3>{title}</h3>
       <p className="muted small">{story ? truncate(story, 160) : 'Your description will appear here.'}</p>

@@ -23,7 +23,7 @@ const FAQ = [
   },
   {
     q: 'Can a campaign be private?',
-    a: 'Yes. A private group asks for a demo access code and each player’s name. Names stay on the leadership board. When someone contributes through your referral, you earn points.',
+    a: 'Yes. A private group asks for a demo access code and each player’s name. Names stay on the leadership board. When someone contributes through the link you shared, you earn points.',
   },
   {
     q: 'Are vouchers available?',
@@ -87,7 +87,7 @@ export function HowItWorksPage() {
       </section>
 
       <section className="container how2-section">
-        <h2>For organisers</h2>
+        <h2>For organizers</h2>
         <p className="muted">From your idea to one campaign link.</p>
         <div className="org-cards">
           <article className="org-card">

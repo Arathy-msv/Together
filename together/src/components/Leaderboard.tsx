@@ -151,15 +151,15 @@ export function Leaderboard({ campaignId, compact = false }: { campaignId: strin
             <strong>{mine.name}</strong>
           </div>
           <div>
-            <span className="eyebrow-label">Your referral</span>
+            <span className="eyebrow-label">Your sharing link</span>
             <strong className="referral-code">{mine.referralCode}</strong>
           </div>
           <button type="button" className="btn btn-outline btn-sm" onClick={() => void copyReferral()}>
-            {copied ? 'Link copied' : 'Copy referral link'}
+            {copied ? 'Link copied.' : 'Copy my link'}
           </button>
         </div>
       ) : (
-        <p className="leaderboard-join">Join with your name to get a referral and a place on this board.</p>
+        <p className="leaderboard-join">Join with your name to get your own sharing link and a place on this board.</p>
       )}
       {rows.length === 0 ? (
         <p className="muted">No players yet.</p>
@@ -236,8 +236,8 @@ function LeaderRowView({ row, rank, mine }: { row: LeaderRow; rank: number; mine
 }
 
 function referralSummary(row: LeaderRow): string {
-  if (row.referralCount === 0) return 'No referral gifts yet'
-  const gifts = row.referralCount === 1 ? '1 referral gift' : `${row.referralCount} referral gifts`
+  if (row.referralCount === 0) return 'No gifts through their link yet'
+  const gifts = row.referralCount === 1 ? '1 gift through their link' : `${row.referralCount} gifts through their link`
   return `${gifts} · ${formatINR(row.referralRupees)}`
 }
 

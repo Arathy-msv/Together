@@ -613,6 +613,7 @@ html.org-theme :focus-visible { outline-color: var(--org-focus); }
 .support-column { display: grid; gap: 14px; position: sticky; top: 88px; align-self: start; }
 .support-column .support-panel { position: static; }
 .pro .aside-card { padding: 16px 18px; display: grid; gap: 10px; }
+.aside-title { font-size: 1rem; font-weight: 800; }
 .delivery-snapshot strong { font-size: 1rem; }
 .delivery-bar { display: block; height: 6px; border-radius: 999px; background: var(--org-secondary-soft); overflow: hidden; }
 .delivery-bar i { display: block; height: 100%; background: var(--org-secondary); filter: saturate(1.6) brightness(0.8); border-radius: inherit; }
@@ -730,6 +731,11 @@ html.org-theme :focus-visible { outline-color: var(--org-focus); }
 .workspace-tabs a.active { color: var(--p-ink); border-bottom-color: var(--org-primary); }
 .workspace-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
 .workspace-grid > .wide { grid-column: 1 / -1; }
+.status-lines { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 0.94rem; }
+.task-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.task-list li { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; border: 1px solid var(--p-line); border-radius: 10px; padding: 12px; background: var(--p-surface); }
+.task-list li > div { display: grid; gap: 2px; flex: 1 1 200px; min-width: 0; }
+@media (max-width: 760px) { .task-list { grid-template-columns: 1fr; } }
 .pro .ws-card { padding: 20px; display: grid; gap: 14px; }
 .ws-card h2 { font-size: 1.15rem; font-weight: 800; }
 .ws-stats { margin: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
@@ -1063,4 +1069,10 @@ a.ai-button { text-decoration: none; }
   .ws-top .org-switcher { margin-left: 0; width: 100%; }
   .hero-stack { display: none; }
   .about-head { flex-direction: column; align-items: flex-start; }
+}
+
+.assistant-links { justify-content: space-between; margin-bottom: 6px; }
+.settings-page :is(input, textarea, select, button, [tabindex]) { scroll-margin-top: 180px; scroll-margin-bottom: 90px; }
+@media (max-width: 760px) {
+  .settings-head { position: static; }
 }

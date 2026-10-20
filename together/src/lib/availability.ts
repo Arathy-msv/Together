@@ -30,7 +30,7 @@ export function contributionAvailability(
       return {
         ok: false,
         reason: campaign.manualClosedAt
-          ? 'The organiser closed this campaign. Nothing has been donated.'
+          ? 'The organizer closed this campaign. Nothing has been donated.'
           : `This campaign closed on ${formatDateTime(campaign.closesAt)}. Nothing has been donated.`,
       }
     default:

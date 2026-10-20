@@ -72,7 +72,7 @@ export function FinalReportEditor({ campaign, view, store }: WorkspaceProps) {
       <section className="panel ws-card wide">
         <h2>Final report</h2>
         <p className="muted small">
-          Closing fundraising and publishing a final report are separate steps. Fundraising is currently <strong>{view.status}</strong>; the report is{' '}
+          Summarize what the campaign achieved once the work is done. Closing fundraising and publishing this report are separate steps. Fundraising is currently <strong>{view.status}</strong>; the report is{' '}
           <strong>{report.status === 'published' ? 'published' : 'a draft'}</strong>.
         </p>
         {notice ? (

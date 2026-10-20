@@ -209,29 +209,6 @@ export function DashboardPage() {
         </div>
       )}
 
-      <div className="soon-row">
-        <div className="soon-tile">
-          <span className="tile-icon">
-            <Icon name="chart" size={20} />
-          </span>
-          <div>
-            <strong>Advanced analytics</strong>
-            <p className="muted small">Detailed insights about your campaign performance.</p>
-          </div>
-          <span className="soon-pill grey">Coming soon</span>
-        </div>
-        <div className="soon-tile">
-          <span className="tile-icon">
-            <Icon name="bell" size={20} />
-          </span>
-          <div>
-            <strong>Reminders</strong>
-            <p className="muted small">Set reminders to keep your campaign active.</p>
-          </div>
-          <span className="soon-pill grey">Coming soon</span>
-        </div>
-      </div>
-
       <div className="notice warn">
         <Icon name="info" size={20} />
         <div>

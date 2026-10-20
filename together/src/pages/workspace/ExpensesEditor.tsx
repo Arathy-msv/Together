@@ -90,12 +90,15 @@ export function ExpensesEditor({ campaign, store }: WorkspaceProps) {
     <div className="workspace-grid">
       <section className="panel ws-card wide">
         <div className="section-head-row">
-          <h2>Expenses</h2>
+          <div>
+            <h2>Expenses</h2>
+            <p className="muted small">Show supporters how the money has been used. Supporters see these as organizer-reported.</p>
+          </div>
           <div className="inline-actions">
-            <AiButton onClick={() => setAssisting(true)}>Try receipt assistance</AiButton>
             <button type="button" className="btn btn-primary btn-sm" onClick={() => setDraft(toDraft())}>
-              + Report an expense
+              Add an expense
             </button>
+            <AiButton onClick={() => setAssisting(true)}>Read a receipt for me (optional)</AiButton>
           </div>
         </div>
         {assisting ? (
@@ -152,7 +155,7 @@ export function ExpensesEditor({ campaign, store }: WorkspaceProps) {
             {notice}
           </div>
         ) : null}
-        {expenses.length === 0 ? <p className="awaiting">No expenses yet.</p> : null}
+        {expenses.length === 0 ? <p className="awaiting">No expenses reported yet. Add an expense when funds are used.</p> : null}
         <ul className="ws-list">
           {expenses.map((expense) => (
             <li key={expense.id}>
@@ -188,7 +191,7 @@ export function ExpensesEditor({ campaign, store }: WorkspaceProps) {
       </section>
       {draft ? (
         <section className="panel ws-card wide" aria-label={draft.id ? 'Edit expense' : 'New expense'}>
-          <h2>{draft.id ? 'Edit expense' : 'Report an expense'}</h2>
+          <h2>{draft.id ? 'Edit expense' : 'Add an expense'}</h2>
           <TextInput label="Description" value={draft.description} maxLength={200} error={errors.description} onChange={(description) => setDraft({ ...draft, description })} />
           <div className="two-col">
             <Select

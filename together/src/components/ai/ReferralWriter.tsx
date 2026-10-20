@@ -71,7 +71,7 @@ export function ReferralWriter({
             </div>
           </fieldset>
           <p className="muted small">
-            Campaign facts come from the original campaign: {campaignTitle}, organised by {organizerName}. Suggestions never change its purpose, target or where money goes.
+            Campaign facts come from the original campaign: {campaignTitle}, organized by {organizerName}. Suggestions never change its purpose, target or where money goes.
           </p>
           <div className="inline-actions">
             <button type="button" className="btn btn-primary btn-sm" onClick={generate} disabled={request.status === 'loading'}>

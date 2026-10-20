@@ -67,7 +67,7 @@ const REQUIRED_MAP: Array<{ keys: Array<keyof FormErrors>; field: ReadinessField
   { keys: ['title'], field: 'title', issue: 'Campaign title', why: 'Supporters need a clear name to recognise and share the campaign.' },
   { keys: ['description'], field: 'description', issue: 'Short summary', why: 'The summary is the first thing supporters read about the purpose.' },
   { keys: ['coverImageId'], field: 'cover', issue: 'Cover image', why: 'Campaign cards and sharing pages need an image.' },
-  { keys: ['organizerName'], field: 'organizer', issue: 'Organiser name', why: 'Supporters should know who runs the campaign.' },
+  { keys: ['organizerName'], field: 'organizer', issue: 'Organizer name', why: 'Supporters should know who runs the campaign.' },
   { keys: ['goalAmount'], field: 'goal', issue: 'Fundraising target', why: 'Progress is shown against the target.' },
   { keys: ['opensAt', 'closesAt'], field: 'dates', issue: 'Opening and closing dates', why: 'Contributions are only accepted between these dates.' },
   { keys: ['fixedAmounts'], field: 'amounts', issue: 'Suggested amounts', why: 'Supporters choose from these amounts when giving directly.' },

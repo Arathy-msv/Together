@@ -39,12 +39,19 @@ import { FinalReportEditor } from './FinalReportEditor.tsx'
 const WORKSPACE_TABS = [
   { id: 'overview', label: 'Overview' },
   { id: 'story', label: 'Story & settings' },
-  { id: 'referrals', label: 'Referral pages' },
+  { id: 'referrals', label: 'Sharing pages' },
   { id: 'milestones', label: 'Milestones' },
   { id: 'updates', label: 'Updates' },
   { id: 'expenses', label: 'Expenses' },
-  { id: 'trust', label: 'Trust & documents' },
+  { id: 'trust', label: 'Documents' },
   { id: 'report', label: 'Final report' },
+] as const
+
+const REPORT_TASKS = [
+  { id: 'updates', label: 'Post an update', hint: 'Tell supporters what has happened and what comes next.' },
+  { id: 'expenses', label: 'Add an expense', hint: 'Show supporters how the money has been used.' },
+  { id: 'milestones', label: 'Update a milestone', hint: 'Mark progress on what you promised to deliver.' },
+  { id: 'report', label: 'Prepare final report', hint: 'Summarize what the campaign achieved once the work is done.' },
 ] as const
 
 export interface WorkspaceProps {
@@ -71,17 +78,15 @@ export function CampaignWorkspacePage() {
 
   return (
     <div className="container page-pad workspace">
-      <nav className="crumbs" aria-label="Breadcrumb">
-        <Link to={`${workspace}/campaigns`}>Campaigns</Link>
-        <span>/</span>
-        <span>{campaign.title}</span>
-      </nav>
+      <Link to={`${workspace}/campaigns`} className="back-link page-back">
+        ← Back to campaigns
+      </Link>
       <header className="workspace-head">
         <CampaignCover campaign={campaign} />
         <div>
           <h1>{campaign.title}</h1>
           <p className="muted small">
-            Organizer workspace · {campaign.organizerName} · amounts in {campaign.currency}
+            Organized by {campaign.organizerName} · amounts in {campaign.currency}
           </p>
         </div>
         <Link to={campaignDetailsPath(campaign.id, base)} className="btn btn-outline btn-sm">
@@ -138,6 +143,41 @@ function Overview({ campaign, view, store }: WorkspaceProps) {
   const fundraisingOpen = !campaign.manualClosedAt && (view.status === 'active' || view.status === 'scheduled')
   return (
     <div className="workspace-grid">
+      <section className="panel ws-card wide" aria-labelledby="report-tasks-title">
+        <h2 id="report-tasks-title">Keep supporters informed</h2>
+        <ul className="status-lines">
+          <li>
+            <strong>Fundraising:</strong>{' '}
+            {view.raised >= campaign.goalAmount
+              ? 'Goal reached.'
+              : fundraisingOpen
+                ? `In progress — ${view.percent}% of the goal raised.`
+                : `Closed at ${view.percent}% of the goal.`}
+          </li>
+          <li>
+            <strong>Delivery:</strong>{' '}
+            {delivery.total === 0
+              ? 'No milestones added yet.'
+              : `${delivery.complete} of ${delivery.total} milestones marked complete by you. Supporters see this as organizer-reported.`}
+          </li>
+          <li>
+            <strong>Final report:</strong> {campaign.finalReport?.status === 'published' ? 'Published.' : campaign.finalReport ? 'Draft saved.' : 'Not started.'}
+          </li>
+        </ul>
+        <ul className="task-list">
+          {REPORT_TASKS.map((task) => (
+            <li key={task.id}>
+              <div>
+                <strong>{task.label}</strong>
+                <span className="muted small">{task.hint}</span>
+              </div>
+              <Link to={`${root}/${task.id}`} className="btn btn-outline btn-sm">
+                {task.label}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </section>
       <section className="panel ws-card">
         <h2>Fundraising</h2>
         <dl className="ws-stats">
@@ -193,7 +233,7 @@ function Overview({ campaign, view, store }: WorkspaceProps) {
             <dd>{formatMinor(summary.spentMinor, campaign.currency)}</dd>
           </div>
           <div>
-            <dt>Unallocated balance (demo calculation)</dt>
+            <dt>Not yet spent (demo calculation)</dt>
             <dd className={summary.balanceMinor < 0 ? 'negative-text' : ''}>{formatMinor(summary.balanceMinor, campaign.currency)}</dd>
           </div>
         </dl>
@@ -210,7 +250,7 @@ function Overview({ campaign, view, store }: WorkspaceProps) {
         />
       </div>
       <section className="panel ws-card wide">
-        <h2>Suggested next steps</h2>
+        <h2>Reminders</h2>
         {prompts.length === 0 ? (
           <p className="muted">Nothing outstanding. Keep supporters informed as delivery continues.</p>
         ) : (
@@ -220,17 +260,6 @@ function Overview({ campaign, view, store }: WorkspaceProps) {
             ))}
           </ul>
         )}
-        <div className="inline-actions">
-          <Link to={`${root}/updates`} className="btn btn-primary btn-sm">
-            Write an update
-          </Link>
-          <Link to={`${root}/milestones`} className="btn btn-outline btn-sm">
-            Manage milestones
-          </Link>
-          <Link to={`${root}/expenses`} className="btn btn-outline btn-sm">
-            Report an expense
-          </Link>
-        </div>
       </section>
     </div>
   )
@@ -241,7 +270,7 @@ function ReferralsPanel({ campaign, store }: WorkspaceProps) {
   const referrals = store.referrals.filter((item) => item.campaignId === campaign.id)
   return (
     <section className="panel ws-card wide">
-      <h2>Referral pages</h2>
+      <h2>Sharing pages</h2>
       <p className="muted small">
         Supporters create sharing pages with a personal introduction. They cannot change the campaign’s facts, goal, currency or where money goes. Credited
         amounts are already included in the campaign total. Donor names are never shown here.
@@ -363,10 +392,10 @@ export function MilestonesEditor({ campaign, store }: WorkspaceProps) {
         <div className="section-head-row">
           <h2>Delivery milestones</h2>
           <button type="button" className="btn btn-primary btn-sm" onClick={() => setDraft(toDraft())}>
-            + Add milestone
+            Add a milestone
           </button>
         </div>
-        <p className="muted small">Completion is shown publicly as “Reported complete” — organizer-reported. Partial delivery and new dates are fine; explain them in an update.</p>
+        <p className="muted small">Mark progress on what you promised to deliver. Supporters see completed milestones as “Reported complete” by you. Partial delivery and new dates are fine — explain them in an update.</p>
         {notice ? (
           <div className="notice success" role="status">
             {notice}

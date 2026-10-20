@@ -343,7 +343,7 @@ export function UpdatesTab({ campaign, store, follow }: { campaign: Campaign; st
           {follow}
         </div>
         {updates.length === 0 ? (
-          <p className="awaiting">Awaiting update — the organizer has not published an update yet.</p>
+          <p className="awaiting">No updates yet. The organizer hasn’t posted one.</p>
         ) : (
           <div className="update-list">
             {shown.map((update) => (

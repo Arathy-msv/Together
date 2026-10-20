@@ -262,7 +262,7 @@ export function suggestReferralMessage(input: ReferralMessageInput): AiResult<st
   if (!why) return result([], { missing: ['Why you support this campaign, in your own words'] })
   const reason = sentence(why)
   const connection = input.connection.trim() ? sentence(input.connection) : ''
-  const facts = `${input.campaignTitle}, organised by ${input.organizerName}`
+  const facts = `${input.campaignTitle}, organized by ${input.organizerName}`
   const options: Record<ReferralTone, string[]> = {
     warm: [
       [connection, reason, `I’m sharing ${facts}. If you’d like to help, you can give directly or play along on this page.`].filter(Boolean).join(' '),

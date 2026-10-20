@@ -211,7 +211,7 @@ export function validateStory(form: CampaignForm): FormErrors {
   else if (description.length > 1000) errors.description = 'Keep the story to 1,000 characters or fewer.'
   if (!form.coverImageId) errors.coverImageId = 'Choose a cover image.'
   else if (form.coverImageId === 'upload' && !form.coverImageData) errors.coverImageId = 'Upload a cover image, or pick a template.'
-  if (form.organizerName.trim().length < 2) errors.organizerName = 'Add an organiser name.'
+  if (form.organizerName.trim().length < 2) errors.organizerName = 'Add an organizer name.'
   const goal = Number(form.goalAmount)
   if (!/^\d+$/.test(form.goalAmount.trim()) || !Number.isFinite(goal) || goal <= 0) {
     errors.goalAmount = 'Enter a fundraising goal greater than zero.'
@@ -293,7 +293,7 @@ export function requiredChecklist(form: CampaignForm, allowedGames?: GameType[])
     { id: 'title', label: 'Campaign title', step: 1, done: !errors.title },
     { id: 'description', label: 'What you’re raising money for', step: 1, done: !errors.description },
     { id: 'coverImageId', label: 'Cover image', step: 1, done: !errors.coverImageId },
-    { id: 'organizerName', label: 'Organiser name', step: 1, done: !errors.organizerName },
+    { id: 'organizerName', label: 'Organizer name', step: 1, done: !errors.organizerName },
     { id: 'goalAmount', label: 'Fundraising goal', step: 2, done: !errors.goalAmount },
     { id: 'dates', label: 'Opening and closing dates', step: 2, done: !errors.opensAt && !errors.closesAt },
     { id: 'participation', label: 'How people can contribute', step: 3, done: !errors.form && !errors.gameType },

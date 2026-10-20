@@ -97,12 +97,15 @@ export function UpdatesEditor({ campaign, store }: WorkspaceProps) {
     <div className="workspace-grid">
       <section className="panel ws-card wide">
         <div className="section-head-row">
-          <h2>Public updates</h2>
+          <div>
+            <h2>Updates</h2>
+            <p className="muted small">Tell supporters what has happened and what comes next.</p>
+          </div>
           <div className="inline-actions">
-            <AiButton onClick={() => setWriting(true)}>Help write an update</AiButton>
             <button type="button" className="btn btn-primary btn-sm" onClick={() => setDraft(toDraft())}>
-              + New update
+              Post an update
             </button>
+            <AiButton onClick={() => setWriting(true)}>Help me write it (optional)</AiButton>
           </div>
         </div>
         {writing ? (
@@ -145,7 +148,11 @@ export function UpdatesEditor({ campaign, store }: WorkspaceProps) {
             {notice}
           </div>
         ) : null}
-        {updates.every((item) => item.status !== 'published') ? <p className="prompt-inline">Your campaign has no published updates yet.</p> : null}
+        {updates.length === 0 ? (
+          <p className="awaiting">No updates yet. Tell supporters what happens next.</p>
+        ) : updates.every((item) => item.status !== 'published') ? (
+          <p className="prompt-inline">You have drafts, but supporters can’t see them until you publish one.</p>
+        ) : null}
         <ul className="ws-list">
           {updates.map((update) => (
             <li key={update.id}>
