@@ -8,6 +8,38 @@ const PLANTS: Record<FlowerKind, string> = {
   marigold: '/games/plant-marigold.png',
   lavender: '/games/plant-lavender.png',
 }
+
+/** Perspective corners of the three dashed beds, as percentages of the 16:9 artwork. */
+const BEDS: [number, number][][] = [
+  [
+    [30.4, 63.5],
+    [41.0, 63.9],
+    [44.2, 71.2],
+    [25.6, 70.8],
+  ],
+  [
+    [46.8, 65.8],
+    [57.0, 66.2],
+    [60.2, 73.6],
+    [43.2, 73.2],
+  ],
+  [
+    [64.8, 66.0],
+    [75.5, 66.4],
+    [78.9, 73.8],
+    [61.0, 73.4],
+  ],
+]
+
+function bedBase(index: number) {
+  const bed = BEDS[index]
+  const left = bed[3]
+  const right = bed[2]
+  return {
+    x: (left[0] + right[0]) / 2,
+    y: (left[1] + right[1]) / 2,
+  }
+}
 import { GameFrame, GameTitle } from './GameFrame.tsx'
 
 export function GardenGame({ view, preview = false }: { view: CampaignView; preview?: boolean }) {
@@ -72,19 +104,31 @@ export function GardenGame({ view, preview = false }: { view: CampaignView; prev
     >
       <div className="scene scene-garden">
         <GameTitle game="garden" organizer={view.campaign.organizerName} />
-        <div className="soil-plots">
-          {spots.map((item, index) => (
-            <button
+        <svg className="bed-overlay" viewBox="0 0 100 100" preserveAspectRatio="none">
+          {BEDS.map((bed, index) => (
+            <polygon
               key={index}
-              type="button"
-              className={`soil-plot plot-${index}${!item && index === active ? ' active' : ''}`}
+              points={bed.map(([x, y]) => `${x},${y}`).join(' ')}
+              className={!spots[index] && index === active ? 'bed-shape active' : 'bed-shape'}
               onClick={() => plantAt(index)}
-              aria-label={item ? `Change the flower in plot ${index + 1}` : `Plant a ${flower} in plot ${index + 1}`}
-            >
-              {item ? <img className={`garden-plant ${item}`} src={PLANTS[item]} alt="" /> : null}
-            </button>
+              role="button"
+              aria-label={spots[index] ? `Change the flower in plot ${index + 1}` : `Plant a ${flower} in plot ${index + 1}`}
+            />
           ))}
-        </div>
+        </svg>
+        {spots.map((item, index) => {
+          if (!item) return null
+          const base = bedBase(index)
+          return (
+            <img
+              key={item + index}
+              className={`garden-plant ${item}`}
+              src={PLANTS[item]}
+              alt=""
+              style={{ left: `${base.x}%`, top: `${base.y}%` }}
+            />
+          )
+        })}
         <div className="flower-dock">
           {FLOWER_OPTIONS.map((option) => (
             <button

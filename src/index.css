@@ -515,40 +515,39 @@ legend { font-weight: 800; }
   color: #24483d;
   gap: 10px;
 }
-.soil-plots {
+.bed-overlay {
   position: absolute;
   inset: 0;
-  z-index: 2;
+  width: 100%;
+  height: 100%;
+  z-index: 5;
+  pointer-events: none;
 }
-.soil-plot {
-  position: absolute;
-  border: 2.5px dashed transparent;
-  background: transparent;
-  border-radius: 3px;
-  padding: 0;
-  overflow: visible;
+.bed-shape {
+  fill: transparent;
+  stroke: transparent;
+  stroke-width: 0.45;
+  stroke-dasharray: 1.1 0.7;
+  stroke-linejoin: round;
+  cursor: pointer;
+  pointer-events: auto;
 }
-.soil-plot.plot-0 { left: 27.2%; top: 63.4%; width: 12.6%; height: 8.4%; }
-.soil-plot.plot-1 { left: 44.6%; top: 63.2%; width: 13.2%; height: 8.6%; }
-.soil-plot.plot-2 { left: 63.2%; top: 63.0%; width: 14.0%; height: 8.8%; }
-.soil-plot.active {
-  border-color: #f6c445;
-  background: rgba(246, 196, 69, 0.16);
-  box-shadow: 0 0 0 1px rgba(246, 196, 69, 0.35);
+.bed-shape.active {
+  stroke: #f6c445;
+  fill: rgba(246, 196, 69, 0.16);
 }
 .garden-plant {
   position: absolute;
-  left: 50%;
-  bottom: -12%;
-  width: 168%;
+  width: 16%;
   height: auto;
-  transform: translateX(-50%);
+  transform: translate(-50%, -100%);
   pointer-events: none;
   filter: drop-shadow(0 10px 6px rgba(30, 20, 8, 0.2));
   z-index: 4;
 }
-.garden-plant.marigold { width: 188%; bottom: -4%; }
-.garden-plant.lavender { width: 150%; bottom: -2%; }
+.garden-plant.sunflower { width: 15%; transform: translate(-50%, -94%); }
+.garden-plant.marigold { width: 17%; transform: translate(-50%, -88%); }
+.garden-plant.lavender { width: 13%; transform: translate(-50%, -95.5%); }
 .flower-dock {
   position: absolute;
   z-index: 3;
