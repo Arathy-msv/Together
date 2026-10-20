@@ -277,9 +277,11 @@ export function WarmthGame({ view, preview = false }: { view: CampaignView; prev
 
       <div className="wm-layout">
         <div className="wm-play">
-          <p className="wm-kicker">{copy.kicker}</p>
-          <h1>{copy.title}</h1>
-          <p className="wm-lead">{copy.body}</p>
+          <div className="wm-intro">
+            <p className="wm-kicker">{copy.kicker}</p>
+            <h1>{copy.title}</h1>
+            <p className="wm-lead">{copy.body}</p>
+          </div>
           <div className="wm-jacket" ref={jacketRef}>
             <img
               src={jacketImage(progress.color, 'open')}
@@ -329,7 +331,7 @@ export function WarmthGame({ view, preview = false }: { view: CampaignView; prev
             ) : null}
           </div>
           {review ? null : (
-            <>
+            <div className="wm-controls">
               <div className="wm-colors" role="radiogroup" aria-label="Jacket colour">
                 {JACKET_COLORS.map((color) => (
                   <button
@@ -362,7 +364,7 @@ export function WarmthGame({ view, preview = false }: { view: CampaignView; prev
                   Review & contribute
                 </button>
               </div>
-            </>
+            </div>
           )}
         </div>
 
