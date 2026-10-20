@@ -12,6 +12,8 @@ import { useCurrentUser } from '../../hooks/useIdentity.ts'
 import { can } from '../../lib/permissions.ts'
 import { formatINR } from '../../lib/format.ts'
 import { hasUnpublishedChanges, isPubliclyAvailable, setupTasks, websiteStatusLabel } from '../../lib/website.ts'
+import { workspacePrompts } from '../../lib/transparency.ts'
+import type { Campaign, DemoStore } from '../../lib/types.ts'
 
 /** /workspace/:organizationId/overview */
 export function WorkspaceOverviewPage() {
@@ -25,7 +27,7 @@ export function WorkspaceOverviewPage() {
   const visibleCampaigns = store.campaigns.filter(
     (campaign) =>
       campaign.organizationId === org.id &&
-      (!campaign.isDraft || campaign.pendingRevision?.status === 'pending') &&
+      (!campaign.isDraft || Boolean(campaign.pendingRevision)) &&
       can(user, 'campaign.view', { campaign, organization: stored }),
   )
   const views = visibleCampaigns.map((campaign) => toView(campaign, store.contributions)).sort((a, b) => Date.parse(b.campaign.createdAt) - Date.parse(a.campaign.createdAt))
@@ -34,6 +36,7 @@ export function WorkspaceOverviewPage() {
   const showChecklist = isAdmin && (Boolean(next) || params.get('checklist') === '1')
   const drafts = listDrafts(org.id).length
   const pending = hasUnpublishedChanges(stored)
+  const attention = attentionItems(visibleCampaigns, store, user?.id ?? null, isAdmin, workspace)
 
   useEffect(() => {
     document.title = `Overview — ${org.name}`
@@ -79,6 +82,28 @@ export function WorkspaceOverviewPage() {
                   </button>
                 </div>
               )}
+            </section>
+          ) : null}
+
+          {!next && attention.length > 0 ? (
+            <section className="panel ws-card" aria-labelledby="attention-title">
+              <div className="section-head-row">
+                <h2 id="attention-title">Needs your attention</h2>
+                <span className="muted small">{attention.length === 1 ? '1 item' : `${attention.length} items`}</span>
+              </div>
+              <ul className="ws-list attention-list">
+                {attention.slice(0, 6).map((item) => (
+                  <li key={item.key}>
+                    <div>
+                      <strong>{item.title}</strong>
+                      <span className="muted small">{item.campaign}</span>
+                    </div>
+                    <Link to={item.to} className="btn btn-outline btn-sm">
+                      {item.action}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             </section>
           ) : null}
 
@@ -145,4 +170,35 @@ export function WorkspaceOverviewPage() {
       </div>
     </div>
   )
+}
+
+interface AttentionItem {
+  key: string
+  title: string
+  campaign: string
+  to: string
+  action: string
+}
+
+/** Review steps first, then reporting gaps, all derived from saved records. */
+function attentionItems(campaigns: Campaign[], store: DemoStore, userId: string | null, isAdmin: boolean, workspace: string): AttentionItem[] {
+  const review: AttentionItem[] = []
+  const reporting: AttentionItem[] = []
+  for (const campaign of campaigns) {
+    const root = `${workspace}/campaigns/${campaign.id}`
+    const revision = campaign.pendingRevision
+    if (revision?.status === 'approved') {
+      review.push({ key: `${campaign.id}-publish`, title: campaign.isDraft ? 'Approved · ready to publish' : 'Approved changes · ready to publish', campaign: campaign.title, to: root, action: 'Review and publish' })
+    } else if (revision?.status === 'pending' && isAdmin && revision.authorId !== userId) {
+      review.push({ key: `${campaign.id}-review`, title: 'Waiting for your review', campaign: campaign.title, to: root, action: 'Review' })
+    } else if (revision?.status === 'rejected' && revision.authorId === userId) {
+      review.push({ key: `${campaign.id}-changes`, title: 'Changes requested', campaign: campaign.title, to: root, action: 'See feedback' })
+    }
+    if (campaign.isDraft) continue
+    workspacePrompts(campaign, store).forEach((prompt, index) => {
+      const tab = /expense|spending/i.test(prompt) ? 'expenses' : /expected date/.test(prompt) ? 'milestones' : 'updates'
+      reporting.push({ key: `${campaign.id}-prompt-${index}`, title: prompt, campaign: campaign.title, to: `${root}/${tab}`, action: 'Open' })
+    })
+  }
+  return [...review, ...reporting]
 }

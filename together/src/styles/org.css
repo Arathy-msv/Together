@@ -1251,3 +1251,10 @@ html.low-data .hero-stack, html.low-data .play-side { display: none; }
   body.printing-share-kit .poster-print-footer { font-size: 10pt; color: #4c5c54; margin-top: 10mm; }
   @page { size: A4; margin: 12mm; }
 }
+
+.feature-mode { border: 0; padding: 0; margin: 0 0 12px; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+.feature-mode-option { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border: 1px solid var(--p-line); border-radius: 12px; cursor: pointer; background: var(--p-surface, #fff); }
+.feature-mode-option.selected { border-color: var(--p-ink, #123d36); box-shadow: 0 0 0 1px var(--p-ink, #123d36); }
+.feature-mode-option input { margin-top: 4px; }
+.feature-mode-option span { display: grid; gap: 2px; }
+.feature-mode-option em { font-style: normal; color: var(--p-ink-2); font-size: 0.9rem; }

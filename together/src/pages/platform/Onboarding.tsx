@@ -606,16 +606,26 @@ function FundraisingStep({ org, errors, patch }: { org: Organization; errors: Re
 
 function PublishedScreen({ org }: { org: Organization }) {
   const url = publicWebsiteUrl(org)
-  const [copied, setCopied] = useState(false)
+  const [copy, setCopy] = useState<'idle' | 'copied' | 'failed'>('idle')
+  const heading = useRef<HTMLHeadingElement>(null)
+  useEffect(() => {
+    document.title = `Your website is ready — ${org.name}`
+    heading.current?.focus()
+  }, [org.name])
   return (
     <div className="container narrow page-pad">
       <section className="panel resume-card published-card" aria-labelledby="published-title">
         <span className="success-pill">Demo website published</span>
-        <h1 id="published-title">{org.name} is live in this browser</h1>
-        <p className="muted">Your website works at this address on this device. Because this prototype has no server, other people can’t see it on their devices.</p>
+        <h1 id="published-title" tabIndex={-1} ref={heading}>
+          Your website is ready.
+        </h1>
+        <p className="muted">
+          {org.name} is live at this address in this browser. Because this prototype has no server, other people can’t open it on their devices yet.
+        </p>
         <code className="published-url">{url}</code>
+        <p>Next, create a campaign so supporters have something to give to. Your website shows it as soon as it is published.</p>
         <div className="inline-actions">
-          <Link to={`/workspace/${org.id}/campaigns/new?new=1`} className="btn btn-primary">
+          <Link to={`/workspace/${org.id}/campaigns/new?new=1`} className="btn btn-primary btn-lg">
             Create your first campaign
           </Link>
           <Link to={`/o/${org.slug}`} className="btn btn-outline">
@@ -627,21 +637,21 @@ function PublishedScreen({ org }: { org: Organization }) {
             onClick={async () => {
               try {
                 await navigator.clipboard.writeText(url)
-                setCopied(true)
+                setCopy('copied')
               } catch {
-                setCopied(false)
+                setCopy('failed')
               }
             }}
           >
-            {copied ? 'Link copied.' : 'Copy website link'}
+            {copy === 'copied' ? 'Link copied.' : 'Copy website link'}
           </button>
-          <span className="sr-only" role="status">
-            {copied ? 'Link copied.' : ''}
-          </span>
-          <Link to={`/workspace/${org.id}/overview`} className="link-button">
-            Go to my workspace
-          </Link>
         </div>
+        <p className={copy === 'failed' ? 'error-text small' : 'sr-only'} role="status">
+          {copy === 'copied' ? 'Link copied.' : copy === 'failed' ? `Copy failed. Select the address above and copy it instead.` : ''}
+        </p>
+        <Link to={`/workspace/${org.id}/overview`} className="link-button">
+          Go to my workspace
+        </Link>
       </section>
     </div>
   )
