@@ -303,8 +303,40 @@ function withDefaultCampaigns(store: RawStore): { store: RawStore; changed: bool
   }
 }
 
+/** Where unreadable saved data is kept, untouched, before sample data replaces it. */
+export const UNREADABLE_KEY = `${STORAGE_KEY}.unreadable`
+
+/** When saved data was last found unreadable on this device, or null. */
+export function unreadableSavedAt(): string | null {
+  try {
+    const raw = localStorage.getItem(UNREADABLE_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as { savedAt?: unknown }
+    return typeof parsed.savedAt === 'string' ? parsed.savedAt : null
+  } catch {
+    return null
+  }
+}
+
+export function dismissUnreadableNotice(): void {
+  try {
+    const raw = localStorage.getItem(UNREADABLE_KEY)
+    if (!raw) return
+    const parsed = JSON.parse(raw) as Record<string, unknown>
+    localStorage.setItem(UNREADABLE_KEY, JSON.stringify({ ...parsed, savedAt: null, dismissedAt: new Date().toISOString() }))
+  } catch {
+    // Nothing to dismiss.
+  }
+}
+
 function recover(): DemoStore {
   const seeded = createSeed()
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (raw) localStorage.setItem(UNREADABLE_KEY, JSON.stringify({ savedAt: new Date().toISOString(), raw }))
+  } catch {
+    // Keeping a copy is best-effort; sample data still loads.
+  }
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(seeded))
   } catch {

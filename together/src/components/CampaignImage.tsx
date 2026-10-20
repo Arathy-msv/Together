@@ -1,3 +1,4 @@
+import { useLowData } from '../lib/lowData.ts'
 import { coverTemplate } from '../data/covers.ts'
 
 interface CoverSource {
@@ -7,9 +8,17 @@ interface CoverSource {
 }
 
 export function CampaignCover({ campaign, className = '' }: { campaign: CoverSource; className?: string }) {
+  const lowData = useLowData()
   const template = coverTemplate(campaign.coverImageId)
   const src = campaign.coverImageId === 'upload' && campaign.coverImageData ? campaign.coverImageData : template.src
   const alt = campaign.title ? `${campaign.title} cover` : template.alt
+  if (lowData) {
+    return (
+      <span className={`campaign-cover low-data-cover ${className}`.trim()} role="img" aria-label={`${alt} (hidden in low-data mode)`}>
+        <span aria-hidden="true">{initials(campaign.title || 'Together')}</span>
+      </span>
+    )
+  }
   return <img className={`campaign-cover ${className}`.trim()} src={src} alt={alt} loading="lazy" />
 }
 

@@ -35,10 +35,12 @@ import { DemoIdentitiesPage } from './pages/platform/DemoIdentities.tsx'
 import { MerchantPortalPage } from './pages/platform/MerchantPortal.tsx'
 import { PlatformAdminPage } from './pages/platform/PlatformAdmin.tsx'
 import { useCurrentUser } from './hooks/useIdentity.ts'
+import { UnreadableDataNotice } from './components/UnreadableDataNotice.tsx'
 
 export default function App() {
   return (
     <BrowserRouter>
+      <UnreadableDataNotice />
       <AppRoutes />
     </BrowserRouter>
   )

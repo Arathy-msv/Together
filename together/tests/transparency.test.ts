@@ -259,3 +259,12 @@ test('milestone records connect expenses, evidence and updates', async () => {
   assert.equal(records.withEvidence, 1)
   assert.deepEqual(records.updates.map((item) => item.id).sort(), ['u1', 'u2'])
 })
+
+test('unreadable saved data is kept aside, never silently discarded', () => {
+  local.setItem(STORAGE_KEY, '{not json')
+  const store = loadStore()
+  assert.ok(store.campaigns.length > 0)
+  const kept = JSON.parse(local.getItem(`${STORAGE_KEY}.unreadable`)!)
+  assert.equal(kept.raw, '{not json')
+  assert.equal(typeof kept.savedAt, 'string')
+})

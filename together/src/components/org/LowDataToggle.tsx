@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { canUseFeature } from '../../lib/features.ts'
+import { setLowDataActive } from '../../lib/lowData.ts'
 import type { Organization } from '../../lib/types.ts'
 
 const KEY = 'together.lowData.v1'
@@ -19,9 +20,11 @@ export function LowDataToggle({ org }: { org: Organization }) {
   useEffect(() => {
     if (!canUseFeature(org, 'lowDataMode')) {
       document.documentElement.classList.remove('low-data')
+      setLowDataActive(false)
       return
     }
     document.documentElement.classList.toggle('low-data', on)
+    setLowDataActive(on)
     try {
       sessionStorage.setItem(KEY, on ? '1' : '0')
     } catch {
@@ -35,7 +38,7 @@ export function LowDataToggle({ org }: { org: Organization }) {
     <div className="low-data-bar">
       <label className="inline-actions">
         <input type="checkbox" checked={on} onChange={(event) => setOn(event.target.checked)} />
-        <span>Low-data page (fewer animations and images)</span>
+        <span>Low-data mode: hide photos and video until you ask, and turn off animations</span>
       </label>
     </div>
   )

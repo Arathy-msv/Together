@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react'
 import { formatDate, formatDateTime } from '../../lib/format.ts'
 import { gameMeta } from '../../lib/games.ts'
 import { GAME_EXPLANATION } from '../../lib/gameContribution.ts'
+import { useLowData } from '../../lib/lowData.ts'
 import {
   campaignMilestones,
   deliverySummary,
@@ -38,7 +39,21 @@ export function SafeImage({ src, alt, className }: { src: string; alt: string; c
 }
 
 export function MediaGallery({ items }: { items: MediaItem[] }) {
+  const lowData = useLowData()
+  const [reveal, setReveal] = useState(false)
   if (items.length === 0) return null
+  if (lowData && !reveal) {
+    return (
+      <p className="low-data-hold">
+        <span className="muted small">
+          {items.length === 1 ? '1 photo' : `${items.length} photos`} hidden to save data.
+        </span>{' '}
+        <button type="button" className="link-button small" onClick={() => setReveal(true)}>
+          Show {items.length === 1 ? 'photo' : 'photos'}
+        </button>
+      </p>
+    )
+  }
   return (
     <div className="media-gallery">
       {items.map((item) => (
@@ -54,7 +69,19 @@ export function MediaGallery({ items }: { items: MediaItem[] }) {
 /** Never autoplays. Supporters start it themselves with the native, keyboard-accessible controls. */
 export function VideoBlock({ video }: { video: MediaVideo | undefined }) {
   const [failed, setFailed] = useState(false)
+  const lowData = useLowData()
+  const [reveal, setReveal] = useState(false)
   if (!video) return null
+  if (lowData && !reveal) {
+    return (
+      <p className="low-data-hold">
+        <span className="muted small">Video hidden to save data{video.caption ? `: ${video.caption}` : ''}.</span>{' '}
+        <button type="button" className="link-button small" onClick={() => setReveal(true)}>
+          Load video
+        </button>
+      </p>
+    )
+  }
   return (
     <figure className="video-block">
       {failed ? (

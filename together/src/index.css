@@ -796,3 +796,14 @@ legend { font-weight: 800; }
   .flower-dock { position: relative; left: auto; bottom: auto; transform: none; margin: 12px; flex-wrap: wrap; justify-content: center; }
   .soil-plots { top: auto; bottom: 22%; left: 18%; width: 64%; }
 }
+
+.recovery-screen { min-height: 100vh; display: grid; place-items: center; padding: 24px; background: #f7f6f2; }
+.recovery-card { width: min(560px, 100%); background: #fff; border: 1px solid #e6e3db; border-radius: 16px; padding: 28px; display: grid; gap: 14px; }
+.recovery-card h1 { margin: 0; font-size: 1.6rem; }
+.recovery-card p { margin: 0; }
+.recovery-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.recovery-card pre { white-space: pre-wrap; font-size: 0.85rem; }
+.low-data-cover { display: grid; place-items: center; aspect-ratio: 16 / 9; width: 100%; background: linear-gradient(135deg, #e7efe9, #f4efe2); color: #13332a; font-weight: 800; font-size: 1.6rem; }
+.low-data-hold { margin: 8px 0; padding: 10px 12px; border: 1px dashed #d9d4c7; border-radius: 10px; }
+.unreadable-notice { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between; padding: 10px 16px; background: #fdf6e7; border-bottom: 1px solid #f2e2b8; color: #4d3c10; font-size: 0.92rem; }
+.unreadable-notice p { margin: 0; max-width: 80ch; }
