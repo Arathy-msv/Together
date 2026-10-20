@@ -1,0 +1,114 @@
+---
+description: Keep the product demo walkthrough synchronized with feature changes
+alwaysApply: true
+---
+
+Whenever you add, modify, or remove a user-facing feature, update the existing demo walkthrough as part of the same task.
+
+Inspect the existing demo documentation, recording scripts, narration, subtitles, fixtures, and role-based journeys before making changes. Reuse them rather than creating another walkthrough.
+
+DEMO COVERAGE
+
+Check whether the change affects:
+- Platform Admin.
+- Organization Admin.
+- Campaign Organizer.
+- Merchant.
+- Supporter.
+- Organization purchase and feature selection.
+- Public website and campaign navigation.
+
+Update only the affected journeys, while keeping the complete walkthrough coherent.
+
+For optional features:
+- Show how the organization enables the feature.
+- Show any campaign-level configuration.
+- Show the relevant user experience.
+- Demonstrate the disabled state when important.
+
+UPDATE THESE ARTIFACTS
+
+Maintain the project's existing equivalents of:
+- Demo scene checklist.
+- Feature-to-scene coverage map.
+- Narration script.
+- Browser recording scripts.
+- Demo fixtures.
+- Expected results.
+
+Use stable scene IDs so individual scenes can be re-recorded.
+
+For each affected scene, record:
+- Role and organization.
+- Required feature settings.
+- Starting state.
+- Actions.
+- Expected visible result.
+- Narration.
+- Dependencies on earlier scenes.
+
+FEATURE CHANGE WORKFLOW
+
+1. Implement the feature.
+2. Verify its working behaviour and permissions.
+3. Update relevant demo data without overwriting user data.
+4. Update the walkthrough and narration.
+5. Update and run affected recording scripts.
+6. Re-record affected scenes when recording tools are available.
+7. Reassemble the main video when clips or narration change.
+8. Regenerate subtitle timings from the final narration/edit.
+9. Review the resulting video for accuracy and continuity.
+
+Do not regenerate the entire recording when isolated scenes can be replaced reliably.
+
+If a changed scene affects later state, update or re-record dependent scenes too.
+
+ACCURACY
+
+- Demonstrate actual working interactions.
+- Preserve all five role boundaries.
+- Keep payments, AI previews, subscriptions, and voucher redemption clearly labelled where simulated.
+- Do not describe unfinished functionality as working.
+- Do not claim localStorage data works across devices.
+- Keep credentials and private data out of recordings.
+
+VIDEO FRESHNESS
+
+Track:
+- Last verified application commit or version.
+- Recording date.
+- Scenes affected by subsequent changes.
+- Whether the final video is current or stale.
+
+If recording, voice-over, or encoding tools are unavailable:
+- Complete the walkthrough, narration, fixtures, and scripts.
+- Mark affected clips and the final video as needing regeneration.
+- State the exact blocker.
+- Never claim the video was updated.
+
+COMPLETION REPORT
+
+At the end of each feature task, report:
+- Feature implemented.
+- Roles and demo scenes affected.
+- Walkthrough/script updates completed.
+- Checks performed.
+- Video regenerated, or explicitly marked stale with the reason.
+
+Do not upload, publish, or use paid voice-over services without authorization.
+
+ARTIFACT LOCATIONS
+
+The walkthrough lives in `together/demo-video/`. Do not start a second one.
+
+- Scene checklist, fixtures, actions, and expected results: `together/demo-video/scripts/scenes.mjs` (stable `id`s; `record: false` scenes are off-camera fixtures).
+- Narration: `together/demo-video/narration/script.md`. One non-heading line is one subtitle cue. `{shown|spoken}` when the subtitle and speech differ.
+- Timed script from the last assembly: `together/demo-video/narration/scene-timings.md`.
+- Feature-to-scene coverage and unfinished behaviour: `together/demo-video/FEATURE-STATUS.md`.
+- Browser recording, local voice, and assembly: `together/demo-video/scripts/record.mjs`, `narrate.mjs`, `assemble.mjs`.
+- Video freshness: the "Video freshness" section in `together/demo-video/README.md`.
+- Rendered video, chapter clips, and subtitles (not committed): `together/demo-video/output/`.
+
+Recording uses a throwaway Chrome profile. Never read or write the user's normal browser storage.
+
+Rebuild only what changed: `node narrate.mjs`, then `DRY=1 FROM=<sceneId>` to check a scene, then a captured run of the affected scenes, then `node assemble.mjs`. Replace whole-video capture only when later scenes depend on new state that checkpoints cannot resume.
