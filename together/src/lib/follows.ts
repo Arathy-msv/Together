@@ -37,3 +37,10 @@ export function setFollowing(campaignId: string, following: boolean): boolean {
     return false
   }
 }
+
+/** Whether a visitor has anything to see under My activity for one organization. */
+export function hasActivity(campaignIds: string[], holdsVouchers: boolean, historyOn: boolean): boolean {
+  if (historyOn || holdsVouchers) return true
+  const followed = new Set(listFollowed().map((item) => item.campaignId))
+  return campaignIds.some((id) => followed.has(id))
+}

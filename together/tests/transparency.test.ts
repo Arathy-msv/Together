@@ -236,3 +236,26 @@ test('saving fails loudly when storage is full', () => {
   local.failWrites = true
   assert.throws(() => saveStore(store), StorageFullError)
 })
+
+test('milestone records connect expenses, evidence and updates', async () => {
+  const { milestoneRecords } = await import('../src/lib/transparency.ts')
+  const store = {
+    expenses: [
+      { id: 'e1', campaignId: 'c', milestoneId: 'm', amountMinor: 1000, publicReceipt: 'r.png', status: 'published', date: '2026-01-01' },
+      { id: 'e2', campaignId: 'c', milestoneId: 'm', amountMinor: 500, status: 'published', date: '2026-01-02' },
+      { id: 'e3', campaignId: 'c', milestoneId: 'm', amountMinor: 900, status: 'draft', date: '2026-01-03' },
+      { id: 'e4', campaignId: 'c', milestoneId: 'other', amountMinor: 700, status: 'published', date: '2026-01-04' },
+    ],
+    campaignUpdates: [
+      { id: 'u1', campaignId: 'c', milestoneId: 'm', expenseIds: [], status: 'published', date: '2026-01-05' },
+      { id: 'u2', campaignId: 'c', expenseIds: ['e2'], status: 'published', date: '2026-01-06' },
+      { id: 'u3', campaignId: 'c', expenseIds: ['e4'], status: 'published', date: '2026-01-07' },
+      { id: 'u4', campaignId: 'c', milestoneId: 'm', expenseIds: [], status: 'draft', date: '2026-01-08' },
+    ],
+  } as unknown as Parameters<typeof milestoneRecords>[0]
+  const records = milestoneRecords(store, { id: 'm', campaignId: 'c' })
+  assert.deepEqual(records.expenses.map((item) => item.id).sort(), ['e1', 'e2'])
+  assert.equal(records.spentMinor, 1500)
+  assert.equal(records.withEvidence, 1)
+  assert.deepEqual(records.updates.map((item) => item.id).sort(), ['u1', 'u2'])
+})

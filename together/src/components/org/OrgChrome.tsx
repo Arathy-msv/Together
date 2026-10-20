@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
+import { hasActivity } from '../../lib/follows.ts'
 import { useDemoStore } from '../../hooks/useDemoStore.ts'
 import { useCurrentUser, useSupporterId } from '../../hooks/useIdentity.ts'
 import { useVoucherStore } from '../../hooks/useVoucherStore.ts'
@@ -55,6 +56,12 @@ export function OrgHeader({ org, base, workspace }: { org: Organization; base: s
   const user = useCurrentUser()
   const canCreate = can(user, 'campaign.create', { organizationId: org.id })
   const canManageSite = can(user, 'org.manageWebsite', { organizationId: org.id })
+  const supporterId = useSupporterId()
+  const showActivity = hasActivity(
+    demo.campaigns.filter((item) => item.organizationId === org.id).map((item) => item.id),
+    holderVouchers(vouchers, org.id, supporterId).length > 0,
+    canUseFeature(org, 'supporterHistory'),
+  )
 
   useEffect(() => {
     if (!open) return
@@ -86,6 +93,7 @@ export function OrgHeader({ org, base, workspace }: { org: Organization; base: s
           <NavLink to={`${base}/campaigns`}>Campaigns</NavLink>
           <NavLink to={`${base}/about`}>About</NavLink>
           {hasOffers ? <NavLink to={`${base}/offers`}>Partner offers</NavLink> : null}
+          {showActivity ? <NavLink to={`${base}/my-activity`}>My activity</NavLink> : null}
           {workspace && canCreate ? (
             <div className="oh-nav-organizer">
               <span className="oh-nav-organizer-label">
@@ -175,8 +183,7 @@ export function OrgFooter({ org, base, workspace, preview = false }: { org: Orga
                 <Link to={`${base}/campaigns`}>Campaigns</Link>
                 <Link to={`${base}/about`}>About</Link>
                 <Link to={`${base}/how-it-works`}>How giving works</Link>
-                {canUseFeature(org, 'supporterHistory') ? <Link to={`${base}/my-history`}>Your contributions</Link> : null}
-                {holdsVouchers && !canUseFeature(org, 'supporterHistory') ? <Link to={`${base}/my-vouchers`}>My vouchers</Link> : null}
+                {canUseFeature(org, 'supporterHistory') || holdsVouchers ? <Link to={`${base}/my-activity`}>My activity</Link> : null}
               </>
             )}
             {links.map((link) =>

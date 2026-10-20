@@ -632,3 +632,10 @@ html { scroll-padding-top: 84px; }
 .demo-tools-links { display: grid; gap: 6px; font-size: 0.9rem; }
 .demo-tools-who { max-width: 14ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .identity-bar .oh-header-inner { display: flex; justify-content: flex-end; }
+
+.linked-records { list-style: none; margin: 8px 0 0; padding: 8px 10px; display: grid; gap: 4px; border-left: 2px solid var(--p-line); background: var(--p-surface-2); border-radius: 0 8px 8px 0; }
+.linked-records li { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+.linked-records li + li::before { content: '↓'; color: var(--p-muted, #7a857f); font-size: 0.8rem; margin-right: 2px; }
+.linked-label { font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--p-ink-2); min-width: 72px; }
+.linked-updates { display: inline-flex; flex-wrap: wrap; gap: 4px 10px; }
+p.linked-records { display: block; border-left: 0; background: none; padding: 0; }

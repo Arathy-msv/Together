@@ -11,6 +11,7 @@ import {
   isMilestoneDelayed,
   latestUpdateDate,
   MILESTONE_LABEL,
+  milestoneRecords,
   publicDocuments,
   publishedExpenses,
   publishedUpdates,
@@ -76,7 +77,62 @@ function milestoneTone(milestone: Milestone): 'good' | 'progress' | 'warn' | 'ne
   return milestone.status === 'in_progress' ? 'progress' : 'neutral'
 }
 
-export function MilestoneTimeline({ milestones, compact = false }: { milestones: Milestone[]; compact?: boolean }) {
+interface TimelineLinks {
+  store: DemoStore
+  currency: Campaign['currency']
+  onOpenExpenses?: (milestoneId: string) => void
+  onOpenUpdate?: (updateId: string) => void
+}
+
+/** Milestone → expenses → evidence → updates, as one readable chain. */
+function LinkedRecords({ milestone, links }: { milestone: Milestone; links: TimelineLinks }) {
+  const records = milestoneRecords(links.store, milestone)
+  if (records.expenses.length === 0 && records.updates.length === 0) return <p className="muted small linked-records">No expenses or updates linked yet.</p>
+  return (
+    <ol className="linked-records" aria-label={`Records linked to ${milestone.title}`}>
+      <li>
+        <span className="linked-label">Expenses</span>
+        {records.expenses.length ? (
+          links.onOpenExpenses ? (
+            <button type="button" className="link-button small" onClick={() => links.onOpenExpenses!(milestone.id)}>
+              {records.expenses.length} · {formatMinor(records.spentMinor, links.currency)}
+            </button>
+          ) : (
+            <span className="small">
+              {records.expenses.length} · {formatMinor(records.spentMinor, links.currency)}
+            </span>
+          )
+        ) : (
+          <span className="small muted">None yet</span>
+        )}
+      </li>
+      <li>
+        <span className="linked-label">Evidence</span>
+        <span className="small">{records.expenses.length ? `${records.withEvidence} of ${records.expenses.length} with a public receipt` : '—'}</span>
+      </li>
+      <li>
+        <span className="linked-label">Updates</span>
+        {records.updates.length ? (
+          <span className="small linked-updates">
+            {records.updates.map((update) =>
+              links.onOpenUpdate ? (
+                <button key={update.id} type="button" className="link-button small" onClick={() => links.onOpenUpdate!(update.id)}>
+                  {update.title}
+                </button>
+              ) : (
+                <span key={update.id}>{update.title}</span>
+              ),
+            )}
+          </span>
+        ) : (
+          <span className="small muted">None yet</span>
+        )}
+      </li>
+    </ol>
+  )
+}
+
+export function MilestoneTimeline({ milestones, compact = false, links }: { milestones: Milestone[]; compact?: boolean; links?: TimelineLinks }) {
   if (milestones.length === 0) return <p className="muted">The organizer has not added delivery milestones yet.</p>
   return (
     <>
@@ -118,6 +174,7 @@ export function MilestoneTimeline({ milestones, compact = false }: { milestones:
                 </span>
                 {!compact && milestone.description ? <p>{milestone.description}</p> : null}
                 {!compact && milestone.progressNote ? <p className="progress-note">Progress: {milestone.progressNote}</p> : null}
+                {!compact && links ? <LinkedRecords milestone={milestone} links={links} /> : null}
               </div>
             </li>
           )
@@ -246,7 +303,7 @@ function UpdateCard({ update, store, campaign }: { update: CampaignUpdate; store
     .map((id) => store.expenses.find((item) => item.id === id && item.status === 'published'))
     .filter((item): item is Expense => Boolean(item))
   return (
-    <article className="update-card">
+    <article className="update-card" id={`update-${update.id}`} tabIndex={-1}>
       <header>
         <StatusPill tone={update.type === 'delay' ? 'warn' : 'neutral'}>{UPDATE_TYPE_LABEL[update.type]}</StatusPill>
         <time dateTime={update.date}>{formatDate(update.date)}</time>
@@ -315,8 +372,26 @@ export function FinalReportCard({ campaign, store }: { campaign: Campaign; store
   )
 }
 
-export function UpdatesTab({ campaign, store, follow }: { campaign: Campaign; store: DemoStore; follow: ReactNode }) {
+export function UpdatesTab({
+  campaign,
+  store,
+  follow,
+  onOpenExpenses,
+}: {
+  campaign: Campaign
+  store: DemoStore
+  follow: ReactNode
+  onOpenExpenses?: (milestoneId: string) => void
+}) {
   const [showAll, setShowAll] = useState(false)
+  function openUpdate(id: string) {
+    setShowAll(true)
+    requestAnimationFrame(() => {
+      const node = document.getElementById(`update-${id}`)
+      node?.scrollIntoView({ block: 'start' })
+      node?.focus()
+    })
+  }
   const updates = publishedUpdates(store, campaign.id)
   const milestones = campaignMilestones(store, campaign.id)
   const delivery = deliverySummary(milestones)
@@ -335,7 +410,7 @@ export function UpdatesTab({ campaign, store, follow }: { campaign: Campaign; st
             : ''}
           Reaching the fundraising goal does not mean delivery is complete.
         </p>
-        <MilestoneTimeline milestones={milestones} />
+        <MilestoneTimeline milestones={milestones} links={{ store, currency: campaign.currency, onOpenExpenses, onOpenUpdate: openUpdate }} />
       </section>
       <section>
         <div className="section-head-row">
@@ -361,12 +436,12 @@ export function UpdatesTab({ campaign, store, follow }: { campaign: Campaign; st
   )
 }
 
-export function FundUseTab({ campaign, store }: { campaign: Campaign; store: DemoStore }) {
+export function FundUseTab({ campaign, store, initialMilestone }: { campaign: Campaign; store: DemoStore; initialMilestone?: string | null }) {
   const summary = fundSummary(campaign, store)
   const expenses = publishedExpenses(store, campaign.id)
   const milestones = campaignMilestones(store, campaign.id)
   const [category, setCategory] = useState<'all' | ExpenseCategory>('all')
-  const [milestoneId, setMilestoneId] = useState('all')
+  const [milestoneId, setMilestoneId] = useState(() => (initialMilestone && milestones.some((item) => item.id === initialMilestone) ? initialMilestone : 'all'))
   const visible = expenses.filter(
     (item) => (category === 'all' || item.category === category) && (milestoneId === 'all' || item.milestoneId === milestoneId),
   )
@@ -463,6 +538,10 @@ export function FundUseTab({ campaign, store }: { campaign: Campaign; store: Dem
                   </summary>
                   <div className="expense-detail">
                     {expense.milestoneId ? <p className="small">Milestone: {milestones.find((item) => item.id === expense.milestoneId)?.title}</p> : null}
+                    {(() => {
+                      const related = publishedUpdates(store, campaign.id).filter((item) => item.expenseIds.includes(expense.id))
+                      return related.length ? <p className="small">Mentioned in updates: {related.map((item) => `“${item.title}”`).join(', ')}</p> : null
+                    })()}
                     {expense.publicNote ? <p className="small">Organizer’s note: {expense.publicNote}</p> : null}
                     {expense.publicReceipt ? (
                       <>

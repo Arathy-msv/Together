@@ -75,6 +75,24 @@ export function deliverySummary(milestones: Milestone[], now = Date.now()) {
   }
 }
 
+/**
+ * Everything published that hangs off one milestone: its expenses, how many have a public receipt,
+ * and the updates that mention the milestone or one of those expenses.
+ */
+export function milestoneRecords(store: Pick<DemoStore, 'expenses' | 'campaignUpdates'>, milestone: Pick<Milestone, 'id' | 'campaignId'>) {
+  const expenses = publishedExpenses(store, milestone.campaignId).filter((item) => item.milestoneId === milestone.id)
+  const expenseIds = new Set(expenses.map((item) => item.id))
+  const updates = publishedUpdates(store, milestone.campaignId).filter(
+    (item) => item.milestoneId === milestone.id || item.expenseIds.some((id) => expenseIds.has(id)),
+  )
+  return {
+    expenses,
+    spentMinor: expenses.reduce((sum, item) => sum + item.amountMinor, 0),
+    withEvidence: expenses.filter((item) => Boolean(item.publicReceipt)).length,
+    updates,
+  }
+}
+
 /** Published updates only, newest first. Drafts never appear publicly. */
 export function publishedUpdates(store: Pick<DemoStore, 'campaignUpdates'>, campaignId: string): CampaignUpdate[] {
   return store.campaignUpdates.filter((item) => item.campaignId === campaignId && item.status === 'published').sort((a, b) => byDateDesc(a.date, b.date))

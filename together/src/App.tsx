@@ -66,6 +66,7 @@ function AppRoutes() {
         <Route path="/o/:organizationSlug" element={<OrgLayout />}>
           <Route index element={<OrgHomePage />} />
           <Route path="about" element={<OrgAboutPage />} />
+          <Route path="my-activity" element={<SupporterHistoryPage />} />
           <Route path="my-history" element={<SupporterHistoryPage />} />
           <Route path="offers" element={<PublicOffersPage />} />
           <Route path="offers/:offerId/buy" element={<StoreValuePurchasePage />} />

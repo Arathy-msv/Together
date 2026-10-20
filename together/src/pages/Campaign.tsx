@@ -199,10 +199,26 @@ function CampaignDetails({ view, referral }: { view: CampaignView; referral?: Re
           </div>
           <div role="tabpanel" id={`panel-${section}`} aria-labelledby={`tab-${section}`} className="section-panel">
             {section === 'story' ? <StoryTab campaign={campaign} store={store} onShowUpdates={() => showSection('updates')} /> : null}
-            {section === 'updates' ? <UpdatesTab campaign={campaign} store={store} follow={followButton} /> : null}
+            {section === 'updates' ? (
+              <UpdatesTab
+                campaign={campaign}
+                store={store}
+                follow={followButton}
+                onOpenExpenses={(milestoneId) => {
+                  const nextParams = new URLSearchParams(params)
+                  nextParams.set('tab', 'fund')
+                  nextParams.set('milestone', milestoneId)
+                  setParams(nextParams, { replace: true })
+                  requestAnimationFrame(() => {
+                    document.getElementById('tab-fund')?.scrollIntoView({ block: 'start' })
+                    document.getElementById('tab-fund')?.focus()
+                  })
+                }}
+              />
+            ) : null}
             {section === 'fund' ? (
               <>
-                <FundUseTab campaign={campaign} store={store} />
+                <FundUseTab key={params.get('milestone') ?? 'all'} campaign={campaign} store={store} initialMilestone={params.get('milestone')} />
                 <section className="organizer-info" aria-labelledby="organizer-info-title">
                   <h3 id="organizer-info-title">Who is running this campaign</h3>
                   <TrustTab campaign={campaign} store={store} org={org} />
