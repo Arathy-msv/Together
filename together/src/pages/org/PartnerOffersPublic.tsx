@@ -6,7 +6,7 @@ import { useCurrentUser, useSupporterId } from '../../hooks/useIdentity.ts'
 import { useVoucherStore } from '../../hooks/useVoucherStore.ts'
 import { campaignDetailsPath } from '../../lib/campaigns.ts'
 import { canUseFeature, capabilityName } from '../../lib/features.ts'
-import { formatDate, formatDateTime, formatMoney } from '../../lib/format.ts'
+import { formatDate, formatMoney } from '../../lib/format.ts'
 import type { Campaign, Contribution } from '../../lib/types.ts'
 import {
   campaignOffers,
@@ -14,7 +14,6 @@ import {
   claimContributionReward,
   claimOnlineOffer,
   holderVouchers,
-  isExpired,
   merchantFor,
   offerIsLive,
   offerValueLine,
@@ -24,6 +23,7 @@ import {
   type PartnerOffer,
 } from '../../lib/vouchers.ts'
 import { OrgNotFound } from './OrgNotFound.tsx'
+import { VoucherCard, voucherState } from '../../components/vouchers/VoucherCard.tsx'
 
 function stockLine(offer: PartnerOffer): string {
   return offer.stock === null ? 'Available while the offer runs' : `${offer.stock} left`
@@ -376,68 +376,19 @@ export function VoucherList({ vouchers }: { vouchers: IssuedVoucher[] }) {
   const demo = useDemoStore()
   const store = useVoucherStore()
   if (vouchers.length === 0) return <p className="awaiting">No vouchers for this supporter profile yet.</p>
+  const order = { ready: 0, used: 1, expired: 2 }
+  const sorted = [...vouchers].sort((a, b) => order[voucherState(a)] - order[voucherState(b)])
   return (
-    <ul className="partner-offer-list">
-      {vouchers.map((voucher) => {
-        const expired = isExpired(voucher)
+    <ul className="voucher-grid">
+      {sorted.map((voucher) => {
         const campaign = demo.campaigns.find((item) => item.id === voucher.campaignId && item.organizationId === org.id)
         return (
-          <li key={voucher.id} className="panel">
-            <div className="offer-admin-head">
-              <div>
-                <strong>{voucher.title}</strong>
-                <span className="muted small">
-                  {merchantFor(store, org.id, voucher.merchantId)?.name ?? 'Partner store'} · {capabilityName(voucher.capability)}
-                </span>
-              </div>
-              <span className={`status-badge status-${voucher.status === 'active' && !expired ? 'active' : 'closed'}`}>
-                <i />
-                {voucher.status === 'redeemed' ? 'Used' : expired ? 'Expired' : 'Ready to use'}
-              </span>
-            </div>
-            <p>
-              Code <code>{voucher.code}</code>
-              {voucher.discountCode ? (
-                <>
-                  {' '}
-                  · partner code <code>{voucher.discountCode}</code>
-                </>
-              ) : null}
-            </p>
-            {voucher.balance !== undefined ? <p>Balance {formatMoney(voucher.balance, voucher.currency)}</p> : null}
-            {voucher.rewardText ? <p>{voucher.rewardText}</p> : null}
-            <p className="muted small">
-              Valid until {formatDate(voucher.validUntil)} · issued {formatDateTime(voucher.issuedAt)} · supports{' '}
-              {campaign ? <Link to={campaignDetailsPath(campaign.id, base)}>{campaign.title}</Link> : 'a campaign'}
-            </p>
-            {voucher.pricePaid ? (
-              <p className="small">
-                Receipt: paid {formatMoney(voucher.pricePaid, voucher.currency)} (simulated) · {formatMoney(voucher.campaignBenefit ?? 0, voucher.currency)} for the campaign ·{' '}
-                {voucher.benefitStatus === 'settled' ? 'passed on by the store' : 'pending from the store'}
-              </p>
-            ) : null}
-            {voucher.shopUrl ? (
-              <a href={voucher.shopUrl} target="_blank" rel="noopener noreferrer">
-                Partner’s approved shop link<span className="sr-only"> (opens in a new tab)</span>
-              </a>
-            ) : null}
-            <details>
-              <summary>Terms and history</summary>
-              <p className="small">{voucher.terms}</p>
-              {voucher.redemptions.length > 0 ? (
-                <ul className="small">
-                  {voucher.redemptions.map((item) => (
-                    <li key={item.id}>
-                      {formatDateTime(item.at)} · {item.note}
-                      {item.amount ? ` · ${formatMoney(item.amount, voucher.currency)}` : ''}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="small muted">Not used yet.</p>
-              )}
-            </details>
-          </li>
+          <VoucherCard
+            key={voucher.id}
+            voucher={voucher}
+            storeName={merchantFor(store, org.id, voucher.merchantId)?.name ?? 'Partner store'}
+            campaign={campaign ? { title: campaign.title, href: campaignDetailsPath(campaign.id, base) } : undefined}
+          />
         )
       })}
     </ul>

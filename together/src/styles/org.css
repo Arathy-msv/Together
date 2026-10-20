@@ -1258,3 +1258,24 @@ html.low-data .hero-stack, html.low-data .play-side { display: none; }
 .feature-mode-option input { margin-top: 4px; }
 .feature-mode-option span { display: grid; gap: 2px; }
 .feature-mode-option em { font-style: normal; color: var(--p-ink-2); font-size: 0.9rem; }
+
+.voucher-grid { list-style: none; margin: 16px 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+.voucher-card { position: relative; display: grid; gap: 8px; padding: 16px 16px 14px; border-radius: 16px; background: var(--p-surface); border: 1px solid var(--p-line); border-left: 6px solid var(--p-green-2, #1f6b4a); box-shadow: 0 2px 10px rgba(19, 51, 42, 0.06); }
+.voucher-card.used, .voucher-card.expired { border-left-color: #b9b2a0; background: var(--p-surface-2); }
+.voucher-card-top { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+.voucher-store { font-weight: 700; font-size: 0.9rem; color: var(--p-ink-2); }
+.voucher-value { font-size: 1.35rem; line-height: 1.25; color: var(--p-ink); overflow-wrap: anywhere; }
+.voucher-card-foot { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; border-top: 1px dashed var(--p-line); padding-top: 10px; }
+.voucher-card details summary { cursor: pointer; font-size: 0.88rem; min-height: 32px; }
+.voucher-present { border: 0; padding: 0; width: 100vw; height: 100dvh; max-width: none; max-height: none; margin: 0; background: #ffffff; color: #000000; }
+.voucher-present::backdrop { background: #000000; }
+.voucher-present-inner { min-height: 100%; display: grid; justify-items: center; align-content: center; gap: 12px; padding: 24px; text-align: center; }
+.voucher-present-inner h2 { margin: 0; font-size: clamp(1.6rem, 6vw, 2.6rem); color: #000; }
+.voucher-present-store { margin: 0; font-weight: 700; font-size: 1.1rem; }
+.voucher-present-state { margin: 0; font-weight: 800; padding: 4px 14px; border-radius: 999px; border: 2px solid #000; }
+.voucher-present-state.used, .voucher-present-state.expired { background: #000; color: #fff; }
+.voucher-present-qr { width: 240px; height: 240px; image-rendering: pixelated; }
+.voucher-present-qr.placeholder { background: #f1f1f1; }
+.voucher-present-code { margin: 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: clamp(1.8rem, 8vw, 3rem); font-weight: 800; letter-spacing: 0.12em; overflow-wrap: anywhere; }
+.voucher-present-sub { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 1.3rem; }
+.voucher-present-note { max-width: 40ch; font-size: 0.9rem; color: #333; margin: 0; }
