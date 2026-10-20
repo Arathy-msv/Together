@@ -1,3 +1,4 @@
+import { DEFAULT_BRANDING } from './theme.ts'
 import type { Organization, WebsiteConfig, WebsiteStatus } from './types.ts'
 
 /*
@@ -108,3 +109,52 @@ export function isPreviewingWebsite(orgId: string): boolean {
     return false
   }
 }
+
+/** Editable example text for first-time setup. Always shown as a sample to replace. */
+export function sampleWebsiteContent(org: Pick<Organization, 'name' | 'type' | 'content'>) {
+  const name = org.name.trim() || 'Our organization'
+  const where = org.content.location.trim() ? ` in ${org.content.location.trim()}` : ''
+  const noun = org.type === 'company' ? 'colleagues' : org.type === 'school' ? 'families and friends' : org.type === 'club' ? 'members and friends' : 'supporters'
+  return {
+    headline: `Help ${name} make a difference`,
+    description: `Support our fundraisers. ${noun[0].toUpperCase() + noun.slice(1)} can give directly or join in with a short game.`,
+    about: `${name} is based${where || ' in our community'}. Replace this sample with a few sentences about who you are and what you do.`,
+    footerText: `${name} · Fundraising website`,
+  }
+}
+
+export const SETUP_STEP_COUNT = 4
+
+/** The setup step to resume at. Progress saved by the earlier six-step flow maps onto the new steps. */
+export function resumeSetupStep(onboarding: Organization['onboarding']): number {
+  const step = onboarding?.step ?? 1
+  if (onboarding?.flow === 4) return Math.min(SETUP_STEP_COUNT, Math.max(1, step))
+  return step <= 2 ? Math.max(1, step) : step <= 5 ? 3 : 4
+}
+
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
+
+interface Task {
+  id: string
+  label: string
+  hint: string
+  done: boolean
+  to: string
+  action: string
+}
+
+/** Getting-started tasks, calculated from what is actually saved. */
+export function setupTasks(stored: Organization, publishedCampaigns: number, workspace: string): Task[] {
+  const org = previewOrganization(stored)
+  const inSetup = stored.website.status === 'setup'
+  const details = Boolean(org.name.trim()) && org.about.trim().length >= 10 && EMAIL.test(org.content.contactEmail.trim())
+  const customized =
+    Boolean(org.logo) || org.content.heroImage !== '/covers/hero-library.jpg' || org.branding.primary !== DEFAULT_BRANDING.primary || Boolean(org.content.headline.trim())
+  return [
+    { id: 'details', label: 'Add organization details', hint: 'Your name, a short description and a contact email.', done: details && !inSetup, to: inSetup ? `/start/${org.id}` : `${workspace}/website`, action: 'Add details' },
+    { id: 'customize', label: 'Customize your website', hint: 'Choose your colours, photo and headline.', done: customized && !inSetup, to: inSetup ? `/start/${org.id}` : `${workspace}/website`, action: 'Customize website' },
+    { id: 'publish', label: 'Publish your website', hint: 'Make it visible at your website address on this device.', done: isPubliclyAvailable(stored), to: inSetup ? `/start/${org.id}` : `${workspace}/website`, action: 'Review and publish' },
+    { id: 'campaign', label: 'Create your first campaign', hint: 'Describe your cause, set a goal and choose how people can contribute.', done: publishedCampaigns > 0, to: `${workspace}/campaigns/new`, action: 'Create a campaign' },
+  ]
+}
+

@@ -88,7 +88,8 @@ export interface Organization {
   /** Selected demo plan. Nothing is billed or enforced in this prototype. */
   plan: { id: PlanId; selectedAt: string }
   website: OrganizationWebsite
-  onboarding?: { step: number; updatedAt: string }
+  /** `flow: 4` marks progress saved by the four-step setup; older saves used six steps. */
+  onboarding?: { step: number; updatedAt: string; flow?: number }
   createdAt: string
   updatedAt: string
 }

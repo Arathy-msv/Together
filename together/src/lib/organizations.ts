@@ -204,7 +204,7 @@ export function normalizeOrganization(value: unknown): Organization | null {
     website: normalizeWebsite(raw.website, name, updatedAt),
     onboarding:
       raw.onboarding && typeof raw.onboarding === 'object' && Number.isInteger(raw.onboarding.step)
-        ? { step: Math.min(6, Math.max(1, raw.onboarding.step)), updatedAt: typeof raw.onboarding.updatedAt === 'string' ? raw.onboarding.updatedAt : updatedAt }
+        ? { step: Math.min(6, Math.max(1, raw.onboarding.step)), updatedAt: typeof raw.onboarding.updatedAt === 'string' ? raw.onboarding.updatedAt : updatedAt, flow: raw.onboarding.flow === 4 ? 4 : undefined }
         : undefined,
     createdAt: typeof raw.createdAt === 'string' ? raw.createdAt : updatedAt,
     updatedAt,

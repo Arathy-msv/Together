@@ -14,9 +14,10 @@ import { saveOrganization, setActiveOrgId } from '../../lib/orgStorage.ts'
 import { demoPlan } from '../../lib/plans.ts'
 import { contrastChecks, FONT_CHOICES, isHexColor } from '../../lib/theme.ts'
 import type { FontChoice, GameType, Organization, OrgType } from '../../lib/types.ts'
-import { previewOrganization, publicWebsiteUrl, websiteConfigOf, withPublishedWebsite } from '../../lib/website.ts'
+import { previewOrganization, publicWebsiteUrl, resumeSetupStep, sampleWebsiteContent, SETUP_STEP_COUNT, websiteConfigOf, withPublishedWebsite } from '../../lib/website.ts'
 
-const STEPS = ['Organization details', 'Website address', 'Branding', 'Website content', 'Fundraising preferences', 'Review & publish']
+const STEPS = ['Your organization', 'Your website address', 'Your look and content', 'Review and publish']
+const LAST = SETUP_STEP_COUNT
 const ONBOARDING_TYPES: OrgType[] = ['company', 'school', 'nonprofit', 'club', 'other']
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
 
@@ -35,12 +36,6 @@ function stepErrors(step: number, org: Organization, all: Organization[]): Recor
   }
   if (step === 3) {
     for (const key of ['primary', 'accent', 'background'] as const) if (!isHexColor(org.branding[key])) errors[key] = 'Use a hex colour like #123D36.'
-  }
-  if (step === 4) {
-    if (org.content.headline.trim().length < 3) errors.headline = 'Add a homepage headline.'
-    if (org.content.description.trim().length < 10) errors.description = 'Add a short introduction (at least 10 characters).'
-  }
-  if (step === 5) {
     if (shared['defaults.suggestedAmounts']) errors.amounts = shared['defaults.suggestedAmounts']!
     if (shared['defaults.games']) errors.games = shared['defaults.games']!
     if (shared['visibility.direct']) errors.direct = shared['visibility.direct']!
@@ -74,14 +69,14 @@ function Wizard({ stored }: { stored: Organization }) {
   const navigate = useNavigate()
   const all = useOrganizations()
   const [org, setOrg] = useState<Organization>(() => previewOrganization(stored))
-  const [step, setStep] = useState(stored.onboarding?.step ?? 1)
+  const [step, setStep] = useState(resumeSetupStep(stored.onboarding))
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop')
   const [published, setPublished] = useState<Organization | null>(null)
   const snapshot = useMemo(() => ({ org, step }), [org, step])
   const autosave = useAutosave(snapshot, (value) => {
     const now = new Date().toISOString()
-    saveOrganization({ ...value.org, website: { status: 'setup', draft: websiteConfigOf(value.org), updatedAt: now }, onboarding: { step: value.step, updatedAt: now } })
+    saveOrganization({ ...value.org, website: { status: 'setup', draft: websiteConfigOf(value.org), updatedAt: now }, onboarding: { step: value.step, updatedAt: now, flow: 4 } })
   })
 
   useEffect(() => {
@@ -96,7 +91,7 @@ function Wizard({ stored }: { stored: Organization }) {
     const next = stepErrors(step, org, all)
     setErrors(next)
     if (Object.keys(next).length > 0) return
-    setStep((current) => Math.min(6, current + 1))
+    setStep((current) => Math.min(LAST, current + 1))
     window.scrollTo(0, 0)
   }
 
@@ -117,7 +112,7 @@ function Wizard({ stored }: { stored: Organization }) {
   }
 
   function finish(publish: boolean) {
-    for (let index = 1; index <= 5; index += 1) {
+    for (let index = 1; index < LAST; index += 1) {
       const problems = stepErrors(index, org, all)
       if (Object.keys(problems).length > 0) {
         setStep(index)
@@ -146,8 +141,8 @@ function Wizard({ stored }: { stored: Organization }) {
     <div className="container page-pad onboarding">
       <header className="onboarding-head">
         <div>
-          <p className="oh-eyebrow">{demoPlan(org.plan.id).name} · simulated, no payment collected</p>
-          <h1>Set up your organization website</h1>
+          <p className="oh-eyebrow">{demoPlan(org.plan.id).name} · no payment taken</p>
+          <h1>Create your website</h1>
         </div>
         <SaveIndicator status={autosave.status} savedAt={autosave.savedAt} error={autosave.error} />
       </header>
@@ -163,17 +158,18 @@ function Wizard({ stored }: { stored: Organization }) {
           )
         })}
       </ol>
-      <div className={step === 6 ? 'onboarding-body review' : 'onboarding-body'}>
+      <div className={step === LAST ? 'onboarding-body review' : 'onboarding-body'}>
         <section className="panel form-panel" aria-labelledby="step-title">
           <h2 id="step-title">
-            Step {step} of 6 · {STEPS[step - 1]}
+            Step {step} of {LAST} · {STEPS[step - 1]}
           </h2>
           {step === 1 ? (
             <>
-              <TextInput label="Organization name" value={org.name} maxLength={80} error={errors.name} onChange={(name) => patch({ name, slug: org.slug.startsWith('new-') && name ? slugify(name) : org.slug })} />
+              <p className="muted">Tell supporters who you are. Fields marked Optional can be skipped.</p>
+              <TextInput label="Organization name" value={org.name} maxLength={80} error={errors.name} help="For example: Greenwood School" onChange={(name) => patch({ name, slug: org.slug.startsWith('new-') && name ? slugify(name) : org.slug })} />
               <Select label="Type" value={org.type} options={ORG_TYPES.filter((type) => ONBOARDING_TYPES.includes(type.id)).map((type) => ({ value: type.id, label: type.label }))} onChange={(type) => patch({ type: type as OrgType })} />
-              <TextArea label="Short description" value={org.about} maxLength={600} error={errors.about} help="Shown on your About page. You can expand it later." onChange={(about) => patch({ about })} />
-              <TextInput label="Public contact email" type="email" value={org.content.contactEmail} maxLength={120} error={errors.contactEmail} onChange={(contactEmail) => patchContent({ contactEmail })} />
+              <TextArea label="Short description" value={org.about} maxLength={600} error={errors.about} help="One or two sentences, e.g. “A primary school of 400 pupils with a big garden and a bigger heart.” Shown on your About page." onChange={(about) => patch({ about })} />
+              <TextInput label="Public contact email" type="email" value={org.content.contactEmail} maxLength={120} error={errors.contactEmail} help="Supporters can write to this address. For example: office@greenwood.example" onChange={(contactEmail) => patchContent({ contactEmail })} />
               <TextInput label="Public location" optional value={org.content.location} maxLength={120} help="A city or area. Avoid street addresses." onChange={(location) => patchContent({ location })} />
             </>
           ) : null}
@@ -184,7 +180,7 @@ function Wizard({ stored }: { stored: Organization }) {
                 value={org.slug}
                 maxLength={40}
                 error={errors.slug}
-                help="Lowercase letters, numbers and hyphens. It can’t change after you publish."
+                help="This is the link you’ll share with your community. Use lowercase letters, numbers and hyphens. It can’t change after you publish."
                 onChange={(slug) => {
                   patch({ slug: slug.replace(/\s+/g, '-') })
                   setErrors({})
@@ -193,9 +189,7 @@ function Wizard({ stored }: { stored: Organization }) {
               <div className="url-preview">
                 <span className="muted small">Your website will be at</span>
                 <code>{url}</code>
-                <span className="muted small">
-                  Example: together.example/o/{org.slug || 'greenwood-school'}. In this prototype the address works in this browser only.
-                </span>
+                <span className="muted small">In this demo the link works on this device only.</span>
               </div>
               {(() => {
                 const live = validateSlug(org.slug, org.id, all)
@@ -203,25 +197,10 @@ function Wizard({ stored }: { stored: Organization }) {
               })()}
             </>
           ) : null}
-          {step === 3 ? <BrandingStep org={org} errors={errors} patch={patch} patchBranding={patchBranding} patchContent={patchContent} /> : null}
-          {step === 4 ? (
-            <>
-              <TextInput label="Homepage headline" value={org.content.headline} maxLength={120} error={errors.headline} onChange={(headline) => patchContent({ headline })} />
-              <TextArea label="Introduction" value={org.content.description} maxLength={400} error={errors.description} onChange={(description) => patchContent({ description })} />
-              <TextArea label="About section" value={org.about} maxLength={600} onChange={(about) => patch({ about })} />
-              <TextInput label="Contact email" type="email" value={org.content.contactEmail} maxLength={120} onChange={(contactEmail) => patchContent({ contactEmail })} />
-              <TextArea label="Footer text" optional value={org.content.footerText} maxLength={240} onChange={(footerText) => patchContent({ footerText })} />
-              <Checkbox label="Show an impact section on the homepage" checked={org.visibility.impactStories} onChange={(impactStories) => patch({ visibility: { ...org.visibility, impactStories } })} />
-              {org.visibility.impactStories ? (
-                <>
-                  <TextInput label="Impact title" optional value={org.content.impactTitle} maxLength={100} onChange={(impactTitle) => patchContent({ impactTitle })} />
-                  <TextArea label="Impact story" optional value={org.content.impactStory} maxLength={600} help="Describe what your organization has actually done. Leave empty to hide the section." onChange={(impactStory) => patchContent({ impactStory })} />
-                </>
-              ) : null}
-            </>
+          {step === 3 ? (
+            <LookAndContentStep org={org} errors={errors} patch={patch} patchBranding={patchBranding} patchContent={patchContent} />
           ) : null}
-          {step === 5 ? <FundraisingStep org={org} errors={errors} patch={patch} /> : null}
-          {step === 6 ? (
+          {step === LAST ? (
             <dl className="detail-list">
               <div>
                 <dt>Demo plan</dt>
@@ -269,7 +248,7 @@ function Wizard({ stored }: { stored: Organization }) {
                 Back
               </button>
             ) : null}
-            {step < 6 ? (
+            {step < LAST ? (
               <button type="button" className="btn btn-primary" onClick={goNext}>
                 Continue
               </button>
@@ -287,7 +266,7 @@ function Wizard({ stored }: { stored: Organization }) {
               Finish later
             </Link>
           </div>
-          {step === 6 ? <p className="muted small">Publishing makes the website available at the address above in this browser. It does not publish any campaigns.</p> : null}
+          {step === LAST ? <p className="muted small">Publishing makes your website visible at the address above on this device. It doesn’t publish any campaigns.</p> : null}
         </section>
         <aside className="onboarding-preview" aria-label="Website preview">
           <div className="preview-toolbar">
@@ -323,83 +302,142 @@ function ColorInput({ label, value, error, onChange }: { label: string; value: s
   )
 }
 
-function BrandingStep({
-  org,
-  errors,
-  patch,
-  patchBranding,
-  patchContent,
-}: {
+function LookAndContentStep(props: {
   org: Organization
   errors: Record<string, string>
   patch: (next: Partial<Organization>) => void
   patchBranding: (next: Partial<Organization['branding']>) => void
   patchContent: (next: Partial<Organization['content']>) => void
 }) {
+  const { org, errors, patch, patchContent } = props
+  const [sampleNote, setSampleNote] = useState(false)
+  function useSample() {
+    const sample = sampleWebsiteContent(org)
+    patchContent({
+      headline: org.content.headline.trim() || sample.headline,
+      description: org.content.description.trim() || sample.description,
+      footerText: org.content.footerText.trim() || sample.footerText,
+    })
+    if (org.about.trim().length < 10) patch({ about: sample.about })
+    setSampleNote(true)
+  }
+  return (
+    <>
+      <p className="muted">Choose a colour and a photo, then write a headline. Your preview updates as you type. You can change everything later.</p>
+      <BrandingStep {...props} essentialOnly />
+      <div className="sample-row">
+        <button type="button" className="btn btn-outline btn-sm" onClick={useSample}>
+          Use sample content
+        </button>
+        <span className="muted small">Fills empty text with an editable example.</span>
+      </div>
+      {sampleNote ? (
+        <p className="notice success compact" role="status">
+          Sample content added. Edit it so it describes {org.name || 'your organization'}.
+        </p>
+      ) : null}
+      <TextInput label="Homepage headline" optional value={org.content.headline} maxLength={120} help="For example: Help Greenwood grow. If empty, we show your name." onChange={(headline) => patchContent({ headline })} />
+      <TextArea label="Introduction" optional value={org.content.description} maxLength={400} help="One or two sentences under the headline." onChange={(description) => patchContent({ description })} />
+      <details className="customize-more">
+        <summary>Customize more (optional)</summary>
+        <div className="customize-body">
+          <BrandingStep {...props} />
+          <TextArea label="Footer text" optional value={org.content.footerText} maxLength={240} onChange={(footerText) => patchContent({ footerText })} />
+          <Checkbox label="Show an impact section on the homepage" checked={org.visibility.impactStories} onChange={(impactStories) => patch({ visibility: { ...org.visibility, impactStories } })} />
+          {org.visibility.impactStories ? (
+            <>
+              <TextInput label="Impact title" optional value={org.content.impactTitle} maxLength={100} onChange={(impactTitle) => patchContent({ impactTitle })} />
+              <TextArea label="Impact story" optional value={org.content.impactStory} maxLength={600} help="Describe what your organization has actually done." onChange={(impactStory) => patchContent({ impactStory })} />
+            </>
+          ) : null}
+        </div>
+      </details>
+      <details className="customize-more" open={Boolean(errors.amounts || errors.games || errors.direct)}>
+        <summary>Fundraising preferences (optional — sensible defaults are set)</summary>
+        <div className="customize-body">
+          <FundraisingStep org={org} errors={errors} patch={patch} />
+        </div>
+      </details>
+    </>
+  )
+}
+
+function BrandingStep({
+  org,
+  errors,
+  patch,
+  patchBranding,
+  patchContent,
+  essentialOnly = false,
+}: {
+  org: Organization
+  errors: Record<string, string>
+  patch: (next: Partial<Organization>) => void
+  patchBranding: (next: Partial<Organization['branding']>) => void
+  patchContent: (next: Partial<Organization['content']>) => void
+  essentialOnly?: boolean
+}) {
   const logo = useImagePicker((data) => patch({ logo: data }), { maxWidth: 256, maxHeight: 256, type: 'image/png', maxChars: 400_000 })
   const hero = useImagePicker((data) => patchContent({ heroImage: data }), { maxWidth: 1400, maxHeight: 1000, type: 'image/jpeg', quality: 0.78, maxChars: 700_000 })
   const warnings = contrastChecks(org.branding).filter((check) => !check.ok)
+  const logoField = (
+    <div className="field">
+      <span className="field-label">
+        Logo <span className="optional-tag">Optional</span>
+      </span>
+      <div className="image-row">
+        <OrgLogoMark org={org} size={56} />
+        <button type="button" className="btn btn-outline btn-sm" onClick={logo.open} disabled={logo.busy}>
+          {logo.busy ? 'Processing…' : org.logo ? 'Replace logo' : 'Upload logo'}
+        </button>
+        {org.logo ? (
+          <button type="button" className="link-button danger" onClick={() => patch({ logo: '' })}>
+            Remove
+          </button>
+        ) : (
+          <span className="help">Without a logo, your initials are shown.</span>
+        )}
+      </div>
+      {logo.input}
+      {logo.error ? <p className="error-text">{logo.error}</p> : null}
+    </div>
+  )
+  if (essentialOnly) {
+    return (
+      <>
+        <ColorInput label="Main colour" value={org.branding.primary} error={errors.primary} onChange={(primary) => patchBranding({ primary })} />
+        {warnings.length ? <p className="muted small">{warnings[0].message}</p> : null}
+        <fieldset className="set-fieldset">
+          <legend className="field-label">Homepage photo</legend>
+          <div className="image-gallery">
+            {IMAGE_GALLERY.map((image) => (
+              <button key={image.src} type="button" className={org.content.heroImage === image.src ? 'gallery-choice selected' : 'gallery-choice'} aria-pressed={org.content.heroImage === image.src} onClick={() => patchContent({ heroImage: image.src })}>
+                <img src={image.src} alt="" />
+                <span>{image.label}</span>
+              </button>
+            ))}
+          </div>
+          <button type="button" className="btn btn-outline btn-sm" onClick={hero.open} disabled={hero.busy}>
+            {hero.busy ? 'Processing…' : 'Upload your own photo'}
+          </button>
+          {hero.input}
+          {hero.error ? <p className="error-text">{hero.error}</p> : null}
+        </fieldset>
+      </>
+    )
+  }
   return (
     <>
-      <div className="field">
-        <span className="field-label">Logo</span>
-        <div className="image-row">
-          <OrgLogoMark org={org} size={56} />
-          <button type="button" className="btn btn-outline btn-sm" onClick={logo.open} disabled={logo.busy}>
-            {logo.busy ? 'Processing…' : org.logo ? 'Replace logo' : 'Upload logo'}
-          </button>
-          {org.logo ? (
-            <button type="button" className="link-button danger" onClick={() => patch({ logo: '' })}>
-              Remove
-            </button>
-          ) : (
-            <span className="help">Optional — your initials are shown without one.</span>
-          )}
-        </div>
-        {logo.input}
-        {logo.error ? <p className="error-text">{logo.error}</p> : null}
-      </div>
-      <TextInput label="Tagline" optional value={org.tagline} maxLength={120} onChange={(tagline) => patch({ tagline })} />
+      {logoField}
+      <TextInput label="Tagline" optional value={org.tagline} maxLength={120} help="A short line shown beside your name." onChange={(tagline) => patch({ tagline })} />
       <div className="colour-grid">
-        <ColorInput label="Primary colour" value={org.branding.primary} error={errors.primary} onChange={(primary) => patchBranding({ primary })} />
         <ColorInput label="Accent colour" value={org.branding.accent} error={errors.accent} onChange={(accent) => patchBranding({ accent })} />
         <ColorInput label="Background colour" value={org.branding.background} error={errors.background} onChange={(background) => patchBranding({ background })} />
       </div>
-      {warnings.length ? (
-        <ul className="contrast-list">
-          {warnings.map((check) => (
-            <li key={check.id} className="warn">
-              <span className="contrast-icon" aria-hidden="true">
-                !
-              </span>
-              <div>
-                <strong>{check.label}</strong>
-                <span>{check.message}</span>
-              </div>
-            </li>
-          ))}
-        </ul>
-      ) : null}
       <div className="two-col">
         <Select label="Heading font" value={org.branding.headingFont} options={FONT_CHOICES.map((font) => ({ value: font.id, label: font.label }))} onChange={(headingFont) => patchBranding({ headingFont: headingFont as FontChoice })} />
         <Select label="Body font" value={org.branding.bodyFont} options={FONT_CHOICES.map((font) => ({ value: font.id, label: font.label }))} onChange={(bodyFont) => patchBranding({ bodyFont: bodyFont as FontChoice })} />
       </div>
-      <fieldset className="set-fieldset">
-        <legend className="field-label">Hero image</legend>
-        <div className="image-gallery">
-          {IMAGE_GALLERY.map((image) => (
-            <button key={image.src} type="button" className={org.content.heroImage === image.src ? 'gallery-choice selected' : 'gallery-choice'} aria-pressed={org.content.heroImage === image.src} onClick={() => patchContent({ heroImage: image.src })}>
-              <img src={image.src} alt="" />
-              <span>{image.label}</span>
-            </button>
-          ))}
-        </div>
-        <button type="button" className="btn btn-outline btn-sm" onClick={hero.open} disabled={hero.busy}>
-          {hero.busy ? 'Processing…' : 'Upload your own'}
-        </button>
-        {hero.input}
-        {hero.error ? <p className="error-text">{hero.error}</p> : null}
-      </fieldset>
     </>
   )
 }

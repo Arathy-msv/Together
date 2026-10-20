@@ -2,19 +2,22 @@ import { useEffect } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { OrgLogoMark } from '../../components/org/OrgChrome.tsx'
 import { useOrganizations } from '../../hooks/useOrganizations.ts'
+import { useStartWebsite } from '../../hooks/useStartWebsite.ts'
 import { formatDateTime } from '../../lib/format.ts'
 import { discardUnfinishedOrganization } from '../../lib/orgStorage.ts'
 import { demoPlan } from '../../lib/plans.ts'
+import { resumeSetupStep, SETUP_STEP_COUNT } from '../../lib/website.ts'
 
 /** /start — resume an unfinished organization setup on this device. */
 export function StartPage() {
   const unfinished = useOrganizations().filter((org) => org.website.status === 'setup')
+  const startWebsite = useStartWebsite()
 
   useEffect(() => {
     document.title = 'Continue setup — Together'
   }, [])
 
-  if (unfinished.length === 0) return <Navigate to="/plans" replace />
+  if (unfinished.length === 0) return <Navigate to="/" replace />
   return (
     <div className="container narrow page-pad">
       <section className="panel resume-card" aria-labelledby="resume-setup">
@@ -28,7 +31,7 @@ export function StartPage() {
                 <div>
                   <strong>{org.website.draft?.name || org.name || 'Untitled organization'}</strong>
                   <span className="muted small">
-                    Step {org.onboarding?.step ?? 1} of 6 · {demoPlan(org.plan.id).name} · last saved {formatDateTime(org.website.updatedAt)}
+                    Step {resumeSetupStep(org.onboarding)} of {SETUP_STEP_COUNT} · {demoPlan(org.plan.id).name} · last saved {formatDateTime(org.website.updatedAt)}
                   </span>
                 </div>
               </div>
@@ -49,9 +52,9 @@ export function StartPage() {
             </li>
           ))}
         </ul>
-        <Link to="/plans" className="btn btn-outline">
-          Start another organization
-        </Link>
+        <button type="button" className="btn btn-outline" onClick={() => startWebsite('community', { forceNew: true })}>
+          Start another website
+        </button>
       </section>
     </div>
   )
