@@ -615,3 +615,20 @@ html { scroll-padding-top: 84px; }
 .game-rules, .game-intro-amounts { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
 .funded-panel h2 { margin-top: 0; }
 .delivery-snapshot .status-badge { justify-self: start; }
+
+.ws-breadcrumbs { padding-top: 12px; }
+.ws-breadcrumbs ol { list-style: none; display: flex; flex-wrap: wrap; gap: 4px 6px; margin: 0; padding: 0; font-size: 0.86rem; color: var(--p-ink-2); }
+.ws-breadcrumbs li { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+.ws-breadcrumbs li + li::before { content: '›'; color: var(--p-muted, #7a857f); }
+.ws-breadcrumbs a { color: inherit; text-decoration: underline; text-underline-offset: 3px; }
+.ws-breadcrumbs [aria-current] { font-weight: 700; color: var(--p-ink); overflow-wrap: anywhere; }
+.demo-tools { position: relative; }
+.demo-tools > summary { list-style: none; display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 4px 10px; border: 1px dashed var(--p-line); border-radius: 999px; cursor: pointer; font-size: 0.86rem; font-weight: 600; }
+.demo-tools > summary::-webkit-details-marker { display: none; }
+.demo-tools > summary::after { content: '▾'; font-size: 0.75rem; }
+.demo-tools[open] > summary { border-style: solid; }
+.demo-tools-menu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 40; width: min(360px, 92vw); display: grid; gap: 10px; padding: 14px; background: var(--p-surface); border: 1px solid var(--p-line); border-radius: 12px; box-shadow: 0 12px 30px rgba(19, 51, 42, 0.14); }
+.demo-tools-menu .identity-switcher select { width: 100%; }
+.demo-tools-links { display: grid; gap: 6px; font-size: 0.9rem; }
+.demo-tools-who { max-width: 14ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.identity-bar .oh-header-inner { display: flex; justify-content: flex-end; }

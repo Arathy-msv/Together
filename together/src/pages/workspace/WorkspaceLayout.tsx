@@ -4,7 +4,8 @@ import { OrgLogoMark } from '../../components/org/OrgChrome.tsx'
 import { OrgContext, orgContextValue } from '../../components/org/OrgContext.tsx'
 import { OrgSwitcher } from '../../components/org/OrgSwitcher.tsx'
 import { AccessDenied } from '../../components/identity/AccessDenied.tsx'
-import { DemoIdentitySwitcher } from '../../components/identity/DemoIdentitySwitcher.tsx'
+import { DemoToolsMenu } from '../../components/identity/DemoToolsMenu.tsx'
+import { useDemoStore } from '../../hooks/useDemoStore.ts'
 import { useCurrentUser } from '../../hooks/useIdentity.ts'
 import { membership, ROLE_LABEL } from '../../lib/identity.ts'
 import { can, SECTION_PERMISSION } from '../../lib/permissions.ts'
@@ -65,7 +66,7 @@ export function WorkspaceLayout() {
             <Link to="/" className="ws-platform-link" aria-label="Together platform home">
               Together
             </Link>
-            <DemoIdentitySwitcher compact />
+            <DemoToolsMenu compact />
           </div>
         </header>
         <main id="main">
@@ -93,7 +94,7 @@ export function WorkspaceLayout() {
             <span className="demo-badge">Demo workspace</span>
             <span className="ws-role">{ROLE_LABEL[member.role]}</span>
             <OrgSwitcher currentId={org.id} />
-            <DemoIdentitySwitcher compact />
+            <DemoToolsMenu compact />
           </div>
         </header>
         <div className="ws-org-head">
@@ -153,6 +154,7 @@ export function WorkspaceLayout() {
             </div>
           </div>
         ) : null}
+        <Breadcrumbs root={root} pathname={pathname} />
         <main id="main">{sectionAllowed ? <Outlet /> : <AccessDenied reason={`${ROLE_LABEL[member.role]}s can’t open this section. Organization branding, plans, features and memberships are managed by an Organization Admin.`} />}</main>
       </div>
     </OrgContext.Provider>
@@ -201,5 +203,60 @@ function WebsiteActions({ stored }: { stored: Parameters<typeof isPubliclyAvaila
         {copied ? 'Link copied.' : ''}
       </span>
     </div>
+  )
+}
+
+const SECTION_LABEL: Record<string, string> = {
+  overview: 'Overview',
+  website: 'My website',
+  campaigns: 'Campaigns',
+  offers: 'Partner offers',
+  members: 'Members',
+  settings: 'Settings',
+  plan: 'Your demo plan',
+  features: 'Website features',
+}
+
+const CAMPAIGN_TAB_LABEL: Record<string, string> = {
+  overview: 'Overview',
+  story: 'Story & settings',
+  referrals: 'Sharing pages',
+  milestones: 'Milestones',
+  updates: 'Updates',
+  expenses: 'Expenses',
+  trust: 'Documents',
+  report: 'Final report',
+}
+
+/** Where you are inside the workspace. Hidden on top-level sections, which the tabs already show. */
+function Breadcrumbs({ root, pathname }: { root: string; pathname: string }) {
+  const store = useDemoStore()
+  const parts = pathname.slice(root.length + 1).split('/').filter(Boolean)
+  const trail: Array<{ label: string; to?: string }> = [{ label: 'Overview', to: `${root}/overview` }]
+  if (parts[0] === 'assistant') {
+    trail.push({ label: 'Campaigns', to: `${root}/campaigns` }, { label: 'New campaign · guided' })
+  } else if (parts[0] === 'campaigns' && parts[1]) {
+    trail.push({ label: 'Campaigns', to: `${root}/campaigns` })
+    if (parts[1] === 'new') trail.push({ label: 'New campaign' })
+    else {
+      const title = store.campaigns.find((item) => item.id === parts[1])?.title ?? 'Campaign'
+      if (parts[2]) trail.push({ label: title, to: `${root}/campaigns/${parts[1]}` }, { label: CAMPAIGN_TAB_LABEL[parts[2]] ?? parts[2] })
+      else trail.push({ label: title })
+    }
+  } else if (parts[0] === 'plan' || parts[0] === 'features') {
+    trail.push({ label: 'Settings', to: `${root}/settings` }, { label: SECTION_LABEL[parts[0]] })
+  } else {
+    return null
+  }
+  return (
+    <nav className="container ws-breadcrumbs" aria-label="Breadcrumb">
+      <ol>
+        {trail.map((item, index) => (
+          <li key={`${item.label}-${index}`}>
+            {item.to ? <Link to={item.to}>{item.label}</Link> : <span aria-current="page">{item.label}</span>}
+          </li>
+        ))}
+      </ol>
+    </nav>
   )
 }

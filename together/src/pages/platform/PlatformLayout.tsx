@@ -4,7 +4,7 @@ import { BrandMark } from '../../components/BrandMark.tsx'
 import { useDocumentTheme, useScrollOnNavigate } from '../../hooks/useDocumentTheme.ts'
 import { DEFAULT_BRANDING } from '../../lib/theme.ts'
 import { useStartWebsite } from '../../hooks/useStartWebsite.ts'
-import { DemoIdentitySwitcher } from '../../components/identity/DemoIdentitySwitcher.tsx'
+import { DemoToolsMenu } from '../../components/identity/DemoToolsMenu.tsx'
 
 /** Together, the product provider. Organization fundraising content lives on each organization's own site. */
 export function PlatformLayout() {
@@ -58,7 +58,7 @@ export function PlatformLayout() {
       </header>
       <div className="identity-bar">
         <div className="oh-header-inner">
-          <DemoIdentitySwitcher />
+          <DemoToolsMenu />
         </div>
       </div>
       <main id="main">
