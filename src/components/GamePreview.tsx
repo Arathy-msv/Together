@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { GAME_THUMBS, gameMeta, isFlowGame } from '../lib/games.ts'
 import { formToCampaign } from '../lib/wizard.ts'
 import type { CampaignForm, CampaignView, GameType } from '../lib/types.ts'
@@ -36,8 +36,11 @@ export function GamePreviewModal({
 }) {
   const view = previewViewFromForm(form, gameType)
   const meta = gameMeta(gameType)
+  const dialogRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
+    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    dialogRef.current?.querySelector<HTMLElement>('button')?.focus()
     function onKey(event: KeyboardEvent) {
       if (event.key === 'Escape') onClose()
     }
@@ -47,6 +50,7 @@ export function GamePreviewModal({
     return () => {
       window.removeEventListener('keydown', onKey)
       document.body.style.overflow = previous
+      previouslyFocused?.focus()
     }
   }, [onClose])
 
@@ -57,6 +61,7 @@ export function GamePreviewModal({
         role="dialog"
         aria-modal="true"
         aria-label={`Preview ${meta.name}`}
+        ref={dialogRef}
         onClick={(event) => event.stopPropagation()}
       >
         <div className="game-preview-head">

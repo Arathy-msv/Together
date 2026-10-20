@@ -162,11 +162,11 @@ function GivePanel({
   return (
     <div>
       {campaign.participation.direct && campaign.participation.game ? (
-        <div className="underline-tabs" role="tablist">
-          <button type="button" role="tab" aria-selected={tab === 'direct'} className={tab === 'direct' ? 'active' : ''} onClick={() => onTab('direct')}>
+        <div className="underline-tabs" role="group" aria-label="Ways to support">
+          <button type="button" aria-pressed={tab === 'direct'} className={tab === 'direct' ? 'active' : ''} onClick={() => onTab('direct')}>
             Donate
           </button>
-          <button type="button" role="tab" aria-selected={tab === 'game'} className={tab === 'game' ? 'active' : ''} onClick={() => onTab('game')}>
+          <button type="button" aria-pressed={tab === 'game'} className={tab === 'game' ? 'active' : ''} onClick={() => onTab('game')}>
             Play & give
           </button>
         </div>

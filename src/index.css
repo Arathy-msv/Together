@@ -38,6 +38,10 @@ body {
 }
 button, input, textarea, select { font: inherit; color: inherit; }
 button { cursor: pointer; }
+:focus-visible { outline: 3px solid #17493b; outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
 a { color: inherit; }
 h1, h2, h3, p { margin: 0; }
 img, svg { display: block; max-width: 100%; }
@@ -787,7 +791,8 @@ legend { font-weight: 800; }
   .scene { position: relative; min-height: 560px; }
   .play-puzzle .scene-puzzle { min-height: 0; padding: 12px 16px 16px; }
   .play-puzzle .play-side { position: static; transform: none; width: auto; margin: 0 12px 12px; }
-  .play-copy, .scene-memory .play-copy, .scene-puzzle .play-copy { position: relative; left: auto; top: auto; transform: none; padding: 16px; width: auto; text-align: left; }
+  .play-copy, .scene-garden .play-copy, .scene-memory .play-copy, .scene-puzzle .play-copy { position: relative; left: auto; top: auto; transform: none; max-width: none; padding: 16px; width: auto; text-align: left; }
+  .play-copy h1 { font-size: 1.8rem; }
   .play-puzzle .play-copy { text-align: center; padding: 4px 8px 0; }
   .memory-grid { position: relative; left: auto; top: auto; transform: none; width: auto; margin: 12px; }
   .flower-dock { position: relative; left: auto; bottom: auto; transform: none; margin: 12px; flex-wrap: wrap; justify-content: center; }

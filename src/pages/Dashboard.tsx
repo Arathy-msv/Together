@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { CampaignCover } from '../components/CampaignImage.tsx'
 import { Icon } from '../components/illustrations.tsx'
@@ -122,6 +122,10 @@ export function DashboardPage() {
                     setMenuId((current) => (current === view.campaign.id ? null : view.campaign.id))
                     setConfirmDeleteId(null)
                   }}
+                  onDismiss={() => {
+                    setMenuId(null)
+                    setConfirmDeleteId(null)
+                  }}
                   onClose={() => {
                     closeCampaign(view.campaign.id)
                     setMenuId(null)
@@ -213,6 +217,7 @@ function Row({
   confirmDelete,
   onCopy,
   onMenu,
+  onDismiss,
   onClose,
   onAskDelete,
   onCancelDelete,
@@ -224,6 +229,7 @@ function Row({
   confirmDelete: boolean
   onCopy: () => void
   onMenu: () => void
+  onDismiss: () => void
   onClose: () => void
   onAskDelete: () => void
   onCancelDelete: () => void
@@ -231,6 +237,24 @@ function Row({
 }) {
   const { campaign, raised, percent, supporters, status } = view
   const canClose = !campaign.isDraft && status !== 'closed' && status !== 'completed'
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!menuOpen) return
+    function onKey(event: KeyboardEvent) {
+      if (event.key === 'Escape') onDismiss()
+    }
+    function onPointer(event: PointerEvent) {
+      if (!menuRef.current?.contains(event.target as Node)) onDismiss()
+    }
+    document.addEventListener('keydown', onKey)
+    document.addEventListener('pointerdown', onPointer)
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      document.removeEventListener('pointerdown', onPointer)
+    }
+  }, [menuOpen, onDismiss])
+
   return (
     <tr>
       <td data-label="Campaign">
@@ -280,7 +304,7 @@ function Row({
               {copied ? 'Copied' : 'Copy demo link'}
             </button>
           )}
-          <div className="menu-wrap">
+          <div className="menu-wrap" ref={menuRef}>
             <button type="button" className="btn btn-outline btn-sm icon-only" aria-label="More actions" aria-expanded={menuOpen} onClick={onMenu}>
               ···
             </button>

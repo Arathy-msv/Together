@@ -47,12 +47,13 @@ export function ExplorePage() {
             aria-label="Search campaigns"
           />
         </label>
-        <div className="filters" role="tablist" aria-label="Filter by status">
+        <div className="filters" role="group" aria-label="Filter by status">
           {FILTERS.map((item) => (
             <button
               key={item.id}
               type="button"
               className={filter === item.id ? 'chip selected' : 'chip'}
+              aria-pressed={filter === item.id}
               onClick={() => setFilter(item.id)}
             >
               {item.label}
