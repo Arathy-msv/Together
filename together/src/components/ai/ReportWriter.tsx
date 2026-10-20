@@ -26,8 +26,8 @@ export function ReportWriter({
   onApply: (draft: ImpactReportDraft, plan: string) => void
   onClose: () => void
 }) {
-  const { base } = useOrg()
-  const root = `${base}/dashboard/${campaign.id}`
+  const { workspace } = useOrg()
+  const root = `${workspace}/campaigns/${campaign.id}`
   const ids = { outcomes: useId(), plan: useId(), text: useId() }
   // Earlier generated drafts contain section headings; only the organizer's own words are reused.
   const [outcomes, setOutcomes] = useState(initialOutcomes.includes('Fundraising summary\n') ? '' : initialOutcomes)

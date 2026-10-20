@@ -11,6 +11,9 @@ import type {
   OrgType,
   OrgVisibility,
   Organization,
+  OrganizationWebsite,
+  PlanId,
+  WebsiteConfig,
 } from './types.ts'
 
 export const DEFAULT_ORG_ID = 'org_together'
@@ -21,6 +24,7 @@ export const ORG_TYPES: { id: OrgType; label: string }[] = [
   { id: 'school', label: 'School' },
   { id: 'club', label: 'Club' },
   { id: 'nonprofit', label: 'Nonprofit' },
+  { id: 'other', label: 'Other' },
   { id: 'platform', label: 'Community platform' },
 ]
 
@@ -57,6 +61,7 @@ export function defaultContent(name: string): OrgContent {
     heroImage: '/covers/hero-library.jpg',
     ctaLabel: 'Explore campaigns',
     contactEmail: '',
+    location: '',
     footerText: 'Browser-only demo. No real money is collected.',
     website: '',
     socialLinks: [],
@@ -122,6 +127,7 @@ function normalizeContent(value: unknown, name: string): OrgContent {
     heroImage: isImageSource(raw.heroImage) ? raw.heroImage : fallback.heroImage,
     ctaLabel: text(raw.ctaLabel, fallback.ctaLabel, 40),
     contactEmail: text(raw.contactEmail, '', 120),
+    location: text(raw.location, '', 120),
     footerText: text(raw.footerText, fallback.footerText, 240),
     website: text(raw.website, '', 300),
     socialLinks: normalizeLinks(raw.socialLinks),
@@ -180,6 +186,7 @@ export function normalizeOrganization(value: unknown): Organization | null {
   if (typeof raw.id !== 'string' || !raw.id.trim()) return null
   const name = typeof raw.name === 'string' && raw.name.trim() ? raw.name.trim().slice(0, 80) : 'Untitled organization'
   const slug = typeof raw.slug === 'string' && SLUG_PATTERN.test(raw.slug) ? raw.slug : slugify(name) || raw.id.toLowerCase()
+  const updatedAt = typeof raw.updatedAt === 'string' ? raw.updatedAt : new Date(0).toISOString()
   return {
     id: raw.id,
     slug,
@@ -193,7 +200,52 @@ export function normalizeOrganization(value: unknown): Organization | null {
     content: normalizeContent(raw.content, name),
     defaults: normalizeDefaults(raw.defaults),
     visibility: normalizeVisibility(raw.visibility),
-    updatedAt: typeof raw.updatedAt === 'string' ? raw.updatedAt : new Date(0).toISOString(),
+    plan: normalizePlan(raw.plan, updatedAt),
+    website: normalizeWebsite(raw.website, name, updatedAt),
+    onboarding:
+      raw.onboarding && typeof raw.onboarding === 'object' && Number.isInteger(raw.onboarding.step)
+        ? { step: Math.min(6, Math.max(1, raw.onboarding.step)), updatedAt: typeof raw.onboarding.updatedAt === 'string' ? raw.onboarding.updatedAt : updatedAt }
+        : undefined,
+    createdAt: typeof raw.createdAt === 'string' ? raw.createdAt : updatedAt,
+    updatedAt,
+  }
+}
+
+export const PLAN_IDS: PlanId[] = ['starter', 'community', 'organization']
+
+function normalizePlan(value: unknown, fallbackDate: string): Organization['plan'] {
+  const raw = (value && typeof value === 'object' ? value : {}) as Partial<Organization['plan']>
+  return { id: PLAN_IDS.includes(raw.id as PlanId) ? (raw.id as PlanId) : 'community', selectedAt: typeof raw.selectedAt === 'string' ? raw.selectedAt : fallbackDate }
+}
+
+/** Repairs a website draft. Invalid parts fall back to defaults instead of discarding the draft. */
+export function normalizeWebsiteConfig(value: unknown, fallbackName: string): WebsiteConfig | undefined {
+  if (!value || typeof value !== 'object') return undefined
+  const raw = value as Partial<WebsiteConfig>
+  const name = typeof raw.name === 'string' ? raw.name.slice(0, 80) : fallbackName
+  const visibility = normalizeVisibility(raw.visibility)
+  return {
+    name,
+    tagline: text(raw.tagline, '', 120),
+    about: text(raw.about, '', 600),
+    logo: isImageSource(raw.logo) ? raw.logo : '',
+    favicon: isImageSource(raw.favicon) ? raw.favicon : '',
+    branding: normalizeBranding(raw.branding),
+    content: normalizeContent(raw.content, name || fallbackName),
+    visibility: { impactStories: visibility.impactStories, poweredBy: visibility.poweredBy },
+  }
+}
+
+function normalizeWebsite(value: unknown, name: string, fallbackDate: string): OrganizationWebsite {
+  // Organizations saved before website publishing existed were already public.
+  if (!value || typeof value !== 'object') return { status: 'published', publishedAt: fallbackDate, updatedAt: fallbackDate }
+  const raw = value as Partial<OrganizationWebsite>
+  const status = raw.status === 'setup' || raw.status === 'draft' ? raw.status : 'published'
+  return {
+    status,
+    draft: normalizeWebsiteConfig(raw.draft, name),
+    publishedAt: status === 'published' ? (typeof raw.publishedAt === 'string' ? raw.publishedAt : fallbackDate) : undefined,
+    updatedAt: typeof raw.updatedAt === 'string' ? raw.updatedAt : fallbackDate,
   }
 }
 
@@ -213,18 +265,31 @@ export function isSafeUrl(value: string): boolean {
 
 export type OrgErrors = Partial<Record<string, string>>
 
+/** Platform route names that can never be organization addresses. */
+export const RESERVED_SLUGS = [
+  'o', 'workspace', 'start', 'plans', 'features', 'examples', 'how-it-works', 'about', 'pricing', 'admin', 'api', 'app', 'login', 'signup', 'help',
+  'support', 'settings', 'new', 'create', 'dashboard', 'explore', 'campaigns', 'static', 'assets', 'www',
+]
+
+/** Website address rules: format, reserved platform names, and uniqueness ignoring case. */
+export function validateSlug(slug: string, orgId: string, all: Organization[]): string | undefined {
+  const value = slug.trim()
+  if (!value) return 'Choose a website address, like “greenwood-school”.'
+  if (all.some((other) => other.id !== orgId && other.slug.toLowerCase() === value.toLowerCase())) return 'Another organization already uses this address.'
+  if (value.length < 2 || value.length > 40) return 'Use between 2 and 40 characters.'
+  if (!SLUG_PATTERN.test(value)) return 'Use lowercase letters, numbers and single hyphens only (no spaces).'
+  if (RESERVED_SLUGS.includes(value)) return 'This address is reserved by the Together platform. Try another.'
+  return undefined
+}
+
 export function validateOrganization(org: Organization, all: Organization[]): OrgErrors {
   const errors: OrgErrors = {}
   const name = org.name.trim()
   if (!name) errors.name = 'Add the organization’s name.'
   else if (name.length > 80) errors.name = 'Keep the name to 80 characters or fewer.'
 
-  if (!org.slug) errors.slug = 'Add a URL slug, like “maple-grove”.'
-  else if (org.slug.length < 2 || org.slug.length > 40) errors.slug = 'Use between 2 and 40 characters.'
-  else if (!SLUG_PATTERN.test(org.slug)) errors.slug = 'Use lowercase letters, numbers and single hyphens only.'
-  else if (all.some((other) => other.id !== org.id && other.slug === org.slug)) {
-    errors.slug = 'Another organization already uses this slug.'
-  }
+  const slugError = validateSlug(org.slug, org.id, all)
+  if (slugError) errors.slug = slugError
 
   if (org.tagline.length > 120) errors.tagline = 'Keep the tagline to 120 characters or fewer.'
 

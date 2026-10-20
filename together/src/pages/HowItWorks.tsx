@@ -52,8 +52,8 @@ export function HowItWorksPage() {
             Create a campaign, invite your community, and give people a meaningful way to take part.
           </p>
           <div className="how2-actions">
-            <Link to={`${base}/create?new=1`} className="btn btn-primary btn-lg">
-              Create a campaign <Icon name="arrow" size={16} />
+            <Link to={`${base}/campaigns`} className="btn btn-primary btn-lg">
+              Support a campaign <Icon name="arrow" size={16} />
             </Link>
             <Link to={`${base}/campaigns`} className="btn btn-outline btn-lg">
               Explore campaigns
@@ -274,8 +274,8 @@ export function HowItWorksPage() {
             <p>Start with a cause. Add a little joy.</p>
           </div>
           <div className="cta-actions">
-            <Link to={`${base}/create?new=1`} className="btn btn-light btn-lg">
-              Create a campaign <Icon name="arrow" size={16} />
+            <Link to={`${base}/campaigns`} className="btn btn-light btn-lg">
+              Support a campaign <Icon name="arrow" size={16} />
             </Link>
             <Link to={`${base}/campaigns`} className="cta-link">
               Explore campaigns

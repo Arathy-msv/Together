@@ -41,7 +41,8 @@ const byId = (id: string) => seeds().find((org) => org.id === id)!
 
 test('seeds a default organization plus a company, school and nonprofit with different branding', () => {
   const orgs = seeds()
-  assert.deepEqual(orgs.map((org) => org.type), ['platform', 'company', 'school', 'nonprofit'])
+  assert.deepEqual(orgs.map((org) => org.type), ['platform', 'company', 'school', 'nonprofit', 'club'])
+  assert.equal(orgs.at(-1)?.website.status, 'setup')
   assert.equal(new Set(orgs.map((org) => org.branding.primary)).size, orgs.length)
   assert.equal(new Set(orgs.map((org) => org.slug)).size, orgs.length)
 })
@@ -87,9 +88,9 @@ test('loading organizations keeps valid records, skips junk and restores missing
   memory.setItem(ORG_STORAGE_KEY, JSON.stringify({ version: 1, organizations: [lumen, 42, { nope: true }] }))
   const orgs = loadOrganizations()
   assert.equal(orgs.find((org) => org.id === ORG_LUMEN)?.name, 'Lumen Renamed')
-  assert.equal(orgs.length, 4)
+  assert.equal(orgs.length, 5)
   memory.setItem(ORG_STORAGE_KEY, '{not json')
-  assert.equal(loadOrganizations().length, 4)
+  assert.equal(loadOrganizations().length, 5)
 })
 
 test('saved organization settings persist', () => {

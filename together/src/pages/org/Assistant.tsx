@@ -84,7 +84,7 @@ interface ChatStart {
 }
 
 export function AssistantPage() {
-  const { org, base } = useOrg()
+  const { org, workspace } = useOrg()
   const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
   const allowedGames = selectableGames(org)
@@ -115,7 +115,7 @@ export function AssistantPage() {
             return { done: items.filter((item) => item.done).length, total: items.length }
           }}
           onContinue={(draft) => {
-            if (draft.kind === 'form') navigate(`${base}/create?draftId=${draft.id}`)
+            if (draft.kind === 'form') navigate(`${workspace}/campaigns/new?draftId=${draft.id}`)
             else setStart({ draftId: draft.id, form: draft.form, stage: asStage(draft.step), resumedAt: draft.updatedAt })
           }}
           onStartAnother={() => setStart({ draftId: newDraftId(), form: blankForm(org), stage: 'purpose' })}
@@ -138,7 +138,7 @@ function asStage(step: string): Stage {
 
 
 function AssistantOff({ org }: { org: Organization }) {
-  const { base } = useOrg()
+  const { workspace } = useOrg()
   return (
     <div className="container narrow page-pad">
       <div className="panel empty">
@@ -147,10 +147,10 @@ function AssistantOff({ org }: { org: Organization }) {
           {org.name} has hidden the campaign creation assistant. You can still create a campaign with the full form.
         </p>
         <div className="inline-actions center">
-          <Link to={`${base}/create?new=1`} className="btn btn-primary">
+          <Link to={`${workspace}/campaigns/new?new=1`} className="btn btn-primary">
             Open the campaign form
           </Link>
-          <Link to={`${base}/settings`} className="btn btn-outline">
+          <Link to={`${workspace}/website`} className="btn btn-outline">
             Brand settings
           </Link>
         </div>
@@ -160,7 +160,7 @@ function AssistantOff({ org }: { org: Organization }) {
 }
 
 function AssistantChat({ org, start }: { org: Organization; start: ChatStart }) {
-  const { base } = useOrg()
+  const { workspace } = useOrg()
   const navigate = useNavigate()
   const allowedGames = selectableGames(org)
   const [form, setForm] = useState<CampaignForm>(start.form)
@@ -248,7 +248,7 @@ function AssistantChat({ org, start }: { org: Organization; start: ChatStart }) 
   function discard() {
     if (!window.confirm('Discard this draft? Your answers on this device will be deleted.')) return
     deleteDraft(start.draftId)
-    navigate(`${base}/dashboard`)
+    navigate(`${workspace}/campaigns`)
   }
 
   function saveAndExit() {
@@ -256,7 +256,7 @@ function AssistantChat({ org, start }: { org: Organization; start: ChatStart }) 
       setNotice({ tone: 'error', text: 'This browser could not save your draft, so it was kept open. Free up storage and try again.' })
       return
     }
-    navigate(`${base}/dashboard`)
+    navigate(`${workspace}/campaigns`)
   }
 
   function skip(step: AssistantStepId) {
@@ -286,7 +286,7 @@ function AssistantChat({ org, start }: { org: Organization; start: ChatStart }) 
       setNotice({ tone: 'error', text: 'This browser could not save the draft, so it was not moved to the form.' })
       return
     }
-    navigate(`${base}/create?draftId=${start.draftId}`)
+    navigate(`${workspace}/campaigns/new?draftId=${start.draftId}`)
   }
 
   function create() {
@@ -317,7 +317,7 @@ function AssistantChat({ org, start }: { org: Organization; start: ChatStart }) 
       return
     }
     deleteDraft(start.draftId)
-    navigate(`${base}/dashboard?created=${campaign.id}`)
+    navigate(`${workspace}/campaigns?created=${campaign.id}`)
   }
 
   const steps = activeSteps(form)
@@ -353,7 +353,7 @@ function AssistantChat({ org, start }: { org: Organization; start: ChatStart }) 
       <div className="draft-bar">
         <SaveIndicator status={autosave.status} savedAt={autosave.savedAt} error={autosave.error} />
         <span className="inline-actions">
-          <Link to={`${base}/assistant?new=1`} reloadDocument className="link-button">
+          <Link to={`${workspace}/assistant?new=1`} reloadDocument className="link-button">
             Start another draft
           </Link>
           <button type="button" className="link-button danger" onClick={discard}>
@@ -413,7 +413,7 @@ function AssistantChat({ org, start }: { org: Organization; start: ChatStart }) 
           <ol className="chat-log" aria-live="polite">
             <li className="chat-pair">
               <BotBubble org={org}>
-                I’ve prefilled what I know about {org.name}: organiser name, {org.defaults.currency} as the default currency, suggested amounts and the games
+                Let’s create a campaign for {org.name}. I’ve prefilled what I know: organiser name, {org.defaults.currency} as the default currency, suggested amounts and the games
                 turned on for you. You can change any of it.
               </BotBubble>
             </li>
@@ -439,7 +439,7 @@ function AssistantChat({ org, start }: { org: Organization; start: ChatStart }) 
                 <ReadinessPanel
                   input={readinessFromForm(form, org, allowedGames)}
                   onJump={(field) => {
-                    if (field === 'contact' || field === 'documents') navigate(`${base}/settings`)
+                    if (field === 'contact' || field === 'documents') navigate(`${workspace}/website`)
                     else if (field === 'organizer') document.getElementById('a-organizer')?.focus()
                     else edit(READINESS_STEP[field] ?? 'purpose')
                   }}

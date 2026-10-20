@@ -4,14 +4,16 @@ import type { Organization } from '../../lib/types.ts'
 
 export interface OrgContextValue {
   org: Organization
-  /** Route prefix for this organization, e.g. `/o/maple-grove`. */
+  /** Public website prefix, e.g. `/o/maple-grove`. */
   base: string
+  /** Management workspace prefix, e.g. `/workspace/org_maple`. */
+  workspace: string
 }
 
 export const OrgContext = createContext<OrgContextValue | null>(null)
 
 export function orgContextValue(org: Organization): OrgContextValue {
-  return { org, base: orgBase(org.slug) }
+  return { org, base: orgBase(org.slug), workspace: `/workspace/${org.id}` }
 }
 
 /** The organization for the current route. Only call inside organization routes. */

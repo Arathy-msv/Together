@@ -69,7 +69,7 @@ interface EditorStart {
 export function CreateCampaignPage() {
   const [params, setParams] = useSearchParams()
   const navigate = useNavigate()
-  const { org, base } = useOrg()
+  const { org, workspace } = useOrg()
   const allowedGames = selectableGames(org)
   const [start, setStart] = useState<EditorStart | null>(() => initialStart(params, org))
   const [drafts, setDrafts] = useState(() => listDrafts(org.id))
@@ -93,7 +93,7 @@ export function CreateCampaignPage() {
             return { done: items.filter((item) => item.done).length, total: items.length }
           }}
           onContinue={(draft) => {
-            if (draft.kind === 'assistant') navigate(`${base}/assistant?draftId=${draft.id}`)
+            if (draft.kind === 'assistant') navigate(`${workspace}/assistant?draftId=${draft.id}`)
             else setStart({ draftId: draft.id, form: draft.form, step: Number(draft.step) || 1 })
           }}
           onStartAnother={() => setStart({ draftId: newDraftId(), form: blankForm(org), step: 1 })}
@@ -133,7 +133,7 @@ function initialStart(params: URLSearchParams, org: Organization): EditorStart |
 
 function CreateCampaignEditor({ start }: { start: EditorStart }) {
   const navigate = useNavigate()
-  const { org, base } = useOrg()
+  const { org, workspace } = useOrg()
   const allowedGames = selectableGames(org)
   const [form, setForm] = useState<CampaignForm>(start.form)
   const [step, setStep] = useState(start.step)
@@ -153,7 +153,7 @@ function CreateCampaignEditor({ start }: { start: EditorStart }) {
   /** Opens the step that holds a readiness result's field and focuses it. */
   function jumpTo(field: ReadinessField) {
     if (field === 'contact' || field === 'documents') {
-      navigate(`${base}/settings`)
+      navigate(`${workspace}/website`)
       return
     }
     const target = FIELD_TARGETS[field]
@@ -171,7 +171,7 @@ function CreateCampaignEditor({ start }: { start: EditorStart }) {
   function discard() {
     if (!window.confirm('Discard this draft? Your answers on this device will be deleted.')) return
     deleteDraft(start.draftId)
-    navigate(`${base}/dashboard`)
+    navigate(`${workspace}/campaigns`)
   }
 
   function continueNext() {
@@ -200,7 +200,7 @@ function CreateCampaignEditor({ start }: { start: EditorStart }) {
       return
     }
     deleteDraft(start.draftId)
-    navigate(`${base}/dashboard?created=${campaign.id}`)
+    navigate(`${workspace}/campaigns?created=${campaign.id}`)
   }
 
   const copy = STEP_COPY[step]

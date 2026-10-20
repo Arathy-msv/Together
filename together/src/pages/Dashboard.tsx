@@ -27,7 +27,7 @@ export function DashboardPage() {
   const views = [...useCampaignViews()].sort(
     (a, b) => Date.parse(b.campaign.createdAt) - Date.parse(a.campaign.createdAt),
   )
-  const { org, base } = useOrg()
+  const { org, base, workspace } = useOrg()
   const [params] = useSearchParams()
   const createdId = params.get('created')
   const [copiedId, setCopiedId] = useState<string | null>(null)
@@ -77,11 +77,11 @@ export function DashboardPage() {
         </div>
         <div className="page-head-actions">
           {org.visibility.assistant ? (
-            <Link to={`${base}/assistant`} className="btn btn-outline">
+            <Link to={`${workspace}/assistant`} className="btn btn-outline">
               Create with assistant
             </Link>
           ) : null}
-          <Link to={`${base}/create?new=1`} className="btn btn-primary">
+          <Link to={`${workspace}/campaigns/new?new=1`} className="btn btn-primary">
             Create campaign
           </Link>
         </div>
@@ -116,7 +116,7 @@ export function DashboardPage() {
                 </div>
                 <div className="inline-actions">
                   <Link
-                    to={draft.kind === 'assistant' ? `${base}/assistant?draftId=${draft.id}` : `${base}/create?draftId=${draft.id}`}
+                    to={draft.kind === 'assistant' ? `${workspace}/assistant?draftId=${draft.id}` : `${workspace}/campaigns/new?draftId=${draft.id}`}
                     className="btn btn-primary btn-sm"
                   >
                     Continue draft
@@ -149,7 +149,7 @@ export function DashboardPage() {
         <div className="panel empty">
           <h2>No campaigns yet</h2>
           <p className="muted">Create one, or reset demo data to restore the sample campaigns.</p>
-          <Link to={`${base}/create?new=1`} className="btn btn-primary">
+          <Link to={`${workspace}/campaigns/new?new=1`} className="btn btn-primary">
             Create campaign
           </Link>
         </div>
@@ -172,6 +172,7 @@ export function DashboardPage() {
                   key={view.campaign.id}
                   view={view}
                   base={base}
+                  workspace={workspace}
                   copied={copiedId === view.campaign.id}
                   menuOpen={menuId === view.campaign.id}
                   confirmDelete={confirmDeleteId === view.campaign.id}
@@ -273,6 +274,7 @@ function StatCard({ icon, tone, value, label }: { icon: string; tone: string; va
 function Row({
   view,
   base,
+  workspace,
   copied,
   menuOpen,
   confirmDelete,
@@ -286,6 +288,7 @@ function Row({
 }: {
   view: CampaignView
   base: string
+  workspace: string
   copied: boolean
   menuOpen: boolean
   confirmDelete: boolean
@@ -352,12 +355,12 @@ function Row({
       <td data-label="Actions">
         <div className="row-buttons">
           {campaign.isDraft ? (
-            <Link to={`${base}/create?draft=${campaign.id}`} className="btn btn-outline btn-sm">
+            <Link to={`${workspace}/campaigns/new?draft=${campaign.id}`} className="btn btn-outline btn-sm">
               Edit
             </Link>
           ) : (
             <>
-              <Link to={`${base}/dashboard/${campaign.id}`} className="btn btn-primary btn-sm">
+              <Link to={`${workspace}/campaigns/${campaign.id}`} className="btn btn-primary btn-sm">
                 Manage
               </Link>
               <Link to={`${base}/campaigns/${campaign.id}?view=details`} className="btn btn-outline btn-sm">

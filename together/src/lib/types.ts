@@ -19,7 +19,7 @@ export interface Participation {
 }
 
 export type CurrencyCode = 'INR' | 'USD' | 'GBP' | 'EUR'
-export type OrgType = 'platform' | 'company' | 'school' | 'club' | 'nonprofit'
+export type OrgType = 'platform' | 'company' | 'school' | 'club' | 'nonprofit' | 'other'
 export type FontChoice = 'figtree' | 'nunito' | 'fraunces' | 'georgia' | 'system'
 export type ButtonStyle = 'rounded' | 'soft'
 
@@ -45,6 +45,8 @@ export interface OrgContent {
   heroImage: string
   ctaLabel: string
   contactEmail: string
+  /** Optional public location, e.g. "Pune, India". */
+  location: string
   footerText: string
   website: string
   socialLinks: OrgLink[]
@@ -83,6 +85,38 @@ export interface Organization {
   content: OrgContent
   defaults: OrgDefaults
   visibility: OrgVisibility
+  /** Selected demo plan. Nothing is billed or enforced in this prototype. */
+  plan: { id: PlanId; selectedAt: string }
+  website: OrganizationWebsite
+  onboarding?: { step: number; updatedAt: string }
+  createdAt: string
+  updatedAt: string
+}
+
+export type PlanId = 'starter' | 'community' | 'organization'
+
+/** setup: onboarding unfinished · draft: set up but never published · published: live in this browser. */
+export type WebsiteStatus = 'setup' | 'draft' | 'published'
+
+/**
+ * Website presentation settings. The organization's top-level fields hold the *published* values;
+ * unpublished edits live in `website.draft` until the organizer publishes or discards them.
+ */
+export interface WebsiteConfig {
+  name: string
+  tagline: string
+  about: string
+  logo: string
+  favicon: string
+  branding: OrgBranding
+  content: OrgContent
+  visibility: Pick<OrgVisibility, 'impactStories' | 'poweredBy'>
+}
+
+export interface OrganizationWebsite {
+  status: WebsiteStatus
+  draft?: WebsiteConfig
+  publishedAt?: string
   updatedAt: string
 }
 

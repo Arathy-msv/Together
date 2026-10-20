@@ -68,11 +68,14 @@ export function OrgHeader({ org, base }: { org: Organization; base: string }) {
           {open ? 'Close' : 'Menu'}
         </button>
         <nav id="org-nav" className={open ? 'oh-nav open' : 'oh-nav'} aria-label="Primary">
+          <NavLink to={base} end>
+            Home
+          </NavLink>
           <NavLink to={`${base}/campaigns`}>Campaigns</NavLink>
+          <NavLink to={`${base}/about`}>About</NavLink>
           <NavLink to={`${base}/how-it-works`}>How it works</NavLink>
-          <NavLink to={`${base}/dashboard`}>Organizer</NavLink>
-          <NavLink to={`${base}/create?new=1`} className="btn btn-primary btn-sm">
-            Create campaign
+          <NavLink to={`${base}/campaigns`} className="btn btn-primary btn-sm" end>
+            Support a campaign
           </NavLink>
         </nav>
       </div>
@@ -97,15 +100,15 @@ export function OrgHeaderPreview({ org }: { org: Organization }) {
         </span>
         <nav className="oh-nav" aria-label="Preview navigation">
           <span className="oh-nav-item">Campaigns</span>
-          <span className="oh-nav-item">How it works</span>
-          <span className="btn btn-primary btn-sm">Create campaign</span>
+          <span className="oh-nav-item">About</span>
+          <span className="btn btn-primary btn-sm">Support a campaign</span>
         </nav>
       </div>
     </header>
   )
 }
 
-export function OrgFooter({ org, base, preview = false }: { org: Organization; base: string; preview?: boolean }) {
+export function OrgFooter({ org, base, workspace, preview = false }: { org: Organization; base: string; workspace?: string; preview?: boolean }) {
   const { content } = org
   const links = [
     ...(content.website ? [{ label: 'Website', url: content.website }] : []),
@@ -119,6 +122,7 @@ export function OrgFooter({ org, base, preview = false }: { org: Organization; b
           <div>
             <strong>{org.name || 'Organization name'}</strong>
             <p>{content.footerText || 'Browser-only demo. No real money is collected.'}</p>
+            {content.location ? <p>{content.location}</p> : null}
             {content.contactEmail ? (
               <p>
                 Contact{' '}
@@ -137,8 +141,8 @@ export function OrgFooter({ org, base, preview = false }: { org: Organization; b
             ) : (
               <>
                 <Link to={`${base}/campaigns`}>Campaigns</Link>
+                <Link to={`${base}/about`}>About</Link>
                 <Link to={`${base}/how-it-works`}>How it works</Link>
-                <Link to={`${base}/dashboard`}>Organizer</Link>
               </>
             )}
             {links.map((link) =>
@@ -152,7 +156,20 @@ export function OrgFooter({ org, base, preview = false }: { org: Organization; b
               ),
             )}
           </nav>
-          {org.visibility.poweredBy ? <PoweredBy /> : null}
+          {org.visibility.poweredBy ? (
+            preview ? (
+              <PoweredBy />
+            ) : (
+              <Link to="/" className="powered-link">
+                <PoweredBy />
+              </Link>
+            )
+          ) : null}
+          {workspace && !preview ? (
+            <Link to={`${workspace}/overview`} className="manage-link">
+              Manage this website <span className="demo-badge small-badge">Demo</span>
+            </Link>
+          ) : null}
         </div>
       </div>
     </footer>

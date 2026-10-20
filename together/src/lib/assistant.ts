@@ -173,7 +173,7 @@ export interface PurposeIdea {
   coverImageId: string
 }
 
-const IDEAS: Record<OrgType, PurposeIdea[]> = {
+const IDEAS: Record<Exclude<OrgType, 'other'>, PurposeIdea[]> = {
   company: [
     { label: 'Volunteer day', title: 'Volunteer Day: River Clean-up', coverImageId: 'garden', description: 'Colleagues are spending a day cleaning the river path. Funds cover gloves, bags, saplings and transport for every volunteer.' },
     { label: 'Winter coats', title: 'Winter Coat Drive', coverImageId: 'jacket', description: 'Warm coats for families at our partner shelters. Every confirmed colleague gift is matched by the company.' },
@@ -202,7 +202,7 @@ const IDEAS: Record<OrgType, PurposeIdea[]> = {
 }
 
 export function purposeIdeas(type: OrgType): PurposeIdea[] {
-  return IDEAS[type] ?? IDEAS.platform
+  return IDEAS[type as keyof typeof IDEAS] ?? IDEAS.platform
 }
 
 /** Goal suggestions scaled from the organization's suggested amounts. */

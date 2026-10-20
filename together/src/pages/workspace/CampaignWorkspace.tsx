@@ -56,7 +56,7 @@ export interface WorkspaceProps {
 /** Organizer workspace for one campaign, inside the existing organizer area. */
 export function CampaignWorkspacePage() {
   const { campaignId = '', tab = 'overview' } = useParams()
-  const { base } = useOrg()
+  const { base, workspace } = useOrg()
   const view = useCampaignView(campaignId)
   const store = useDemoStore()
 
@@ -67,12 +67,12 @@ export function CampaignWorkspacePage() {
   if (!view) return <OrgNotFound kind="campaign" />
   const campaign = view.campaign
   const props: WorkspaceProps = { campaign, view, store }
-  const root = `${base}/dashboard/${campaign.id}`
+  const root = `${workspace}/campaigns/${campaign.id}`
 
   return (
     <div className="container page-pad workspace">
       <nav className="crumbs" aria-label="Breadcrumb">
-        <Link to={`${base}/dashboard`}>Campaigns</Link>
+        <Link to={`${workspace}/campaigns`}>Campaigns</Link>
         <span>/</span>
         <span>{campaign.title}</span>
       </nav>
@@ -111,7 +111,7 @@ export function CampaignWorkspacePage() {
 }
 
 /** Where a readiness result points inside the workspace. */
-function workspaceTarget(field: ReadinessField, root: string, base: string): string {
+function workspaceTarget(field: ReadinessField, root: string, workspace: string): string {
   switch (field) {
     case 'milestones':
       return `${root}/milestones`
@@ -120,21 +120,21 @@ function workspaceTarget(field: ReadinessField, root: string, base: string): str
     case 'updates':
       return `${root}/updates`
     case 'contact':
-      return `${base}/settings#set-footer`
+      return `${workspace}/website#set-footer`
     default:
       return `${root}/story`
   }
 }
 
 function Overview({ campaign, view, store }: WorkspaceProps) {
-  const { base, org } = useOrg()
+  const { workspace, org } = useOrg()
   const navigate = useNavigate()
   const summary = fundSummary(campaign, store)
   const delivery = deliverySummary(campaignMilestones(store, campaign.id))
   const prompts = workspacePrompts(campaign, store)
   const referrals = store.referrals.filter((item) => item.campaignId === campaign.id)
   const credited = store.contributions.filter((item) => item.campaignId === campaign.id && item.referralId).reduce((sum, item) => sum + item.amount, 0)
-  const root = `${base}/dashboard/${campaign.id}`
+  const root = `${workspace}/campaigns/${campaign.id}`
   const fundraisingOpen = !campaign.manualClosedAt && (view.status === 'active' || view.status === 'scheduled')
   return (
     <div className="workspace-grid">
@@ -201,7 +201,7 @@ function Overview({ campaign, view, store }: WorkspaceProps) {
       <div className="wide">
         <ReadinessPanel
           input={readinessFromCampaign(campaign, store, org)}
-          onJump={(field) => navigate(workspaceTarget(field, root, base))}
+          onJump={(field) => navigate(workspaceTarget(field, root, workspace))}
           applicable={['whatItSupports', 'whatHappensNext']}
           onApply={(field, text) => {
             const story = campaign.story ?? { whoItHelps: '', whatTheyNeed: '', whatItSupports: '', whatHappensNext: '', beneficiary: '', imageStory: [] }
@@ -315,7 +315,7 @@ function toDraft(milestone?: Milestone): MilestoneDraft {
 }
 
 export function MilestonesEditor({ campaign, store }: WorkspaceProps) {
-  const { base } = useOrg()
+  const { workspace } = useOrg()
   const milestones = campaignMilestones(store, campaign.id)
   const [draft, setDraft] = useState<MilestoneDraft | null>(null)
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -385,7 +385,7 @@ export function MilestonesEditor({ campaign, store }: WorkspaceProps) {
                 {isMilestoneDelayed(milestone) ? <span className="prompt-inline">This milestone is past its expected date.</span> : null}
               </div>
               <div className="inline-actions">
-                <Link to={`${base}/dashboard/${campaign.id}/updates?assist=1&milestone=${milestone.id}`} className="ai-button">
+                <Link to={`${workspace}/campaigns/${campaign.id}/updates?assist=1&milestone=${milestone.id}`} className="ai-button">
                   <SparkIcon size={15} /> Help write an update
                 </Link>
                 <button type="button" className="btn btn-outline btn-sm" onClick={() => setDraft(toDraft(milestone))}>

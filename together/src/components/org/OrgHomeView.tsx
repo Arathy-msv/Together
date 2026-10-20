@@ -33,7 +33,6 @@ export function OrgHomeView({
   const featured = featuredCampaigns(views)
   const showImpact = org.visibility.impactStories && org.content.impactStory.trim().length > 0
   const showAbout = org.about.trim().length > 0
-  const createTo = org.visibility.assistant ? `${base}/assistant` : `${base}/create?new=1`
 
   const steps = [
     { icon: 'search', title: 'Choose a campaign', text: `Find a cause that matters to ${copy.supporters} at ${org.name || 'our organization'}.` },
@@ -56,8 +55,8 @@ export function OrgHomeView({
             <MaybeLink to={`${base}/campaigns`} className="btn btn-primary btn-lg" preview={preview}>
               {copy.cta}
             </MaybeLink>
-            <MaybeLink to={createTo} className="btn btn-outline btn-lg" preview={preview}>
-              Create a campaign
+            <MaybeLink to={`${base}/about`} className="btn btn-outline btn-lg" preview={preview}>
+              About {org.name || 'us'}
             </MaybeLink>
           </div>
         </div>
@@ -79,9 +78,6 @@ export function OrgHomeView({
           <div className="oh-empty">
             <h3>No campaigns yet</h3>
             <p>When {org.name || 'this organization'} publishes a campaign, it will appear here.</p>
-            <MaybeLink to={createTo} className="btn btn-primary" preview={preview}>
-              Start the first campaign
-            </MaybeLink>
           </div>
         ) : (
           <div className="oh-cards">

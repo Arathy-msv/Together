@@ -53,8 +53,8 @@ export function UpdatesEditor({ campaign, store }: WorkspaceProps) {
   const [params, setParams] = useSearchParams()
   const [writing, setWriting] = useState(params.get('assist') === '1')
   const [translating, setTranslating] = useState<string | null>(null)
-  const { base } = useOrg()
-  const root = `${base}/dashboard/${campaign.id}`
+  const { workspace } = useOrg()
+  const root = `${workspace}/campaigns/${campaign.id}`
 
   function fromWriter(update: WrittenUpdate): UpdateDraft {
     return { ...toDraft(), title: update.title, body: update.body, date: update.date, type: update.type, milestoneId: update.milestoneId, expenseIds: update.expenseIds }

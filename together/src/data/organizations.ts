@@ -7,8 +7,13 @@ const SEEDED_AT = '2026-01-01T00:00:00.000Z'
 export const ORG_LUMEN = 'org_lumen'
 export const ORG_MAPLE = 'org_maple'
 export const ORG_HARBOUR = 'org_harbour'
+export const ORG_RIVERSIDE = 'org_riverside_runners'
 
 export function createOrganizationSeed(): Organization[] {
+  return [...publishedSeeds(), unfinishedSetupSeed()]
+}
+
+function publishedSeeds(): Organization[] {
   return [
     {
       id: DEFAULT_ORG_ID,
@@ -26,6 +31,7 @@ export function createOrganizationSeed(): Organization[] {
         heroImage: '/covers/hero-library.jpg',
         ctaLabel: 'Explore campaigns',
         contactEmail: 'hello@together.example',
+        location: '',
         footerText: 'Browser-only demo. No real money is collected.',
         website: '',
         socialLinks: [],
@@ -36,6 +42,9 @@ export function createOrganizationSeed(): Organization[] {
       },
       defaults: { currency: 'INR', suggestedAmounts: [100, 250, 500], visibility: 'open', durationDays: 30, games: [...IMPLEMENTED_GAMES] },
       visibility: { ...DEFAULT_VISIBILITY },
+      plan: { id: 'organization', selectedAt: SEEDED_AT },
+      website: { status: 'published', publishedAt: SEEDED_AT, updatedAt: SEEDED_AT },
+      createdAt: SEEDED_AT,
       updatedAt: SEEDED_AT,
     },
     {
@@ -64,6 +73,7 @@ export function createOrganizationSeed(): Organization[] {
         heroImage: '/covers/cover-winter.jpg',
         ctaLabel: 'Browse team challenges',
         contactEmail: 'giving@lumen.example',
+        location: 'Pune · Leeds · Austin · Dublin',
         footerText: 'Lumen & Co. Employee Giving · Internal demo. No real money is collected.',
         website: 'https://lumen.example',
         socialLinks: [{ label: 'LinkedIn', url: 'https://www.linkedin.com/company/lumen-example' }],
@@ -74,6 +84,9 @@ export function createOrganizationSeed(): Organization[] {
       },
       defaults: { currency: 'USD', suggestedAmounts: [10, 25, 50], visibility: 'open', durationDays: 21, games: ['memory', 'jacket', 'garden'] },
       visibility: { games: true, direct: true, impactStories: true, assistant: true, poweredBy: true },
+      plan: { id: 'organization', selectedAt: SEEDED_AT },
+      website: { status: 'published', publishedAt: SEEDED_AT, updatedAt: SEEDED_AT },
+      createdAt: SEEDED_AT,
       updatedAt: SEEDED_AT,
     },
     {
@@ -102,6 +115,7 @@ export function createOrganizationSeed(): Organization[] {
         heroImage: '/covers/cover-reading.jpg',
         ctaLabel: 'Support our students',
         contactEmail: 'pta@maplegrove.example',
+        location: 'Maple Grove, Bengaluru',
         footerText: 'Maple Grove PTA · School fundraising demo. No real money is collected.',
         website: 'https://maplegrove.example',
         socialLinks: [
@@ -115,6 +129,9 @@ export function createOrganizationSeed(): Organization[] {
       },
       defaults: { currency: 'INR', suggestedAmounts: [100, 250, 500], visibility: 'open', durationDays: 30, games: ['garden', 'puzzle', 'memory'] },
       visibility: { games: true, direct: true, impactStories: true, assistant: true, poweredBy: true },
+      plan: { id: 'community', selectedAt: SEEDED_AT },
+      website: { status: 'published', publishedAt: SEEDED_AT, updatedAt: SEEDED_AT },
+      createdAt: SEEDED_AT,
       updatedAt: SEEDED_AT,
     },
     {
@@ -143,6 +160,7 @@ export function createOrganizationSeed(): Organization[] {
         heroImage: '/covers/cover-garden.jpg',
         ctaLabel: 'See where help is needed',
         contactEmail: 'hello@openharbour.example',
+        location: 'Kochi, Kerala',
         footerText: 'Open Harbour Foundation · Registered charity demo. No real money is collected.',
         website: 'https://openharbour.example',
         socialLinks: [{ label: 'Instagram', url: 'https://www.instagram.com/openharbour.example' }],
@@ -153,9 +171,54 @@ export function createOrganizationSeed(): Organization[] {
       },
       defaults: { currency: 'INR', suggestedAmounts: [250, 500, 1000], visibility: 'open', durationDays: 45, games: ['garden', 'jacket', 'memory', 'puzzle'] },
       visibility: { games: true, direct: true, impactStories: true, assistant: true, poweredBy: false },
+      plan: { id: 'community', selectedAt: SEEDED_AT },
+      website: { status: 'published', publishedAt: SEEDED_AT, updatedAt: SEEDED_AT },
+      createdAt: SEEDED_AT,
       updatedAt: SEEDED_AT,
     },
   ]
+}
+
+/** An onboarding started on this device but not finished, to demonstrate resuming setup. */
+export function unfinishedSetupSeed(): Organization {
+  const content = {
+    headline: 'Run together, give together',
+    description: '',
+    heroImage: '/covers/cover-sports.jpg',
+    ctaLabel: 'See our runs',
+    contactEmail: 'hello@riverside-runners.example',
+    location: 'Riverside, Kochi',
+    footerText: 'Riverside Runners Club · Volunteer-run running club.',
+    website: '',
+    socialLinks: [],
+    supporterNoun: 'runners',
+    impactTitle: '',
+    impactStory: '',
+  }
+  const branding = { primary: '#b5471f', secondary: '#f6e3d6', accent: '#2f6e8f', background: '#fffaf5', headingFont: 'nunito' as const, bodyFont: 'nunito' as const, buttonStyle: 'rounded' as const }
+  return {
+    id: ORG_RIVERSIDE,
+    slug: 'riverside-runners',
+    name: 'Riverside Runners Club',
+    type: 'club',
+    logo: '',
+    favicon: '',
+    tagline: 'Saturday 5k for everyone',
+    about: 'A volunteer-run club organizing free weekly runs and charity races along the river.',
+    branding,
+    content,
+    defaults: { currency: 'INR', suggestedAmounts: [100, 200, 500], visibility: 'open', durationDays: 30, games: ['garden', 'memory'] },
+    visibility: { games: true, direct: true, impactStories: false, assistant: true, poweredBy: true },
+    plan: { id: 'starter', selectedAt: SEEDED_AT },
+    website: {
+      status: 'setup',
+      draft: { name: 'Riverside Runners Club', tagline: 'Saturday 5k for everyone', about: 'A volunteer-run club organizing free weekly runs and charity races along the river.', logo: '', favicon: '', branding, content, visibility: { impactStories: false, poweredBy: true } },
+      updatedAt: SEEDED_AT,
+    },
+    onboarding: { step: 3, updatedAt: SEEDED_AT },
+    createdAt: SEEDED_AT,
+    updatedAt: SEEDED_AT,
+  }
 }
 
 export function seededOrganization(id: string): Organization | undefined {

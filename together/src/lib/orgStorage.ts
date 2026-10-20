@@ -1,18 +1,19 @@
 import { createOrganizationSeed } from '../data/organizations.ts'
 import { DEFAULT_ORG_ID, normalizeOrganization } from './organizations.ts'
 import { notifyChange, StorageFullError } from './storage.ts'
-import type { Organization } from './types.ts'
+import type { Organization, PlanId } from './types.ts'
+import { websiteConfigOf } from './website.ts'
 
 export const ORG_STORAGE_KEY = 'together.organizations.v1'
 export const ACTIVE_ORG_KEY = 'together.activeOrg.v1'
 
 interface OrgStore {
-  version: 1
+  version: 2
   organizations: Organization[]
 }
 
 function persist(organizations: Organization[]): void {
-  const payload: OrgStore = { version: 1, organizations }
+  const payload: OrgStore = { version: 2, organizations }
   localStorage.setItem(ORG_STORAGE_KEY, JSON.stringify(payload))
 }
 
@@ -57,7 +58,8 @@ export function loadOrganizations(): Organization[] {
   const present = new Set(saved.map((org) => org.id))
   const missing = seeds.filter((seed) => !present.has(seed.id))
   const organizations = dedupeSlugs([...saved, ...missing])
-  if (!raw || missing.length > 0) {
+  const outdated = Boolean(raw) && !raw!.includes('"version":2')
+  if (!raw || missing.length > 0 || outdated) {
     try {
       persist(organizations)
     } catch {
@@ -91,6 +93,36 @@ export function saveOrganization(org: Organization): Organization {
   }
   notifyChange()
   return next
+}
+
+/** Starts a new organization in "setup" with the chosen demo plan. Only saved in this browser. */
+export function createOrganization(planId: PlanId): Organization {
+  const now = new Date().toISOString()
+  const id = `org_${crypto.randomUUID().slice(0, 12)}`
+  const base = normalizeOrganization({ id, name: '', slug: `new-${id.slice(4, 10)}`, type: 'school', updatedAt: now, createdAt: now })!
+  const org: Organization = {
+    ...base,
+    name: '',
+    content: { ...base.content, headline: '', description: '', footerText: '' },
+    plan: { id: planId, selectedAt: now },
+    website: { status: 'setup', updatedAt: now },
+    onboarding: { step: 1, updatedAt: now },
+  }
+  org.website.draft = websiteConfigOf(org)
+  return saveOrganization(org)
+}
+
+/** Removes an organization whose setup was never finished. Published organizations are kept. */
+export function discardUnfinishedOrganization(id: string): void {
+  const organizations = loadOrganizations()
+  const org = organizations.find((item) => item.id === id)
+  if (!org || org.website.status !== 'setup') return
+  try {
+    persist(organizations.filter((item) => item.id !== id))
+  } catch {
+    throw new StorageFullError()
+  }
+  notifyChange()
 }
 
 export function resetOrganizations(): void {

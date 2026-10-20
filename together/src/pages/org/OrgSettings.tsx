@@ -15,21 +15,22 @@ import {
   effectiveParticipation,
   IMAGE_GALLERY,
   ORG_TYPES,
-  orgBase,
   slugify,
   validateOrganization,
 } from '../../lib/organizations.ts'
 import { saveOrganization } from '../../lib/orgStorage.ts'
+import { hasUnpublishedChanges, previewOrganization, setWebsitePreview, websiteConfigOf, withDraftDiscarded, withPublishedWebsite, withWebsiteDraft } from '../../lib/website.ts'
 import { StorageFullError } from '../../lib/storage.ts'
 import { BUTTON_STYLES, contrastChecks, DEFAULT_BRANDING, FONT_CHOICES, isHexColor } from '../../lib/theme.ts'
 import type { GameType, OrgBranding, OrgContent, OrgDefaults, OrgType, OrgVisibility, Organization } from '../../lib/types.ts'
 
 const SECTIONS = [
-  { id: 'identity', label: 'Identity' },
-  { id: 'colours', label: 'Colours & typography' },
-  { id: 'homepage', label: 'Homepage content' },
-  { id: 'games', label: 'Games & participation' },
-  { id: 'footer', label: 'Footer & links' },
+  { id: 'identity', label: 'Identity', variant: 'website' },
+  { id: 'colours', label: 'Colours & typography', variant: 'website' },
+  { id: 'homepage', label: 'Homepage content', variant: 'website' },
+  { id: 'footer', label: 'Footer & links', variant: 'website' },
+  { id: 'address', label: 'Website address & type', variant: 'settings' },
+  { id: 'games', label: 'Games & participation', variant: 'settings' },
 ] as const
 
 /** Survives the remount that follows a save, so the confirmation is still shown. */
@@ -37,25 +38,48 @@ const SAVED_FLAG = 'together.settingsSaved'
 
 type Notice = { tone: 'success' | 'error'; text: string } | null
 
-export function OrgSettingsPage() {
-  const { org } = useOrg()
-  return <SettingsEditor key={`${org.id}-${org.updatedAt}`} saved={org} />
+type Variant = 'website' | 'settings'
+
+/** Website editor: presentation settings saved as a draft until published. */
+export function WebsiteEditorPage() {
+  return <EditorHost variant="website" />
 }
 
-function SettingsEditor({ saved }: { saved: Organization }) {
+/** Organization settings: address, type and fundraising preferences, saved immediately. */
+export function OrganizationSettingsPage() {
+  return <EditorHost variant="settings" />
+}
+
+function EditorHost({ variant }: { variant: Variant }) {
+  const { org } = useOrg()
+  const stored = useOrganizations().find((item) => item.id === org.id)
+  if (!stored) return null
+  return <SettingsEditor key={`${variant}-${stored.id}-${stored.updatedAt}`} stored={stored} variant={variant} />
+}
+
+const WEBSITE_ERROR = (key: string) => !key.startsWith('defaults.') && key !== 'slug' && key !== 'visibility.direct'
+
+function SettingsEditor({ stored, variant }: { stored: Organization; variant: Variant }) {
   const navigate = useNavigate()
   const organizations = useOrganizations()
   const store = useDemoStore()
+  const saved = useMemo(() => (variant === 'website' ? previewOrganization(stored) : stored), [stored, variant])
+  const isWebsite = variant === 'website'
   const [draft, setDraft] = useState<Organization>(saved)
   const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop')
   const [mobileView, setMobileView] = useState<'edit' | 'preview'>('edit')
   const [notice, setNotice] = useState<Notice>(() =>
-    window.sessionStorage.getItem(SAVED_FLAG) === saved.id ? { tone: 'success', text: 'Settings saved. The live site now uses this branding.' } : null,
+    window.sessionStorage.getItem(SAVED_FLAG) ? { tone: 'success', text: window.sessionStorage.getItem(SAVED_FLAG)! } : null,
   )
   const [attempted, setAttempted] = useState(false)
 
   const dirty = useMemo(() => JSON.stringify(draft) !== JSON.stringify(saved), [draft, saved])
-  const errors = useMemo(() => validateOrganization(draft, organizations), [draft, organizations])
+  const errors = useMemo(() => {
+    const all = validateOrganization(draft, organizations)
+    return Object.fromEntries(Object.entries(all).filter(([key]) => (isWebsite ? WEBSITE_ERROR(key) : !WEBSITE_ERROR(key))))
+  }, [draft, organizations, isWebsite])
+  const published = stored.website.status === 'published'
+  const unpublished = hasUnpublishedChanges(stored)
   const errorCount = Object.keys(errors).length
   const checks = useMemo(() => contrastChecks(draft.branding), [draft.branding])
   const usedGames = useMemo(
@@ -71,8 +95,8 @@ function SettingsEditor({ saved }: { saved: Organization }) {
   )
 
   useEffect(() => {
-    document.title = `Brand settings — ${saved.name}`
-  }, [saved.name])
+    document.title = `${isWebsite ? 'Website editor' : 'Organization settings'} — ${saved.name}`
+  }, [saved.name, isWebsite])
 
   useEffect(() => {
     if (!dirty) return
@@ -92,13 +116,13 @@ function SettingsEditor({ saved }: { saved: Organization }) {
 
   const shownError = (key: string) => (attempted || key.startsWith('branding') || key === 'slug' ? errors[key] : undefined)
 
-  function save() {
+  function validated(): Organization | null {
     setAttempted(true)
     if (errorCount > 0) {
-      setNotice({ tone: 'error', text: `Fix ${errorCount === 1 ? 'the highlighted field' : `${errorCount} highlighted fields`} before saving.` })
-      return
+      setNotice({ tone: 'error', text: `Fix ${errorCount === 1 ? 'the highlighted field' : `${errorCount} highlighted fields`} first.` })
+      return null
     }
-    const clean: Organization = {
+    return {
       ...draft,
       name: draft.name.trim(),
       tagline: draft.tagline.trim(),
@@ -109,8 +133,11 @@ function SettingsEditor({ saved }: { saved: Organization }) {
         socialLinks: draft.content.socialLinks.map((link) => ({ label: link.label.trim(), url: link.url.trim() })),
       },
     }
+  }
+
+  function persist(next: Organization, message: string): boolean {
     try {
-      saveOrganization(clean)
+      saveOrganization(next)
     } catch (error) {
       setNotice({
         tone: 'error',
@@ -119,10 +146,51 @@ function SettingsEditor({ saved }: { saved: Organization }) {
             ? 'Browser storage is full, so nothing was saved. Use a gallery image or a smaller upload, then try again.'
             : 'Settings could not be saved in this browser.',
       })
-      return
+      return false
     }
-    if (clean.slug !== saved.slug) navigate(`${orgBase(clean.slug)}/settings`, { replace: true })
-    window.sessionStorage.setItem(SAVED_FLAG, clean.id)
+    window.sessionStorage.setItem(SAVED_FLAG, message)
+    return true
+  }
+
+  function saveWebsiteDraft(): Organization | null {
+    const clean = validated()
+    if (!clean) return null
+    const next = withWebsiteDraft(stored, websiteConfigOf(clean))
+    return persist(next, published ? 'Draft saved. Your public website still shows the published version.' : 'Draft saved.') ? next : null
+  }
+
+  function publishWebsite() {
+    const clean = validated()
+    if (!clean) return
+    if (!window.confirm(`Publish these website settings? The public site at /o/${stored.slug} will update. Campaign drafts stay unpublished.`)) return
+    persist(withPublishedWebsite(withWebsiteDraft(stored, websiteConfigOf(clean))), 'Website published. The public site now uses these settings.')
+  }
+
+  function previewWebsite() {
+    const next = dirty ? saveWebsiteDraft() : stored
+    if (!next) return
+    setWebsitePreview(stored.id)
+    navigate(`/o/${stored.slug}`)
+  }
+
+  function discardWebsiteDraft() {
+    if (!window.confirm('Discard all unpublished website changes? The published website stays as it is.')) return
+    persist(withDraftDiscarded(stored), 'Unpublished changes discarded.')
+  }
+
+  function saveSettings() {
+    const clean = validated()
+    if (!clean) return
+    persist(
+      {
+        ...stored,
+        slug: published ? stored.slug : clean.slug.trim(),
+        type: clean.type,
+        defaults: clean.defaults,
+        visibility: { ...stored.visibility, games: clean.visibility.games, direct: clean.visibility.direct, assistant: clean.visibility.assistant },
+      },
+      'Organization settings saved.',
+    )
   }
 
   useEffect(() => {
@@ -136,13 +204,21 @@ function SettingsEditor({ saved }: { saved: Organization }) {
           <p className="settings-kicker">
             <span className="demo-badge">Demo control</span> Not secure tenant administration
           </p>
-          <h1>Brand settings</h1>
-          <p className="muted">Changes appear in the preview straight away and only go live when you save.</p>
+          <h1>{isWebsite ? 'Website editor' : 'Organization settings'}</h1>
+          <p className="muted">
+            {isWebsite
+              ? published
+                ? 'Edits are saved as a draft. Your public website keeps the published version until you publish changes.'
+                : 'Your website is not published yet. Publish it when you are ready.'
+              : 'Fundraising preferences apply to new campaigns straight away.'}
+          </p>
         </div>
         <div className="settings-actions">
-          <span className={dirty ? 'save-state dirty' : 'save-state'} role="status">
-            {dirty ? 'Unsaved changes' : 'All changes saved'}
+          <span className={dirty || (isWebsite && unpublished) ? 'save-state dirty' : 'save-state'} role="status">
+            {dirty ? 'Unsaved edits' : isWebsite && unpublished ? 'Draft saved · not published' : isWebsite && !published ? 'Not published yet' : 'All changes saved'}
           </span>
+          {isWebsite ? (
+            <>
           <button
             type="button"
             className="btn btn-outline btn-sm"
@@ -153,21 +229,24 @@ function SettingsEditor({ saved }: { saved: Organization }) {
           >
             Restore default branding
           </button>
-          <button
-            type="button"
-            className="btn btn-outline btn-sm"
-            disabled={!dirty}
-            onClick={() => {
-              setDraft(saved)
-              setAttempted(false)
-              setNotice(null)
-            }}
-          >
-            Discard changes
+          <button type="button" className="btn btn-outline btn-sm" disabled={!unpublished && !dirty} onClick={() => (dirty && !unpublished ? setDraft(saved) : discardWebsiteDraft())}>
+            Discard unpublished changes
           </button>
-          <button type="button" className="btn btn-primary btn-sm" disabled={!dirty} onClick={save}>
-            Save changes
+          <button type="button" className="btn btn-outline btn-sm" disabled={!dirty} onClick={() => saveWebsiteDraft()}>
+            Save draft
           </button>
+          <button type="button" className="btn btn-outline btn-sm" onClick={previewWebsite}>
+            Preview changes
+          </button>
+          <button type="button" className="btn btn-primary btn-sm" disabled={published && !dirty && !unpublished} onClick={publishWebsite}>
+            {published ? 'Publish changes' : 'Publish website'}
+          </button>
+            </>
+          ) : (
+            <button type="button" className="btn btn-primary btn-sm" disabled={!dirty} onClick={saveSettings}>
+              Save settings
+            </button>
+          )}
         </div>
       </div>
       {notice ? (
@@ -179,6 +258,7 @@ function SettingsEditor({ saved }: { saved: Organization }) {
         </div>
       ) : null}
 
+      {isWebsite ? (
       <div className="settings-mobile-toggle container-wide" role="group" aria-label="Settings view">
         <button type="button" className={mobileView === 'edit' ? 'chip selected' : 'chip'} aria-pressed={mobileView === 'edit'} onClick={() => setMobileView('edit')}>
           Edit settings
@@ -192,41 +272,56 @@ function SettingsEditor({ saved }: { saved: Organization }) {
           Show preview
         </button>
       </div>
+      ) : null}
 
-      <div className={`settings-grid container-wide ${mobileView === 'preview' ? 'show-preview' : ''}`}>
+      <div className={`settings-grid container-wide ${isWebsite ? '' : 'single'} ${mobileView === 'preview' ? 'show-preview' : ''}`}>
         <div className="settings-controls">
           <nav className="settings-jump" aria-label="Settings sections">
-            {SECTIONS.map((section) => (
+            {SECTIONS.filter((section) => section.variant === variant).map((section) => (
               <a key={section.id} href={`#set-${section.id}`}>
                 {section.label}
               </a>
             ))}
           </nav>
 
-          <Section id="identity" title="Identity" text="How the organization is named and recognised.">
-            <TextField label="Organization name" value={draft.name} maxLength={80} error={shownError('name')} onChange={(name) => patch({ name })} />
+          {!isWebsite ? (
+          <Section id="address" title="Website address & type" text="Where your public website lives in this prototype.">
             <div className="two-col">
-              <TextField
-                label="URL slug"
-                value={draft.slug}
-                maxLength={40}
-                prefix="/o/"
-                error={shownError('slug')}
-                help={draft.slug !== saved.slug ? 'Old links to this organization stop working after you save.' : undefined}
-                onChange={(slug) => patch({ slug: slug.toLowerCase().replace(/\s+/g, '-') })}
-                action={
-                  <button type="button" className="link-button" onClick={() => patch({ slug: slugify(draft.name) })}>
-                    Use name
-                  </button>
-                }
-              />
+              {published ? (
+                <div className="field">
+                  <span className="field-label">Website address</span>
+                  <code className="slug-locked">/o/{stored.slug}</code>
+                  <p className="help">Addresses can’t change after publishing in this prototype, so links you have shared keep working.</p>
+                </div>
+              ) : (
+                <TextField
+                  label="Website address"
+                  value={draft.slug}
+                  maxLength={40}
+                  prefix="/o/"
+                  error={shownError('slug')}
+                  help="Lowercase letters, numbers and hyphens. Locked once the website is published."
+                  onChange={(slug) => patch({ slug: slug.replace(/\s+/g, '-') })}
+                  action={
+                    <button type="button" className="link-button" onClick={() => patch({ slug: slugify(draft.name) })}>
+                      Use name
+                    </button>
+                  }
+                />
+              )}
               <SelectField
                 label="Organization type"
                 value={draft.type}
-                options={ORG_TYPES.map((type) => ({ value: type.id, label: type.label }))}
+                options={ORG_TYPES.filter((type) => type.id !== 'platform' || draft.type === 'platform').map((type) => ({ value: type.id, label: type.label }))}
                 onChange={(type) => patch({ type: type as OrgType })}
               />
             </div>
+          </Section>
+          ) : null}
+
+          {isWebsite ? (
+          <Section id="identity" title="Identity" text="How the organization is named and recognised.">
+            <TextField label="Organization name" value={draft.name} maxLength={80} error={shownError('name')} onChange={(name) => patch({ name })} />
             <TextField label="Tagline" value={draft.tagline} maxLength={120} error={shownError('tagline')} help="Optional. Shown beside the logo and above the headline." onChange={(tagline) => patch({ tagline })} />
             <TextArea label="About" value={draft.about} maxLength={600} help="Optional. A short paragraph shown on the homepage." onChange={(about) => patch({ about })} />
             <ImageField
@@ -246,6 +341,10 @@ function SettingsEditor({ saved }: { saved: Organization }) {
               onChange={(favicon) => patch({ favicon })}
             />
           </Section>
+          ) : null}
+
+          {isWebsite ? (
+          <>
 
           <Section id="colours" title="Colours & typography" text="Text colours are picked automatically for readability.">
             <div className="colour-grid">
@@ -327,13 +426,16 @@ function SettingsEditor({ saved }: { saved: Organization }) {
             <TextField label="Supporter word" value={draft.content.supporterNoun} maxLength={30} help="How you refer to people who give, e.g. colleagues, families, supporters." onChange={(supporterNoun) => patchContent({ supporterNoun })} />
             <TextField label="Impact story title" value={draft.content.impactTitle} maxLength={100} onChange={(impactTitle) => patchContent({ impactTitle })} />
             <TextArea label="Impact story" value={draft.content.impactStory} maxLength={600} help="Leave empty to hide the impact story section." onChange={(impactStory) => patchContent({ impactStory })} />
+            <Toggle label="Show impact stories" text="Adds the impact story section to the homepage." checked={draft.visibility.impactStories} onChange={(impactStories) => patchVisibility({ impactStories })} />
           </Section>
+          </>
+          ) : null}
 
+          {!isWebsite ? (
           <Section id="games" title="Games & participation" text="What supporters can do, and the defaults for new campaigns.">
             <div className="toggle-list">
               <Toggle label="Show games" text="Supporters can play games on campaigns that use them." checked={draft.visibility.games} onChange={(games) => patchVisibility({ games })} />
               <Toggle label="Show direct contributions" text="Supporters can give an amount without playing." checked={draft.visibility.direct} onChange={(direct) => patchVisibility({ direct })} error={shownError('visibility.direct')} />
-              <Toggle label="Show impact stories" text="Adds the impact story section to the homepage." checked={draft.visibility.impactStories} onChange={(impactStories) => patchVisibility({ impactStories })} />
               <Toggle label="Show campaign creation assistant" text="Organizers can create campaigns through guided questions." checked={draft.visibility.assistant} onChange={(assistant) => patchVisibility({ assistant })} />
             </div>
 
@@ -419,8 +521,12 @@ function SettingsEditor({ saved }: { saved: Organization }) {
             </fieldset>
           </Section>
 
+          ) : null}
+
+          {isWebsite ? (
           <Section id="footer" title="Footer & links" text="Contact details and links shown at the bottom of every page.">
             <TextField label="Contact email" type="email" value={draft.content.contactEmail} maxLength={120} error={shownError('content.contactEmail')} onChange={(contactEmail) => patchContent({ contactEmail })} />
+            <TextField label="Public location" value={draft.content.location} maxLength={120} help="Optional, e.g. a city. Avoid street addresses." onChange={(location) => patchContent({ location })} />
             <TextArea label="Footer text" value={draft.content.footerText} maxLength={240} onChange={(footerText) => patchContent({ footerText })} />
             <TextField label="Website" type="url" placeholder="https://" value={draft.content.website} maxLength={300} error={shownError('content.website')} onChange={(website) => patchContent({ website })} />
             <div className="field">
@@ -470,13 +576,15 @@ function SettingsEditor({ saved }: { saved: Organization }) {
             </div>
             <Toggle label="Show “Powered by Together”" text="A small credit in the footer." checked={draft.visibility.poweredBy} onChange={(poweredBy) => patchVisibility({ poweredBy })} />
           </Section>
+          ) : null}
         </div>
 
+        {isWebsite ? (
         <aside className="settings-preview" aria-label="Live preview">
           <div className="preview-toolbar">
             <span>
-              <strong>Live preview</strong>
-              <em>{dirty ? 'Showing unsaved changes' : 'Matches the live site'}</em>
+              <strong>Website preview</strong>
+              <em>{dirty || unpublished ? 'Showing unpublished changes' : published ? 'Matches the public website' : 'Not published yet'}</em>
             </span>
             <div className="segmented small" role="group" aria-label="Preview size">
               <button type="button" className={device === 'desktop' ? 'selected' : ''} aria-pressed={device === 'desktop'} onClick={() => setDevice('desktop')}>
@@ -491,6 +599,7 @@ function SettingsEditor({ saved }: { saved: Organization }) {
             <BrandPreview org={draft} views={previewViews} device={device} />
           </div>
         </aside>
+        ) : null}
       </div>
     </div>
   )
