@@ -1,5 +1,5 @@
 import { makeAccessCode } from './campaigns.ts'
-import { fromDatetimeLocal, toDatetimeLocal } from './format.ts'
+import { fromDatetimeLocal, isCurrencyCode, toDatetimeLocal } from './format.ts'
 import {
   campaignGameSettings,
   defaultGameSettings,
@@ -9,7 +9,23 @@ import {
   MAX_CONTRIBUTION_PAISE,
 } from './gameContribution.ts'
 import { isGameType } from './games.ts'
-import type { Campaign, CampaignForm, GameContributionSettings, GameType } from './types.ts'
+import { DEFAULT_DEFAULTS, DEFAULT_ORG_ID, DEFAULT_VISIBILITY, IMPLEMENTED_GAMES } from './organizations.ts'
+import type { Campaign, CampaignForm, GameContributionSettings, GameType, Organization } from './types.ts'
+
+/** The organization fields that shape a new campaign. */
+export type OrgFormContext = Pick<Organization, 'id' | 'name' | 'defaults' | 'visibility'>
+
+const FALLBACK_CONTEXT: OrgFormContext = {
+  id: DEFAULT_ORG_ID,
+  name: 'Community Organizer',
+  defaults: DEFAULT_DEFAULTS,
+  visibility: DEFAULT_VISIBILITY,
+}
+
+function contextGames(org: OrgFormContext): GameType[] {
+  if (!org.visibility.games) return []
+  return IMPLEMENTED_GAMES.filter((game) => org.defaults.games.includes(game))
+}
 
 /** Form fields for one game's contribution rules, using that game's defaults. */
 export function gameSettingsFields(game: GameType, settings: GameContributionSettings = defaultGameSettings(game)) {
@@ -38,37 +54,44 @@ export function formGameSettings(form: CampaignForm): GameContributionSettings {
 
 export const WIZARD_KEY = 'together.wizard.v1'
 
-export function blankForm(): CampaignForm {
+export function blankForm(org: OrgFormContext = FALLBACK_CONTEXT): CampaignForm {
   const opened = new Date(Date.now() - 60 * 60 * 1000)
   const closes = new Date()
-  closes.setDate(closes.getDate() + 30)
+  closes.setDate(closes.getDate() + org.defaults.durationDays)
   closes.setHours(18, 0, 0, 0)
+  const games = contextGames(org)
+  const gameType = games[0] ?? 'garden'
+  const game = games.length > 0
   return {
+    organizationId: org.id,
+    currency: org.defaults.currency,
     title: '',
     description: '',
     coverImageId: 'library',
     coverImageData: '',
     logoData: '',
     puzzleImageData: '',
-    organizerName: 'Community Organizer',
-    access: 'open',
+    organizerName: org.name,
+    access: org.defaults.visibility,
     accessCode: makeAccessCode(),
-    goalAmount: '10000',
+    goalAmount: String(org.defaults.suggestedAmounts[0] ? org.defaults.suggestedAmounts[0] * 100 : 10000),
     donationMode: 'fixed',
-    fixedAmounts: [100, 250, 500],
+    fixedAmounts: [...org.defaults.suggestedAmounts],
     opensAt: toDatetimeLocal(opened.toISOString()),
     closesAt: toDatetimeLocal(closes.toISOString()),
     autoCloseOnGoal: true,
-    direct: true,
-    game: true,
-    gameType: 'garden',
-    ...gameSettingsFields('garden'),
+    direct: org.visibility.direct || !game,
+    game,
+    gameType,
+    ...gameSettingsFields(gameType),
   }
 }
 
 export function campaignToForm(campaign: Campaign): CampaignForm {
   return {
     id: campaign.id,
+    organizationId: campaign.organizationId,
+    currency: campaign.currency,
     title: campaign.title,
     description: campaign.description,
     coverImageId: campaign.coverImageId,
@@ -97,6 +120,8 @@ export function formToCampaign(form: CampaignForm, options: { isDraft: boolean; 
   const closesAt = fromDatetimeLocal(form.closesAt)
   return {
     id: form.id ?? options.existing?.id ?? crypto.randomUUID(),
+    organizationId: options.existing?.organizationId ?? (form.organizationId || DEFAULT_ORG_ID),
+    currency: options.existing?.currency ?? form.currency,
     title: form.title.trim(),
     description: form.description.trim(),
     coverImageId: form.coverImageId || 'library',
@@ -126,7 +151,8 @@ export interface WizardSnapshot {
   step: number
 }
 
-export function readWizard(): WizardSnapshot | null {
+/** Restores the in-progress form, but only for the organization it was started in. */
+export function readWizard(organizationId: string): WizardSnapshot | null {
   try {
     const raw = sessionStorage.getItem(WIZARD_KEY)
     if (!raw) return null
@@ -135,6 +161,8 @@ export function readWizard(): WizardSnapshot | null {
     const snapshot = parsed as WizardSnapshot
     if (!snapshot.form || typeof snapshot.form !== 'object') return null
     if (snapshot.step !== 1 && snapshot.step !== 2 && snapshot.step !== 3) return null
+    if (snapshot.form.organizationId !== organizationId) return null
+    if (!isCurrencyCode(snapshot.form.currency)) snapshot.form.currency = 'INR'
     if (!isGameType(snapshot.form.gameType)) snapshot.form.gameType = 'garden'
     if (typeof snapshot.form.coverImageData !== 'string') snapshot.form.coverImageData = ''
     if (typeof snapshot.form.logoData !== 'string') snapshot.form.logoData = ''
@@ -190,7 +218,7 @@ export function validateStory(form: CampaignForm): FormErrors {
   if (form.donationMode === 'fixed') {
     if (form.fixedAmounts.length === 0) errors.fixedAmounts = 'Add at least one suggested amount.'
     else if (form.fixedAmounts.some((amount) => !Number.isInteger(amount) || amount <= 0)) {
-      errors.fixedAmounts = 'Suggested amounts must be whole rupees greater than zero.'
+      errors.fixedAmounts = 'Suggested amounts must be whole numbers greater than zero.'
     }
   }
   if (form.access === 'closed' && form.accessCode.trim().length < 4) {
@@ -199,7 +227,11 @@ export function validateStory(form: CampaignForm): FormErrors {
   return errors
 }
 
-export function validateSettings(form: CampaignForm): FormErrors {
+/**
+ * `allowedGames` is the organization's selectable list; pass it for new campaigns so a game the
+ * organization turned off cannot be chosen.
+ */
+export function validateSettings(form: CampaignForm, allowedGames?: GameType[]): FormErrors {
   const errors: FormErrors = {}
   if (!form.opensAt) errors.opensAt = 'Choose an opening date and time.'
   if (!form.closesAt) errors.closesAt = 'Choose a closing date and time.'
@@ -211,6 +243,11 @@ export function validateSettings(form: CampaignForm): FormErrors {
   }
   if (!form.direct && !form.game) {
     errors.form = 'Choose direct giving, a game, or both.'
+  }
+  if (form.game && allowedGames && !allowedGames.includes(form.gameType)) {
+    errors.gameType = allowedGames.length > 0
+      ? 'This game is not available for this organization. Choose one of the available games.'
+      : 'Games are turned off for this organization. Choose direct giving.'
   }
   if (form.game) {
     const rate = parseRupeesToPaise(form.gameRate)
@@ -232,6 +269,6 @@ export function validateSettings(form: CampaignForm): FormErrors {
   return errors
 }
 
-export function validateAll(form: CampaignForm): FormErrors {
-  return { ...validateStory(form), ...validateSettings(form) }
+export function validateAll(form: CampaignForm, allowedGames?: GameType[]): FormErrors {
+  return { ...validateStory(form), ...validateSettings(form, allowedGames) }
 }

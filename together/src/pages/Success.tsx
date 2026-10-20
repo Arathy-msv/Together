@@ -4,7 +4,8 @@ import { CampaignCover } from '../components/CampaignImage.tsx'
 import { Icon } from '../components/illustrations.tsx'
 import { ProgressBar } from '../components/ProgressBar.tsx'
 import { useCampaignView, useDemoStore } from '../hooks/useDemoStore.ts'
-import { campaignDetailsPath, goalReached } from '../lib/campaigns.ts'
+import { campaignDetailsPath, campaignPlayPath, goalReached } from '../lib/campaigns.ts'
+import { useOrgBase } from '../components/org/OrgContext.tsx'
 import { GoalGesture } from '../components/GoalGesture.tsx'
 import { formatINR } from '../lib/format.ts'
 import { jacketColorFromDetail, jacketImage } from '../lib/warmth.ts'
@@ -13,6 +14,7 @@ import { NotFoundPage } from './NotFound.tsx'
 export function SuccessPage() {
   const { id = '', contributionId = '' } = useParams()
   const view = useCampaignView(id)
+  const base = useOrgBase()
   const store = useDemoStore()
   const contribution = store.contributions.find((item) => item.id === contributionId && item.campaignId === id)
 
@@ -27,7 +29,7 @@ export function SuccessPage() {
         <div className="panel empty">
           <h1>We couldn’t find that contribution</h1>
           <p className="muted">It may belong to another browser, or the demo data was reset.</p>
-          <Link to={campaignDetailsPath(view.campaign.id)} className="btn btn-primary">
+          <Link to={campaignDetailsPath(view.campaign.id, base)} className="btn btn-primary">
             Back to campaign
           </Link>
         </div>
@@ -96,17 +98,17 @@ export function SuccessPage() {
       </section>
       <div className="center-actions">
         {contribution.method === 'game' && view.campaign.participation.game && !finished ? (
-          <Link to={`/campaigns/${view.campaign.id}/play/${view.campaign.gameType}`} className="btn btn-primary btn-lg">
+          <Link to={campaignPlayPath(view.campaign.id, view.campaign.gameType, base)} className="btn btn-primary btn-lg">
             Keep playing
           </Link>
         ) : null}
         <Link
-          to={campaignDetailsPath(view.campaign.id)}
+          to={campaignDetailsPath(view.campaign.id, base)}
           className={contribution.method === 'game' ? 'btn btn-outline btn-lg' : 'btn btn-primary btn-lg'}
         >
           Back to campaign
         </Link>
-        <Link to="/" className="btn btn-outline btn-lg">
+        <Link to={base || '/'} className="btn btn-outline btn-lg">
           Return home
         </Link>
       </div>

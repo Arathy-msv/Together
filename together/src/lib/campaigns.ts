@@ -143,11 +143,21 @@ export function makeAccessCode(): string {
   return code
 }
 
-export function campaignSharePath(id: string): string {
-  return `/campaigns/${id}`
+/** `base` is the organization prefix (`/o/slug`). Without it, legacy links redirect to the right organization. */
+export function campaignSharePath(id: string, base = ''): string {
+  return `${base}/campaigns/${id}`
 }
 
 /** Campaign story and direct giving. The plain campaign link opens the game when one is enabled. */
-export function campaignDetailsPath(id: string): string {
-  return `/campaigns/${id}?view=details`
+export function campaignDetailsPath(id: string, base = ''): string {
+  return `${base}/campaigns/${id}?view=details`
+}
+
+export function campaignPlayPath(id: string, game: string, base = ''): string {
+  return `${base}/campaigns/${id}/play/${game}`
+}
+
+/** Campaigns that belong to one organization. */
+export function campaignsForOrganization(campaigns: Campaign[], organizationId: string): Campaign[] {
+  return campaigns.filter((campaign) => campaign.organizationId === organizationId)
 }

@@ -18,8 +18,79 @@ export interface Participation {
   game: boolean
 }
 
+export type CurrencyCode = 'INR' | 'USD' | 'GBP' | 'EUR'
+export type OrgType = 'platform' | 'company' | 'school' | 'club' | 'nonprofit'
+export type FontChoice = 'figtree' | 'nunito' | 'fraunces' | 'georgia' | 'system'
+export type ButtonStyle = 'rounded' | 'soft'
+
+export interface OrgBranding {
+  primary: string
+  secondary: string
+  accent: string
+  background: string
+  headingFont: FontChoice
+  bodyFont: FontChoice
+  buttonStyle: ButtonStyle
+}
+
+export interface OrgLink {
+  label: string
+  url: string
+}
+
+export interface OrgContent {
+  headline: string
+  description: string
+  /** Public path or compressed data URL. */
+  heroImage: string
+  ctaLabel: string
+  contactEmail: string
+  footerText: string
+  website: string
+  socialLinks: OrgLink[]
+  /** Word used for the people who give, e.g. "colleagues" or "families". */
+  supporterNoun: string
+  impactTitle: string
+  impactStory: string
+}
+
+export interface OrgDefaults {
+  currency: CurrencyCode
+  suggestedAmounts: number[]
+  visibility: AccessMode
+  durationDays: number
+  games: GameType[]
+}
+
+export interface OrgVisibility {
+  games: boolean
+  direct: boolean
+  impactStories: boolean
+  assistant: boolean
+  poweredBy: boolean
+}
+
+export interface Organization {
+  id: string
+  slug: string
+  name: string
+  type: OrgType
+  logo: string
+  favicon: string
+  tagline: string
+  about: string
+  branding: OrgBranding
+  content: OrgContent
+  defaults: OrgDefaults
+  visibility: OrgVisibility
+  updatedAt: string
+}
+
 export interface Campaign {
   id: string
+  organizationId: string
+  /** Amounts on this campaign are always shown in this currency, even if the organization default changes. */
+  currency: CurrencyCode
   title: string
   description: string
   coverImageId: string
@@ -60,13 +131,15 @@ export interface Contribution {
 }
 
 export interface DemoStore {
-  version: 1
+  version: 2
   campaigns: Campaign[]
   contributions: Contribution[]
 }
 
 export interface CampaignForm {
   id?: string
+  organizationId: string
+  currency: CurrencyCode
   title: string
   description: string
   coverImageId: string

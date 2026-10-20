@@ -1,10 +1,48 @@
-export function formatINR(value: number): string {
+import type { CurrencyCode } from './types.ts'
+
+export const CURRENCIES: { code: CurrencyCode; label: string; locale: string; symbol: string }[] = [
+  { code: 'INR', label: 'Indian rupee (₹)', locale: 'en-IN', symbol: '₹' },
+  { code: 'USD', label: 'US dollar ($)', locale: 'en-US', symbol: '$' },
+  { code: 'GBP', label: 'British pound (£)', locale: 'en-GB', symbol: '£' },
+  { code: 'EUR', label: 'Euro (€)', locale: 'en-IE', symbol: '€' },
+]
+
+export function isCurrencyCode(value: unknown): value is CurrencyCode {
+  return CURRENCIES.some((item) => item.code === value)
+}
+
+function currencyInfo(code: CurrencyCode) {
+  return CURRENCIES.find((item) => item.code === code) ?? CURRENCIES[0]
+}
+
+/**
+ * Currency used when a caller does not pass one. Campaign routes set this to the open campaign's
+ * own currency so game screens keep that campaign's label; lists always pass a currency explicitly.
+ */
+let displayCurrency: CurrencyCode = 'INR'
+
+export function setDisplayCurrency(code: CurrencyCode | undefined): void {
+  displayCurrency = isCurrencyCode(code) ? code : 'INR'
+}
+
+export function currencySymbol(code: CurrencyCode = displayCurrency): string {
+  return currencyInfo(code).symbol
+}
+
+export function formatMoney(value: number, code: CurrencyCode = displayCurrency, fractionDigits = 0): string {
   const amount = Number.isFinite(value) ? value : 0
-  return new Intl.NumberFormat('en-IN', {
+  const info = currencyInfo(code)
+  return new Intl.NumberFormat(info.locale, {
     style: 'currency',
-    currency: 'INR',
-    maximumFractionDigits: 0,
+    currency: info.code,
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
   }).format(amount)
+}
+
+/** Whole-unit amount in the given currency (defaults to the open campaign's currency). */
+export function formatINR(value: number, code?: CurrencyCode): string {
+  return formatMoney(value, code)
 }
 
 export function formatDate(iso: string): string {

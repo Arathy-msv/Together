@@ -1,3 +1,4 @@
+import { formatMoney } from './format.ts'
 import type { Campaign, GameContributionSettings, GameType } from './types.ts'
 
 /** Integer paise per rupee. All game money is stored in paise and only formatted as rupees. */
@@ -65,7 +66,7 @@ export function shortNoun(game: GameType): string {
 
 export function gameIntroSentence(game: GameType, ratePaise: number): string {
   if (game === 'jacket') {
-    return 'Add a warm lining and zip the jacket for ₹50 each, then attach a kindness tag for ₹25. You can edit the total before confirming. Nothing is charged while playing.'
+    return `Add a warm lining and zip the jacket for ${formatMoney(50)} each, then attach a kindness tag for ${formatMoney(25)}. You can edit the total before confirming. Nothing is charged while playing.`
   }
   return `Each completed ${shortNoun(game)} adds ${formatPaise(ratePaise)} to your suggested contribution. You can edit the total before confirming. Nothing is charged while playing.`
 }
@@ -113,17 +114,12 @@ export function campaignGameSettings(campaign: Pick<Campaign, 'gameType' | 'game
 export function formatPaise(paise: number): string {
   const safe = Number.isFinite(paise) ? Math.round(paise) : 0
   const whole = safe % PAISE_PER_RUPEE === 0
-  return new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    minimumFractionDigits: whole ? 0 : 2,
-    maximumFractionDigits: whole ? 0 : 2,
-  }).format(safe / PAISE_PER_RUPEE)
+  return formatMoney(safe / PAISE_PER_RUPEE, undefined, whole ? 0 : 2)
 }
 
 /** Converts what a supporter typed (₹, commas and up to two decimals allowed) into paise. */
 export function parseRupeesToPaise(input: string): number | null {
-  const cleaned = input.replace(/[₹,\s]/g, '')
+  const cleaned = input.replace(/[₹$£€,\s]/g, '')
   if (!/^\d+(\.\d{1,2})?$/.test(cleaned)) return null
   const [rupees, fraction = ''] = cleaned.split('.')
   const paise = Number(rupees) * PAISE_PER_RUPEE + Number(fraction.padEnd(2, '0'))

@@ -5,7 +5,9 @@ import { CampaignCover, OrgLogo } from '../components/CampaignImage.tsx'
 import { Leaderboard, RankBanner } from '../components/Leaderboard.tsx'
 import { ProgressBar } from '../components/ProgressBar.tsx'
 import { StatusBadge } from '../components/StatusBadge.tsx'
+import { useOrgBase } from '../components/org/OrgContext.tsx'
 import { useCampaignView } from '../hooks/useDemoStore.ts'
+import { campaignPlayPath } from '../lib/campaigns.ts'
 import { formatDateRange, formatINR, parseWholeRupees } from '../lib/format.ts'
 import { campaignGameSettings, gameIntroSentence } from '../lib/gameContribution.ts'
 import { GAME_THUMBS, gameMeta } from '../lib/games.ts'
@@ -18,12 +20,13 @@ export function CampaignPage() {
   const { id = '' } = useParams()
   const view = useCampaignView(id)
   const navigate = useNavigate()
+  const base = useOrgBase()
   const [params] = useSearchParams()
   const [unlocked, setUnlocked] = useState(() => (id ? isUnlocked(id) : false))
   const [tab, setTab] = useState<'direct' | 'game'>('direct')
 
   useEffect(() => {
-    if (view) document.title = `${view.campaign.title} — Together`
+    if (view) document.title = `${view.campaign.title} — ${view.campaign.organizerName}`
   }, [view])
 
   useEffect(() => {
@@ -36,7 +39,7 @@ export function CampaignPage() {
   const { campaign } = view
   const needsCode = campaign.access === 'closed' && !campaign.isDraft && !unlocked
   const game = gameMeta(campaign.gameType)
-  const playPath = `/campaigns/${campaign.id}/play/${campaign.gameType}`
+  const playPath = campaignPlayPath(campaign.id, campaign.gameType, base)
   const contribution = campaignGameSettings(campaign)
   const gameIntro = gameIntroSentence(campaign.gameType, contribution.ratePaise)
   const player = campaign.access === 'closed' ? currentPlayer(campaign.id) : null
@@ -49,7 +52,7 @@ export function CampaignPage() {
   return (
     <div className="container page-pad campaign">
       <nav className="crumbs" aria-label="Breadcrumb">
-        <Link to="/explore">Campaigns</Link>
+        <Link to={`${base}/campaigns`}>Campaigns</Link>
         <span>/</span>
         <span>{campaign.title}</span>
       </nav>
@@ -126,7 +129,7 @@ export function CampaignPage() {
                   playerName: giver?.name,
                   referralCode: activeReferral(campaign.id, giver?.id),
                 })
-                navigate(`/campaigns/${campaign.id}/confirm`)
+                navigate(`${base}/campaigns/${campaign.id}/confirm`)
               }}
             />
           )}
@@ -180,6 +183,7 @@ function GivePanel({
   onContinue: (amount: number) => void
 }) {
   const { campaign } = view
+  const base = useOrgBase()
   const [selected, setSelected] = useState<number | null>(() => {
     if (campaign.donationMode !== 'fixed') return null
     const pending = getPending(campaign.id)
@@ -220,7 +224,7 @@ function GivePanel({
           <p className="muted small">
             {gameMeta(campaign.gameType).blurb} {gameIntroSentence(campaign.gameType, campaignGameSettings(campaign).ratePaise)}
           </p>
-          <Link to={`/campaigns/${campaign.id}/play/${campaign.gameType}`} className="btn btn-primary btn-block">
+          <Link to={campaignPlayPath(campaign.id, campaign.gameType, base)} className="btn btn-primary btn-block">
             Play {gameMeta(campaign.gameType).name}
           </Link>
         </div>

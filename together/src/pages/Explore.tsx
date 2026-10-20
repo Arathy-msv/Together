@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { CampaignCard } from '../components/CampaignCard.tsx'
 import { Icon } from '../components/illustrations.tsx'
+import { useOrg } from '../components/org/OrgContext.tsx'
 import { useCampaignViews } from '../hooks/useDemoStore.ts'
 import type { CampaignStatus } from '../lib/types.ts'
 
@@ -13,13 +14,14 @@ const FILTERS: Array<{ id: 'all' | CampaignStatus; label: string }> = [
 ]
 
 export function ExplorePage() {
+  const { org } = useOrg()
   const views = useCampaignViews().filter((view) => !view.campaign.isDraft)
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<(typeof FILTERS)[number]['id']>('all')
 
   useEffect(() => {
-    document.title = 'Explore campaigns — Together'
-  }, [])
+    document.title = `Campaigns — ${org.name}`
+  }, [org.name])
 
   const visible = useMemo(() => {
     const needle = query.trim().toLowerCase()
@@ -34,8 +36,14 @@ export function ExplorePage() {
   return (
     <div className="container page-pad">
       <div className="page-title">
-        <h1>Explore campaigns</h1>
-        <p className="muted">Give directly or play a short game to support a cause.</p>
+        <h1>{org.name} campaigns</h1>
+        <p className="muted">
+          {org.visibility.games && org.visibility.direct
+            ? 'Give directly or play a short game to support a cause.'
+            : org.visibility.games
+              ? 'Play a short game to build a suggested contribution for a cause.'
+              : 'Choose a cause and give directly.'}
+        </p>
       </div>
       <div className="toolbar">
         <label className="search-field">

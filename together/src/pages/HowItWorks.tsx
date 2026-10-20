@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Icon } from '../components/illustrations.tsx'
+import { useOrg } from '../components/org/OrgContext.tsx'
 import { GAME_THUMBS, GAMES } from '../lib/games.ts'
+import { selectableGames } from '../lib/organizations.ts'
 
 const SUPPORTER_STEPS = [
   { title: 'Open the campaign', text: 'Discover the cause and the people behind it.' },
@@ -32,10 +34,13 @@ const FAQ = [
 
 export function HowItWorksPage() {
   const [openFaq, setOpenFaq] = useState(0)
+  const { org, base } = useOrg()
+  const allowed = selectableGames(org)
+  const games = GAMES.filter((game) => allowed.includes(game.id))
 
   useEffect(() => {
-    document.title = 'How it works — Together'
-  }, [])
+    document.title = `How it works — ${org.name}`
+  }, [org.name])
 
   return (
     <div className="how2">
@@ -47,10 +52,10 @@ export function HowItWorksPage() {
             Create a campaign, invite your community, and give people a meaningful way to take part.
           </p>
           <div className="how2-actions">
-            <Link to="/create?new=1" className="btn btn-primary btn-lg">
+            <Link to={`${base}/create?new=1`} className="btn btn-primary btn-lg">
               Create a campaign <Icon name="arrow" size={16} />
             </Link>
-            <Link to="/explore" className="btn btn-outline btn-lg">
+            <Link to={`${base}/campaigns`} className="btn btn-outline btn-lg">
               Explore campaigns
             </Link>
           </div>
@@ -189,11 +194,12 @@ export function HowItWorksPage() {
         </div>
       </section>
 
+      {games.length > 0 ? (
       <section className="container how2-section">
-        <h2>Games your campaign can use</h2>
+        <h2>Games {org.name} campaigns can use</h2>
         <p className="muted">Pick one when you create a campaign, and preview it before you publish.</p>
         <div className="games-rail">
-          {GAMES.map((game) => (
+          {games.map((game) => (
             <article key={game.id} className="rail-game">
               <img src={GAME_THUMBS[game.id]} alt="" />
               <span className={game.style === 'flow' ? 'rail-chip calm' : 'rail-chip'}>
@@ -205,6 +211,7 @@ export function HowItWorksPage() {
           ))}
         </div>
       </section>
+      ) : null}
 
       <section className="container trust-row">
         <div>
@@ -267,10 +274,10 @@ export function HowItWorksPage() {
             <p>Start with a cause. Add a little joy.</p>
           </div>
           <div className="cta-actions">
-            <Link to="/create?new=1" className="btn btn-light btn-lg">
+            <Link to={`${base}/create?new=1`} className="btn btn-light btn-lg">
               Create a campaign <Icon name="arrow" size={16} />
             </Link>
-            <Link to="/explore" className="cta-link">
+            <Link to={`${base}/campaigns`} className="cta-link">
               Explore campaigns
             </Link>
           </div>

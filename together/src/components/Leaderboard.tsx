@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { useDemoStore } from '../hooks/useDemoStore.ts'
 import { formatINR } from '../lib/format.ts'
+import { useOrgBase } from './org/OrgContext.tsx'
 import { currentPlayer, leaderboard, listPlayers, referralLink, standing, type LeaderRow, type Player, type Standing } from '../lib/players.ts'
 
 function useBoard(campaignId: string) {
@@ -109,10 +110,11 @@ export function Leaderboard({ campaignId, compact = false }: { campaignId: strin
   const mineBelow = compact && mine ? rows.findIndex((row) => row.player.id === mine.id) : -1
   const pinned = mineBelow >= 3 ? rows[mineBelow] : null
   const [copied, setCopied] = useState(false)
+  const base = useOrgBase()
 
   async function copyReferral() {
     if (!mine) return
-    const link = referralLink(campaignId, mine.referralCode)
+    const link = referralLink(campaignId, mine.referralCode, base)
     try {
       await navigator.clipboard.writeText(link)
     } catch {

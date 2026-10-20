@@ -2,6 +2,7 @@ import { createSeed } from '../data/seed.ts'
 import { normalizeGameSettings } from './gameContribution.ts'
 import { clearPlayers, ensureSampleRoster } from './players.ts'
 import { isGameType } from './games.ts'
+import { isCurrencyCode } from './format.ts'
 import type { Campaign, Contribution, DemoStore } from './types.ts'
 
 export const STORAGE_KEY = 'together.demo.v1'
@@ -17,6 +18,14 @@ export function subscribe(listener: Listener): () => void {
 function emit(): void {
   listeners.forEach((listener) => listener())
 }
+
+/** Lets other storage modules (organizations) refresh subscribed views. */
+export function notifyChange(): void {
+  emit()
+}
+
+/** Campaigns saved before organizations existed belong to the default Together organization. */
+export const LEGACY_ORG_ID = 'org_together'
 
 function isCampaign(value: unknown): value is Campaign {
   if (!value || typeof value !== 'object') return false
@@ -48,6 +57,9 @@ function normalizeCampaign(campaign: Campaign): Campaign {
   const gameType = isGameType(campaign.gameType) ? campaign.gameType : 'garden'
   return {
     ...campaign,
+    organizationId:
+      typeof campaign.organizationId === 'string' && campaign.organizationId ? campaign.organizationId : LEGACY_ORG_ID,
+    currency: isCurrencyCode(campaign.currency) ? campaign.currency : 'INR',
     gameType,
     gameSettings: campaign.gameSettings ? normalizeGameSettings(gameType, campaign.gameSettings) : undefined,
     coverImageData:
@@ -112,13 +124,13 @@ export function loadStore(): DemoStore {
     const saved = record.campaigns.filter(isCampaign)
     const retired = saved.some((campaign) => RETIRED_SAMPLE_IDS.includes(campaign.id))
     const store = withDefaultCampaigns({
-      version: 1,
+      version: 2,
       campaigns: saved.filter((campaign) => !RETIRED_SAMPLE_IDS.includes(campaign.id)).map(normalizeCampaign),
       contributions: record.contributions
         .filter(isContribution)
         .filter((contribution) => !RETIRED_SAMPLE_IDS.includes(contribution.campaignId)),
     })
-    if (retired) {
+    if (retired || record.version !== 2) {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(store))
       } catch {
@@ -150,12 +162,15 @@ function withDefaultCampaigns(store: DemoStore): DemoStore {
   const present = new Set(campaigns.map((campaign) => campaign.id))
   const missing = seeded.campaigns.filter((campaign) => !present.has(campaign.id))
   if (!changed && missing.length === 0) return store
-  const circleIsNew = missing.some((campaign) => campaign.id === 'cmp_circle')
-  const circleGifts = circleIsNew ? seeded.contributions.filter((contribution) => contribution.campaignId === 'cmp_circle') : []
+  const missingIds = new Set(missing.map((campaign) => campaign.id))
+  const knownGifts = new Set(store.contributions.map((contribution) => contribution.id))
+  const sampleGifts = seeded.contributions.filter(
+    (contribution) => missingIds.has(contribution.campaignId) && !knownGifts.has(contribution.id),
+  )
   const next: DemoStore = {
     ...store,
     campaigns: [...campaigns, ...missing],
-    contributions: [...store.contributions, ...circleGifts],
+    contributions: [...store.contributions, ...sampleGifts],
   }
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next))

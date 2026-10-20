@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useOrgBase } from '../../../components/org/OrgContext.tsx'
+import { OrgGameBrand } from '../../../components/org/OrgGameBrand.tsx'
 import { GoalGesture } from '../../../components/GoalGesture.tsx'
 import { Leaderboard, RankBanner } from '../../../components/Leaderboard.tsx'
 import { contributionAvailability } from '../../../lib/availability.ts'
@@ -43,7 +45,6 @@ import {
   CloudCheck,
   LeafPoints,
   SproutMark,
-  TogetherLeaf,
 } from './icons.tsx'
 import { AmountChooser, CartReview, GrowthReference, SuccessBanner, type CampaignSummary } from './Panels.tsx'
 import { Sheet } from './Sheet.tsx'
@@ -137,6 +138,7 @@ export function GivingTreeGame({ view, preview = false }: { view: CampaignView; 
 
   const raised = view.raised
   const goal = campaign.goalAmount
+  const base = useOrgBase()
   const finished = goalReached(raised, goal)
   const percent = campaignPercent(raised, goal)
   const sharedStage = treeStage(raised, goal)
@@ -146,7 +148,7 @@ export function GivingTreeGame({ view, preview = false }: { view: CampaignView; 
 
   const shownCart = flying ? state.cart.filter((record) => record.id !== flying.id) : state.cart
   const shownPaise = shownCart.reduce((sum, record) => sum + record.pricePaise, 0)
-  const backTo = preview ? undefined : campaignDetailsPath(campaignId)
+  const backTo = preview ? undefined : campaignDetailsPath(campaignId, base)
 
   const blockedReason = useMemo(() => {
     if (preview) return 'Preview only — publish the campaign to try the demo contribution.'
@@ -313,15 +315,7 @@ export function GivingTreeGame({ view, preview = false }: { view: CampaignView; 
       <div className={`gt-shell${preview ? ' gt-preview' : ''}${finished ? ' is-resting' : ''}`} inert={panel ? true : undefined}>
         <header className="gt-header">
           <div className="gt-header-left">
-            {preview ? (
-              <span className="gt-brand">
-                <TogetherLeaf /> Together
-              </span>
-            ) : (
-              <Link to="/" className="gt-brand" aria-label="Together home">
-                <TogetherLeaf /> Together
-              </Link>
-            )}
+            <OrgGameBrand className="gt-brand" preview={preview} />
             <span className="gt-header-rule" aria-hidden="true" />
             {backTo ? (
               <Link to={backTo} className="gt-back">

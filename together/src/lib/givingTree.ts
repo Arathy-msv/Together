@@ -272,7 +272,7 @@ export function clearCart(state: GivingTreeState, makeId: () => string = randomI
 export const MAX_GIFT_PAISE = 1_000_000 * PAISE_PER_RUPEE
 
 export function parseGiftAmount(input: string): { paise: number | null; error: string | null } {
-  const cleaned = input.replace(/[₹,\s]/g, '')
+  const cleaned = input.replace(/[₹$£€,\s]/g, '')
   if (cleaned === '') return { paise: null, error: 'Enter an amount to contribute.' }
   if (!/^\d+$/.test(cleaned)) return { paise: null, error: 'Enter a whole rupee amount, like 100.' }
   const paise = Number(cleaned) * PAISE_PER_RUPEE

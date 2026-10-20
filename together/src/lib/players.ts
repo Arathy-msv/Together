@@ -238,7 +238,7 @@ export function ensureSampleRoster(campaignIds: string[]): void {
   savePlayers([...players, ...SAMPLE_PLAYERS])
 }
 
-export function referralLink(campaignId: string, code: string): string {
-  const path = `/campaigns/${campaignId}?ref=${encodeURIComponent(code)}`
+export function referralLink(campaignId: string, code: string, base = ''): string {
+  const path = `${base}/campaigns/${campaignId}?ref=${encodeURIComponent(code)}`
   return typeof window === 'undefined' ? path : `${window.location.origin}${path}`
 }

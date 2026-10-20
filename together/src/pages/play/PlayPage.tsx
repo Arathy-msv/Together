@@ -1,7 +1,8 @@
 import { useEffect } from 'react'
 import { Navigate, useParams, useSearchParams } from 'react-router-dom'
 import { useCampaignView } from '../../hooks/useDemoStore.ts'
-import { campaignDetailsPath } from '../../lib/campaigns.ts'
+import { campaignDetailsPath, campaignPlayPath } from '../../lib/campaigns.ts'
+import { useOrgBase } from '../../components/org/OrgContext.tsx'
 import { gameMeta, isGameType } from '../../lib/games.ts'
 import { isUnlocked } from '../../lib/pending.ts'
 import { currentPlayer, rememberReferral } from '../../lib/players.ts'
@@ -15,6 +16,7 @@ export function PlayPage() {
   const { id = '', game } = useParams()
   const [params] = useSearchParams()
   const view = useCampaignView(id)
+  const base = useOrgBase()
 
   useEffect(() => {
     const ref = params.get('ref')
@@ -29,17 +31,17 @@ export function PlayPage() {
 
   if (!view) return <NotFoundPage />
   if (!view.campaign.participation.game) {
-    return <Navigate to={campaignDetailsPath(view.campaign.id)} replace />
+    return <Navigate to={campaignDetailsPath(view.campaign.id, base)} replace />
   }
   if (
     view.campaign.access === 'closed' &&
     !view.campaign.isDraft &&
     (!isUnlocked(view.campaign.id) || !currentPlayer(view.campaign.id))
   ) {
-    return <Navigate to={campaignDetailsPath(view.campaign.id)} replace />
+    return <Navigate to={campaignDetailsPath(view.campaign.id, base)} replace />
   }
   if (!isGameType(game) || game !== view.campaign.gameType) {
-    return <Navigate to={`/campaigns/${view.campaign.id}/play/${view.campaign.gameType}`} replace />
+    return <Navigate to={campaignPlayPath(view.campaign.id, view.campaign.gameType, base)} replace />
   }
   if (game === 'memory') return <MemoryGame view={view} />
   if (game === 'puzzle') return <PuzzleGame view={view} />

@@ -1,17 +1,19 @@
-import { useEffect, useRef, useState, type ChangeEvent, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
+import { useImagePicker } from '../hooks/useImagePicker.tsx'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { CampaignCover, OrgLogo } from '../components/CampaignImage.tsx'
 import { GamePreviewModal, GameThumb } from '../components/GamePreview.tsx'
+import { useOrg } from '../components/org/OrgContext.tsx'
 import { Icon } from '../components/illustrations.tsx'
 import { LivePreview } from '../components/LivePreview.tsx'
 import { COVERS, UPLOADED_COVER_ID } from '../data/covers.ts'
 import { getCampaign, upsertCampaign } from '../lib/campaigns.ts'
-import { formatDateTime, formatINR } from '../lib/format.ts'
+import { currencySymbol, formatDateTime, formatINR, setDisplayCurrency } from '../lib/format.ts'
 import { formatPaise, gameConfig } from '../lib/gameContribution.ts'
 import { GAMES, gameMeta } from '../lib/games.ts'
-import { IMAGE_ACCEPT, readImageFile } from '../lib/image.ts'
+import { COMING_SOON_GAMES, selectableGames } from '../lib/organizations.ts'
 import { StorageFullError } from '../lib/storage.ts'
-import type { CampaignForm, GameType } from '../lib/types.ts'
+import type { CampaignForm, GameType, Organization } from '../lib/types.ts'
 import {
   blankForm,
   campaignToForm,
@@ -37,22 +39,25 @@ export function CreateCampaignPage() {
   const [params] = useSearchParams()
   const fresh = params.get('new')
   const draft = params.get('draft')
-  const key = fresh ? `new-${fresh}` : draft ? `draft-${draft}` : 'resume'
+  const { org } = useOrg()
+  const key = `${org.id}-${fresh ? `new-${fresh}` : draft ? `draft-${draft}` : 'resume'}`
   return <CreateCampaignEditor key={key} />
 }
 
 function CreateCampaignEditor() {
   const [params, setParams] = useSearchParams()
   const navigate = useNavigate()
-  const [snapshot] = useState(() => initialSnapshot(params))
+  const { org, base } = useOrg()
+  const allowedGames = selectableGames(org)
+  const [snapshot] = useState(() => initialSnapshot(params, org))
   const [form, setForm] = useState<CampaignForm>(snapshot.form)
   const [step, setStep] = useState(snapshot.step)
   const [errors, setErrors] = useState<FormErrors>({})
   const [notice, setNotice] = useState<{ tone: 'success' | 'error'; text: string } | null>(null)
 
   useEffect(() => {
-    document.title = 'Create a campaign — Together'
-  }, [])
+    document.title = `Create a campaign — ${org.name}`
+  }, [org.name])
 
   useEffect(() => {
     writeWizard({ form, step })
@@ -98,14 +103,14 @@ function CreateCampaignEditor() {
   }
 
   function continueNext() {
-    const nextErrors = step === 1 ? validateStory(form) : validateSettings(form)
+    const nextErrors = step === 1 ? validateStory(form) : validateSettings(form, allowedGames)
     setErrors(nextErrors)
     if (Object.keys(nextErrors).length > 0) return
     setStep((current) => Math.min(3, current + 1))
   }
 
   function publish() {
-    const nextErrors = validateAll(form)
+    const nextErrors = validateAll(form, allowedGames)
     setErrors(nextErrors)
     if (Object.keys(nextErrors).length > 0) {
       setStep(Object.keys(validateStory(form)).length > 0 ? 1 : 2)
@@ -114,10 +119,11 @@ function CreateCampaignEditor() {
     const id = persist(false)
     if (!id) return
     clearWizard()
-    navigate(`/dashboard?created=${id}`)
+    navigate(`${base}/dashboard?created=${id}`)
   }
 
   const copy = STEP_COPY[step]
+  setDisplayCurrency(form.currency)
 
   return (
     <div className="container page-pad create">
@@ -136,8 +142,8 @@ function CreateCampaignEditor() {
       {errors.form ? <div className="notice error">{errors.form}</div> : null}
       <div className={step === 3 ? 'create-grid single' : 'create-grid'}>
         <div>
-          {step === 1 ? <StoryStep form={form} errors={errors} onChange={update} /> : null}
-          {step === 2 ? <SettingsStep form={form} errors={errors} onChange={update} /> : null}
+          {step === 1 ? <StoryStep form={form} errors={errors} onChange={update} org={org} /> : null}
+          {step === 2 ? <SettingsStep form={form} errors={errors} onChange={update} org={org} /> : null}
           {step === 3 ? <ReviewStep form={form} onEdit={setStep} /> : null}
         </div>
         {step < 3 ? (
@@ -175,17 +181,17 @@ function CreateCampaignEditor() {
   )
 }
 
-function initialSnapshot(params: URLSearchParams): { form: CampaignForm; step: number } {
+function initialSnapshot(params: URLSearchParams, org: Organization): { form: CampaignForm; step: number } {
   const draftId = params.get('draft')
   if (draftId) {
     const existing = getCampaign(draftId)
-    if (existing) return { form: campaignToForm(existing), step: 1 }
+    if (existing && existing.organizationId === org.id) return { form: campaignToForm(existing), step: 1 }
   }
   if (params.get('new') === '1') {
     clearWizard()
-    return { form: blankForm(), step: 1 }
+    return { form: blankForm(org), step: 1 }
   }
-  return readWizard() ?? { form: blankForm(), step: 1 }
+  return readWizard(org.id) ?? { form: blankForm(org), step: 1 }
 }
 
 function Stepper({ step, onStep }: { step: number; onStep: (step: number) => void }) {
@@ -212,40 +218,16 @@ function Stepper({ step, onStep }: { step: number; onStep: (step: number) => voi
   )
 }
 
-function useImagePicker(onPicked: (dataUrl: string) => void, options: Parameters<typeof readImageFile>[1]) {
-  const inputRef = useRef<HTMLInputElement>(null)
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState('')
-
-  async function onChange(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0]
-    event.target.value = ''
-    if (!file) return
-    setBusy(true)
-    setError('')
-    try {
-      onPicked(await readImageFile(file, options))
-    } catch (problem) {
-      setError(problem instanceof Error ? problem.message : 'That image could not be used.')
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  const input = (
-    <input ref={inputRef} type="file" accept={IMAGE_ACCEPT} hidden onChange={(event) => void onChange(event)} />
-  )
-  return { input, open: () => inputRef.current?.click(), busy, error }
-}
-
 function StoryStep({
   form,
   errors,
   onChange,
+  org,
 }: {
   form: CampaignForm
   errors: FormErrors
   onChange: (patch: Partial<CampaignForm>) => void
+  org: Organization
 }) {
   const cover = useImagePicker((data) => onChange({ coverImageId: UPLOADED_COVER_ID, coverImageData: data }), {
     maxWidth: 1400,
@@ -409,7 +391,7 @@ function StoryStep({
       <div className="two-col">
         <Field label="Fundraising goal" htmlFor="goal" error={errors.goalAmount}>
           <div className="input-prefix">
-            <span>₹</span>
+            <span>{currencySymbol(form.currency)}</span>
             <input
               id="goal"
               inputMode="numeric"
@@ -426,11 +408,11 @@ function StoryStep({
               <div className="amount-chips">
                 {form.fixedAmounts.map((amount) => (
                   <span key={amount} className="amount-chip-pro">
-                    {formatINR(amount)}
+                    {formatINR(amount, form.currency)}
                     {form.fixedAmounts.length > 1 ? (
                       <button
                         type="button"
-                        aria-label={`Remove ${formatINR(amount)}`}
+                        aria-label={`Remove ${formatINR(amount, form.currency)}`}
                         onClick={() => onChange({ fixedAmounts: form.fixedAmounts.filter((item) => item !== amount) })}
                       >
                         ×
@@ -442,7 +424,7 @@ function StoryStep({
                   <input
                     inputMode="numeric"
                     value={draftAmount}
-                    placeholder="₹ Add"
+                    placeholder={`${currencySymbol(form.currency)} Add`}
                     aria-label="New suggested amount"
                     onChange={(event) => setDraftAmount(event.target.value.replace(/[^\d]/g, ''))}
                     onKeyDown={(event) => {
@@ -499,7 +481,7 @@ function StoryStep({
         ) : null}
       </div>
 
-      <GameGallery form={form} errors={errors} onChange={onChange} />
+      <GameGallery form={form} errors={errors} onChange={onChange} org={org} />
     </div>
   )
 }
@@ -559,11 +541,14 @@ function SettingsStep({
   form,
   errors,
   onChange,
+  org,
 }: {
   form: CampaignForm
   errors: FormErrors
   onChange: (patch: Partial<CampaignForm>) => void
+  org: Organization
 }) {
+  const gamesAllowed = selectableGames(org).length > 0
   return (
     <div className="settings-stack">
       <section className="panel form-panel">
@@ -579,7 +564,7 @@ function SettingsStep({
           <RadioCard
             checked={form.donationMode === 'custom'}
             title="Custom amount"
-            text="Supporters enter any whole-rupee amount."
+            text="Supporters enter any whole amount."
             onSelect={() => onChange({ donationMode: 'custom' })}
           />
         </div>
@@ -630,13 +615,21 @@ function SettingsStep({
           <OptionCard
             checked={form.direct}
             title="Direct donation"
-            text="A simple simulated contribution."
+            text={org.visibility.direct ? 'A simple simulated contribution.' : `Direct contributions are hidden for ${org.name}.`}
+            disabled={!org.visibility.direct && !form.direct}
             onToggle={() => onChange({ direct: !form.direct })}
           />
           <OptionCard
             checked={form.game}
             title="Game-based giving"
-            text={form.game ? gameMeta(form.gameType).name : 'Turn giving into a short game.'}
+            text={
+              !gamesAllowed
+                ? `Games are turned off for ${org.name}.`
+                : form.game
+                  ? gameMeta(form.gameType).name
+                  : 'Turn giving into a short game.'
+            }
+            disabled={!gamesAllowed && !form.game}
             onToggle={() => onChange({ game: !form.game })}
           />
           <div className="option-card disabled">
@@ -647,7 +640,7 @@ function SettingsStep({
             <span className="muted small">Thank-you vouchers from local partners.</span>
           </div>
         </div>
-        {form.game ? <GameGallery form={form} errors={errors} onChange={onChange} /> : null}
+        {form.game ? <GameGallery form={form} errors={errors} onChange={onChange} org={org} /> : null}
         {form.game ? <GameContributionSettingsPanel form={form} errors={errors} onChange={onChange} /> : null}
       </section>
     </div>
@@ -658,11 +651,15 @@ function GameGallery({
   form,
   errors,
   onChange,
+  org,
 }: {
   form: CampaignForm
   errors: FormErrors
   onChange: (patch: Partial<CampaignForm>) => void
+  org: Organization
 }) {
+  const allowed = selectableGames(org)
+  const games = GAMES.filter((game) => allowed.includes(game.id))
   const [previewGame, setPreviewGame] = useState<GameType | null>(null)
   const puzzle = useImagePicker((data) => onChange({ puzzleImageData: data }), {
     maxWidth: 1200,
@@ -678,13 +675,16 @@ function GameGallery({
           Choose a game
         </label>
         <p className="help">
-          {form.game
-            ? `${gameMeta(form.gameType).name} is the only game supporters will see. Preview it before publishing.`
-            : 'Supporters will only see direct giving.'}
+          {allowed.length === 0
+            ? `Games are turned off for ${org.name}, so supporters give directly.`
+            : form.game
+              ? `${gameMeta(form.gameType).name} is the only game supporters will see. ${org.name} offers ${allowed.length === 1 ? 'this game' : `${allowed.length} games`}.`
+              : 'Supporters will only see direct giving.'}
         </p>
       </div>
+      {errors.gameType ? <p className="error-text">{errors.gameType}</p> : null}
       <div className="game-chooser" role="radiogroup" aria-labelledby="game-gallery-label">
-        {GAMES.map((game) => (
+        {games.map((game) => (
           <div
             key={game.id}
             className={form.game && form.gameType === game.id ? 'game-choice selected' : 'game-choice'}
@@ -728,7 +728,7 @@ function GameGallery({
               <rect x="46" y="22" width="68" height="56" rx="14" fill="#fffdf8" />
               <rect x="46" y="22" width="68" height="56" rx="14" fill="none" stroke="#17493b" strokeWidth="1.5" />
               <text x="80" y="58" textAnchor="middle" fill="#17493b" fontSize="26" fontWeight="700" fontFamily="Georgia, serif">
-                ₹
+                {currencySymbol(form.currency)}
               </text>
               <path d="M122 70c6-8 14-10 18-8-6 8-12 14-18 14-4 0-6-2-6-6 0 0 2 2 6 0Z" fill="#8FCB6A" />
               <path d="M126 76c-2 6-1 12 2 16" fill="none" stroke="#e6b84b" strokeWidth="1.6" strokeLinecap="round" />
@@ -740,6 +740,15 @@ function GameGallery({
           </span>
           <span className="none-foot">A simple contribution</span>
         </button>
+        {COMING_SOON_GAMES.map((game) => (
+          <div key={game.id} className="game-choice soon-choice" aria-disabled="true">
+            <span className="soon-art" aria-hidden="true">
+              <Icon name="spark" size={26} />
+            </span>
+            <strong>{game.name}</strong>
+            <span className="soon-pill">Coming soon</span>
+          </div>
+        ))}
       </div>
 
       {form.game && form.gameType === 'puzzle' ? (
@@ -803,7 +812,7 @@ function GameContributionSettingsPanel({
       <div className="game-settings-grid">
         <Field label={`Rate per ${config.noun}`} htmlFor="game-rate" error={errors.gameRate}>
           <div className="input-prefix">
-            <span>₹</span>
+            <span>{currencySymbol(form.currency)}</span>
             <input
               id="game-rate"
               inputMode="decimal"
@@ -833,7 +842,7 @@ function GameContributionSettingsPanel({
         </Field>
         <Field label="Suggested-total cap (optional)" htmlFor="game-cap" error={errors.gameCap}>
           <div className="input-prefix">
-            <span>₹</span>
+            <span>{currencySymbol(form.currency)}</span>
             <input
               id="game-cap"
               inputMode="decimal"
@@ -870,14 +879,22 @@ function OptionCard({
   title,
   text,
   onToggle,
+  disabled = false,
 }: {
   checked: boolean
   title: string
   text: string
   onToggle: () => void
+  disabled?: boolean
 }) {
   return (
-    <button type="button" className={checked ? 'option-card checked' : 'option-card'} aria-pressed={checked} onClick={onToggle}>
+    <button
+      type="button"
+      className={checked ? 'option-card checked' : disabled ? 'option-card disabled' : 'option-card'}
+      aria-pressed={checked}
+      disabled={disabled}
+      onClick={onToggle}
+    >
       <div className="option-top">
         <strong>{title}</strong>
         <i className="checkbox">{checked ? <Icon name="check" size={13} /> : null}</i>
@@ -897,11 +914,11 @@ function ReviewStep({ form, onEdit }: { form: CampaignForm; onEdit: (step: numbe
   const goal = Number(form.goalAmount)
   const rows: Array<[string, string]> = [
     ['Organiser', form.organizerName],
-    ['Goal', Number.isFinite(goal) ? formatINR(goal) : '—'],
+    ['Goal', Number.isFinite(goal) ? formatINR(goal, form.currency) : '—'],
     ['Group type', form.access === 'open' ? 'Open group' : `Private · code ${form.accessCode}`],
     [
       'Amounts',
-      form.donationMode === 'custom' ? 'Supporter chooses' : form.fixedAmounts.map((amount) => formatINR(amount)).join(', '),
+      form.donationMode === 'custom' ? 'Supporter chooses' : form.fixedAmounts.map((amount) => formatINR(amount, form.currency)).join(', '),
     ],
     ['Opens', safeStamp(form.opensAt)],
     ['Closes', safeStamp(form.closesAt)],

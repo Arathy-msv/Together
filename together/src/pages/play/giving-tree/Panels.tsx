@@ -9,7 +9,7 @@ import {
   suggestedPaise,
   type GivingTreeState,
 } from '../../../lib/givingTree.ts'
-import { formatINR } from '../../../lib/format.ts'
+import { currencySymbol, formatINR } from '../../../lib/format.ts'
 import { ART } from './GardenScene.tsx'
 import { ArrowRight, CareIcon, CheckIcon, InfoIcon, LeafPoints, SproutMark } from './icons.tsx'
 
@@ -193,7 +193,7 @@ export function AmountChooser({
         <label htmlFor="gt-amount">Your contribution amount</label>
         <div className="gt-field-row">
           <div className={error ? 'gt-input has-error' : 'gt-input'}>
-            <span aria-hidden="true">₹</span>
+            <span aria-hidden="true">{currencySymbol()}</span>
             <input
               id="gt-amount"
               inputMode="numeric"
@@ -244,7 +244,7 @@ export function AmountChooser({
 
       <div className="gt-panel-actions">
         <button type="submit" className="gt-btn gt-btn-primary gt-btn-lg" disabled={disabled}>
-          Confirm simulated contribution — {amount != null ? formatPaise(amount) : '₹—'} <ArrowRight />
+          Confirm simulated contribution — {amount != null ? formatPaise(amount) : `${currencySymbol()}—`} <ArrowRight />
         </button>
         <button type="button" className="gt-link" onClick={onBack}>
           Cancel and return

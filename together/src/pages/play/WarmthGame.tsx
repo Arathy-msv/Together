@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { LeafMark } from '../../components/illustrations.tsx'
+import { OrgGameBrand } from '../../components/org/OrgGameBrand.tsx'
+import { useOrgBase } from '../../components/org/OrgContext.tsx'
 import { CoinFlight, type Point } from './giving-tree/CoinFlight.tsx'
 import { useGameContribution } from '../../hooks/useGameContribution.ts'
 import { contributionAvailability } from '../../lib/availability.ts'
@@ -14,7 +16,7 @@ import {
   selectedPaise,
 } from '../../lib/gameContribution.ts'
 import { newRoundId, readLedger, readProgress, writeProgress } from '../../lib/gameLedger.ts'
-import { formatINR } from '../../lib/format.ts'
+import { currencySymbol, formatINR } from '../../lib/format.ts'
 import { loadStore } from '../../lib/storage.ts'
 import type { CampaignView } from '../../lib/types.ts'
 import {
@@ -52,6 +54,7 @@ export function WarmthGame({ view, preview = false }: { view: CampaignView; prev
   const reduced = useReducedMotion()
   const campaign = view.campaign
   const campaignId = campaign.id
+  const base = useOrgBase()
   const [progress, setProgress] = useState<WarmthProgress>(() => {
     if (preview) return freshProgress()
     return readProgress(campaignId, 'jacket', parseWarmthProgress) ?? freshProgress()
@@ -220,7 +223,7 @@ export function WarmthGame({ view, preview = false }: { view: CampaignView; prev
   if (finished) {
     return (
       <div className="wm-shell">
-        <WarmthHeader backTo={preview ? undefined : campaignDetailsPath(campaignId)} preview={preview} />
+        <WarmthHeader backTo={preview ? undefined : campaignDetailsPath(campaignId, base)} preview={preview} />
         <section className="wm-goal">
           <img src="/games/warmth/clothing-rail.jpg" alt="A rail of navy and forest jackets above folded sweaters" />
           <div>
@@ -233,10 +236,10 @@ export function WarmthGame({ view, preview = false }: { view: CampaignView; prev
             </p>
             <p className="wm-goal-note">This clothing rail is a symbol of the goal. It is not a count of garments bought or delivered.</p>
             <div className="wm-goal-actions">
-              <Link className="wm-btn" to={campaignDetailsPath(campaignId)}>
+              <Link className="wm-btn" to={campaignDetailsPath(campaignId, base)}>
                 View campaign story
               </Link>
-              <Link className="wm-btn wm-btn-ghost" to="/explore">
+              <Link className="wm-btn wm-btn-ghost" to={`${base}/campaigns`}>
                 Explore other campaigns
               </Link>
             </div>
@@ -248,7 +251,7 @@ export function WarmthGame({ view, preview = false }: { view: CampaignView; prev
 
   return (
     <div className={`wm-shell${review ? ' is-review' : ''}`}>
-      <WarmthHeader backTo={preview ? undefined : campaignDetailsPath(campaignId)} preview={preview} />
+      <WarmthHeader backTo={preview ? undefined : campaignDetailsPath(campaignId, base)} preview={preview} />
       <div className="wm-strip">
         <div className="wm-campaign">
           <LeafMark size={18} />
@@ -350,15 +353,15 @@ export function WarmthGame({ view, preview = false }: { view: CampaignView; prev
               <div className="wm-actions">
                 <button type="button" className="wm-chip" disabled={lined} onClick={() => addAction('lining', jacketPoint)}>
                   <strong>Warm lining</strong>
-                  <span>₹50</span>
+                  <span>{formatINR(50)}</span>
                 </button>
                 <button type="button" className="wm-chip" disabled={!lined || zipped} onClick={completeZip}>
                   <strong>Zip</strong>
-                  <span>₹50</span>
+                  <span>{formatINR(50)}</span>
                 </button>
                 <button type="button" className="wm-chip" disabled={!zipped || tagged} onClick={() => addAction('tag', jacketPoint)}>
                   <strong>Kindness tag</strong>
-                  <span>₹25</span>
+                  <span>{formatINR(25)}</span>
                 </button>
                 <button type="button" className="wm-btn" onClick={openReview}>
                   Review & contribute
@@ -391,7 +394,7 @@ export function WarmthGame({ view, preview = false }: { view: CampaignView; prev
                 <div className="wm-quick">
                   {WARMTH_QUICK_RUPEES.map((rupees) => (
                     <button key={rupees} type="button" onClick={() => setAmountText(String(rupees))} className={amountText === String(rupees) ? 'is-on' : ''}>
-                      ₹{rupees}
+                      {formatINR(rupees)}
                     </button>
                   ))}
                 </div>
@@ -416,7 +419,7 @@ export function WarmthGame({ view, preview = false }: { view: CampaignView; prev
             {amountError ? <p className="wm-error" role="alert">{amountError}</p> : null}
             {!availability.ok ? <p className="wm-error">{availability.reason}</p> : null}
             <button type="button" className="wm-btn" onClick={proceed} disabled={!availability.ok || done.length === 0}>
-              Continue with {allowCustom && amountText ? `₹${amountText}` : formatPaise(suggestion)}
+              Continue with {allowCustom && amountText ? `${currencySymbol()}${amountText}` : formatPaise(suggestion)}
             </button>
             <button type="button" className="wm-text" onClick={() => setReview(false)}>
               Keep preparing
@@ -460,9 +463,7 @@ export function WarmthGame({ view, preview = false }: { view: CampaignView; prev
 function WarmthHeader({ backTo, preview }: { backTo?: string; preview: boolean }) {
   return (
     <header className="wm-header">
-      <Link to="/" className="wm-brand" aria-label="Together home">
-        <LeafMark size={22} /> Together
-      </Link>
+      <OrgGameBrand className="wm-brand" preview={preview} />
       {backTo ? (
         <Link to={backTo} className="wm-back">
           Back to campaign

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useOrgBase } from '../components/org/OrgContext.tsx'
 import { contributionAvailability } from '../lib/availability.ts'
 import { findContribution } from '../lib/campaigns.ts'
 import {
@@ -63,6 +64,7 @@ export function useGameContribution({
 }) {
   const campaignId = view.campaign.id
   const navigate = useNavigate()
+  const base = useOrgBase()
   const settings = useMemo(() => campaignGameSettings(view.campaign), [view.campaign])
   const config = gameConfig(game)
   const [ledger, setLedger] = useState(() => initialLedger(campaignId, game, preview))
@@ -156,7 +158,7 @@ export function useGameContribution({
     next = beginCheckout(next, session.id)
     commit(next)
     setDialog(null)
-    navigate(`/campaigns/${campaignId}/confirm?session=${encodeURIComponent(session.id)}`)
+    navigate(`${base}/campaigns/${campaignId}/confirm?session=${encodeURIComponent(session.id)}`)
     return null
   }
 

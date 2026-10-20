@@ -24,7 +24,7 @@ function loadImage(file: File): Promise<HTMLImageElement> {
  */
 export async function readImageFile(
   file: File,
-  options: { maxWidth: number; maxHeight: number; type: 'image/jpeg' | 'image/png'; quality?: number },
+  options: { maxWidth: number; maxHeight: number; type: 'image/jpeg' | 'image/png'; quality?: number; maxChars?: number },
 ): Promise<string> {
   if (!ACCEPTED.includes(file.type)) throw new Error('Use a JPG, PNG, WebP or GIF image.')
   if (file.size > MAX_UPLOAD_BYTES) throw new Error('Choose an image smaller than 8 MB.')
@@ -42,5 +42,13 @@ export async function readImageFile(
     context.fillRect(0, 0, width, height)
   }
   context.drawImage(image, 0, 0, width, height)
-  return canvas.toDataURL(options.type, options.quality ?? 0.82)
+  const limit = options.maxChars ?? 1_200_000
+  let quality = options.quality ?? 0.82
+  let data = canvas.toDataURL(options.type, quality)
+  while (data.length > limit && options.type === 'image/jpeg' && quality > 0.45) {
+    quality -= 0.1
+    data = canvas.toDataURL(options.type, quality)
+  }
+  if (data.length > limit) throw new Error('This image is still too large after compression. Try a simpler or smaller image.')
+  return data
 }

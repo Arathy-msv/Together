@@ -10,6 +10,7 @@ import {
   parseRupeesToPaise,
   selectedPaise,
 } from '../lib/gameContribution.ts'
+import { currencySymbol, formatMoney } from '../lib/format.ts'
 import { gameMeta } from '../lib/games.ts'
 import { loadStore } from '../lib/storage.ts'
 
@@ -203,7 +204,7 @@ function CheckpointDialog({ contribution, onNextRound }: { contribution: GameCon
             {dialog.outcome === 'capped'
               ? dialog.latestPaise > 0
                 ? `Added ${formatPaise(dialog.latestPaise)} — the suggestion cap is now reached`
-                : 'Suggestion cap reached — this action added ₹0'
+                : `Suggestion cap reached — this action added ${formatMoney(0)}`
               : `Added ${formatPaise(dialog.latestPaise)}`}
           </p>
         ) : null}
@@ -234,7 +235,7 @@ function CheckpointDialog({ contribution, onNextRound }: { contribution: GameCon
         <div className="gc-field">
           <label htmlFor={fieldId}>Your contribution total</label>
           <div className={fieldError && dirty ? 'gc-input invalid' : 'gc-input'}>
-            <span aria-hidden="true">₹</span>
+            <span aria-hidden="true">{currencySymbol()}</span>
             <input
               id={fieldId}
               inputMode="decimal"

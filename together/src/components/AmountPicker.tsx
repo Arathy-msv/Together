@@ -1,4 +1,4 @@
-import { formatINR } from '../lib/format.ts'
+import { currencySymbol, formatINR } from '../lib/format.ts'
 import type { DonationMode } from '../lib/types.ts'
 
 export function AmountPicker({
@@ -23,7 +23,7 @@ export function AmountPicker({
       <div className="amount-picker">
         <label htmlFor="custom-amount">Enter an amount</label>
         <div className="rupee-field">
-          <span>₹</span>
+          <span>{currencySymbol()}</span>
           <input
             id="custom-amount"
             inputMode="numeric"

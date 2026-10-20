@@ -1,16 +1,20 @@
 import { Link } from 'react-router-dom'
+import { campaignSharePath } from '../lib/campaigns.ts'
 import { formatINR } from '../lib/format.ts'
 import { gameMeta } from '../lib/games.ts'
 import type { CampaignView } from '../lib/types.ts'
 import { CampaignCover } from './CampaignImage.tsx'
 import { ProgressBar } from './ProgressBar.tsx'
 import { StatusBadge } from './StatusBadge.tsx'
+import { useOrgBase } from './org/OrgContext.tsx'
 
 export function CampaignCard({ view, compact = false }: { view: CampaignView; compact?: boolean }) {
   const { campaign, raised, percent, supporters, status } = view
+  const base = useOrgBase()
+  const to = campaignSharePath(campaign.id, base)
   if (compact) {
     return (
-      <Link to={`/campaigns/${campaign.id}`} className="feature-campaign">
+      <Link to={to} className="feature-campaign">
         <CampaignCover campaign={campaign} />
         <div>
           <h3>{campaign.title}</h3>
@@ -20,7 +24,7 @@ export function CampaignCard({ view, compact = false }: { view: CampaignView; co
             <>
               <div className="money-row">
                 <span>
-                  <strong>{formatINR(raised)}</strong> of {formatINR(campaign.goalAmount)}
+                  <strong>{formatINR(raised, campaign.currency)}</strong> of {formatINR(campaign.goalAmount, campaign.currency)}
                 </span>
                 <span>{percent}%</span>
               </div>
@@ -32,7 +36,7 @@ export function CampaignCard({ view, compact = false }: { view: CampaignView; co
     )
   }
   return (
-    <Link to={`/campaigns/${campaign.id}`} className="campaign-tile">
+    <Link to={to} className="campaign-tile">
       <div className="campaign-tile-media">
         <CampaignCover campaign={campaign} />
         <StatusBadge status={status} />
@@ -45,7 +49,7 @@ export function CampaignCard({ view, compact = false }: { view: CampaignView; co
         <h3>{campaign.title}</h3>
         <div className="money-row">
           <span>
-            <strong>{formatINR(raised)}</strong> of {formatINR(campaign.goalAmount)}
+            <strong>{formatINR(raised, campaign.currency)}</strong> of {formatINR(campaign.goalAmount, campaign.currency)}
           </span>
           <span>{percent}%</span>
         </div>

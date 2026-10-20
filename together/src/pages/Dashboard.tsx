@@ -4,18 +4,29 @@ import { CampaignCover } from '../components/CampaignImage.tsx'
 import { Icon } from '../components/illustrations.tsx'
 import { ProgressBar } from '../components/ProgressBar.tsx'
 import { StatusBadge } from '../components/StatusBadge.tsx'
+import { useOrg } from '../components/org/OrgContext.tsx'
 import { useCampaignViews } from '../hooks/useDemoStore.ts'
 import { closeCampaign, deleteCampaign } from '../lib/campaigns.ts'
-import { formatDate, formatINR } from '../lib/format.ts'
+import { formatDate, formatINR, formatMoney } from '../lib/format.ts'
 import { gameMeta } from '../lib/games.ts'
 import { clearGameData } from '../lib/gameLedger.ts'
+import { resetOrganizations } from '../lib/orgStorage.ts'
 import { resetStore } from '../lib/storage.ts'
-import type { CampaignView } from '../lib/types.ts'
+import type { CampaignView, CurrencyCode } from '../lib/types.ts'
+
+/** Totals per currency, so campaigns in different currencies are never added together. */
+function formatTotals(views: CampaignView[], fallback: CurrencyCode): string {
+  const totals = new Map<CurrencyCode, number>()
+  for (const view of views) totals.set(view.campaign.currency, (totals.get(view.campaign.currency) ?? 0) + view.raised)
+  if (totals.size === 0) return formatMoney(0, fallback)
+  return [...totals].map(([currency, amount]) => formatMoney(amount, currency)).join(' + ')
+}
 
 export function DashboardPage() {
   const views = [...useCampaignViews()].sort(
     (a, b) => Date.parse(b.campaign.createdAt) - Date.parse(a.campaign.createdAt),
   )
+  const { org, base } = useOrg()
   const [params] = useSearchParams()
   const createdId = params.get('created')
   const [copiedId, setCopiedId] = useState<string | null>(null)
@@ -25,15 +36,14 @@ export function DashboardPage() {
   const [confirmReset, setConfirmReset] = useState(false)
 
   useEffect(() => {
-    document.title = 'My campaigns — Together'
-  }, [])
+    document.title = `Organizer — ${org.name}`
+  }, [org.name])
 
   const published = views.filter((view) => !view.campaign.isDraft)
-  const raised = published.reduce((sum, view) => sum + view.raised, 0)
   const contributions = published.reduce((sum, view) => sum + view.supporters, 0)
 
   async function copyLink(id: string) {
-    const url = `${window.location.origin}/campaigns/${id}`
+    const url = `${window.location.origin}${base}/campaigns/${id}`
     try {
       await navigator.clipboard.writeText(url)
     } catch {
@@ -60,19 +70,26 @@ export function DashboardPage() {
     <div className="container page-pad">
       <div className="page-head">
         <div>
-          <h1>My campaigns</h1>
-          <p className="muted">Saved in this browser.</p>
+          <h1>{org.name} campaigns</h1>
+          <p className="muted">Organizer view · saved in this browser.</p>
         </div>
-        <Link to="/create?new=1" className="btn btn-primary">
-          Create campaign
-        </Link>
+        <div className="page-head-actions">
+          {org.visibility.assistant ? (
+            <Link to={`${base}/assistant`} className="btn btn-outline">
+              Create with assistant
+            </Link>
+          ) : null}
+          <Link to={`${base}/create?new=1`} className="btn btn-primary">
+            Create campaign
+          </Link>
+        </div>
       </div>
 
       {createdId ? (
         <div className="notice success" role="status">
           <Icon name="check" size={18} />
           Campaign created and saved in this browser.
-          <Link to={`/campaigns/${createdId}`}>View campaign</Link>
+          <Link to={`${base}/campaigns/${createdId}`}>View campaign</Link>
         </div>
       ) : null}
 
@@ -85,7 +102,7 @@ export function DashboardPage() {
 
       <div className="stat-cards">
         <StatCard icon="chart" tone="green" value={String(published.length)} label="campaigns" />
-        <StatCard icon="gift" tone="gold" value={formatINR(raised)} label="simulated contributions" />
+        <StatCard icon="gift" tone="gold" value={formatTotals(published, org.defaults.currency)} label="simulated contributions" />
         <StatCard icon="users" tone="coral" value={String(contributions)} label="contributions" />
       </div>
 
@@ -93,7 +110,7 @@ export function DashboardPage() {
         <div className="panel empty">
           <h2>No campaigns yet</h2>
           <p className="muted">Create one, or reset demo data to restore the sample campaigns.</p>
-          <Link to="/create?new=1" className="btn btn-primary">
+          <Link to={`${base}/create?new=1`} className="btn btn-primary">
             Create campaign
           </Link>
         </div>
@@ -115,6 +132,7 @@ export function DashboardPage() {
                 <Row
                   key={view.campaign.id}
                   view={view}
+                  base={base}
                   copied={copiedId === view.campaign.id}
                   menuOpen={menuId === view.campaign.id}
                   confirmDelete={confirmDeleteId === view.campaign.id}
@@ -172,12 +190,13 @@ export function DashboardPage() {
         </div>
         {confirmReset ? (
           <div className="inline-actions">
-            <span className="small">Restore sample campaigns and clear your changes?</span>
+            <span className="small">Restore sample campaigns and organization branding, and clear your changes?</span>
             <button
               type="button"
               className="btn btn-danger btn-sm"
               onClick={() => {
                 resetStore()
+                resetOrganizations()
                 clearGameData()
                 setConfirmReset(false)
               }}
@@ -214,6 +233,7 @@ function StatCard({ icon, tone, value, label }: { icon: string; tone: string; va
 
 function Row({
   view,
+  base,
   copied,
   menuOpen,
   confirmDelete,
@@ -226,6 +246,7 @@ function Row({
   onConfirmDelete,
 }: {
   view: CampaignView
+  base: string
   copied: boolean
   menuOpen: boolean
   confirmDelete: boolean
@@ -274,7 +295,7 @@ function Row({
       <td data-label="Progress">
         <div className="money-row">
           <span>
-            <strong>{formatINR(raised)}</strong> / {formatINR(campaign.goalAmount)}
+            <strong>{formatINR(raised, campaign.currency)}</strong> / {formatINR(campaign.goalAmount, campaign.currency)}
           </span>
           <span>{percent}%</span>
         </div>
@@ -292,11 +313,11 @@ function Row({
       <td data-label="Actions">
         <div className="row-buttons">
           {campaign.isDraft ? (
-            <Link to={`/create?draft=${campaign.id}`} className="btn btn-outline btn-sm">
+            <Link to={`${base}/create?draft=${campaign.id}`} className="btn btn-outline btn-sm">
               Edit
             </Link>
           ) : (
-            <Link to={`/campaigns/${campaign.id}`} className="btn btn-outline btn-sm">
+            <Link to={`${base}/campaigns/${campaign.id}`} className="btn btn-outline btn-sm">
               View
             </Link>
           )}

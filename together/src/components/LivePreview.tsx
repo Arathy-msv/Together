@@ -27,11 +27,11 @@ export function LivePreview({ form }: { form: CampaignForm }) {
       <p className="muted small">{story ? truncate(story, 160) : 'Your description will appear here.'}</p>
       <div className="money-row big">
         <span className="muted">Target</span>
-        <strong>{Number.isFinite(goal) && goal > 0 ? formatINR(goal) : '—'}</strong>
+        <strong>{Number.isFinite(goal) && goal > 0 ? formatINR(goal, form.currency) : '—'}</strong>
       </div>
       <ProgressBar value={0} />
       <div className="money-row small muted">
-        <span>{formatINR(0)} raised</span>
+        <span>{formatINR(0, form.currency)} raised</span>
         <span>0%</span>
       </div>
       <div className="preview-facts">

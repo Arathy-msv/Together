@@ -2,9 +2,10 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { CampaignCover } from '../components/CampaignImage.tsx'
 import { Icon } from '../components/illustrations.tsx'
+import { useOrgBase } from '../components/org/OrgContext.tsx'
 import { useCampaignView, useDemoStore } from '../hooks/useDemoStore.ts'
 import { contributionAvailability } from '../lib/availability.ts'
-import { addContribution, campaignDetailsPath, findContribution, toView } from '../lib/campaigns.ts'
+import { addContribution, campaignDetailsPath, campaignPlayPath, findContribution, toView } from '../lib/campaigns.ts'
 import {
   actionBreakdown,
   campaignGameSettings,
@@ -52,13 +53,14 @@ function GameConfirm({ view, sessionId }: { view: CampaignView; sessionId: strin
   const navigate = useNavigate()
   const store = useDemoStore()
   const { campaign } = view
+  const base = useOrgBase()
   const [ledger, setLedger] = useState(() => loadLedgerFor(view, sessionId))
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const lock = useRef(false)
   const session = ledger.session?.id === sessionId ? ledger.session : null
   const config = gameConfig(campaign.gameType)
-  const playPath = `/campaigns/${campaign.id}/play/${campaign.gameType}`
+  const playPath = campaignPlayPath(campaign.id, campaign.gameType, base)
 
   useEffect(() => {
     document.title = 'Review your game contribution — Together'
@@ -66,7 +68,7 @@ function GameConfirm({ view, sessionId }: { view: CampaignView; sessionId: strin
 
   const saved = store.contributions.find((item) => item.id === sessionId && item.campaignId === campaign.id)
   if (!session) {
-    if (saved) return <Navigate to={`/campaigns/${campaign.id}/success/${saved.id}`} replace />
+    if (saved) return <Navigate to={`${base}/campaigns/${campaign.id}/success/${saved.id}`} replace />
     return (
       <div className="container narrow page-pad">
         <div className="panel empty">
@@ -133,7 +135,7 @@ function GameConfirm({ view, sessionId }: { view: CampaignView; sessionId: strin
         referralCode: activeReferral(campaign.id, giver?.id),
       })
       writeLedger(settleConfirmed(latestLedger, sessionId))
-      navigate(`/campaigns/${campaign.id}/success/${savedContribution.id}`, { replace: true })
+      navigate(`${base}/campaigns/${campaign.id}/success/${savedContribution.id}`, { replace: true })
     } catch (problem) {
       lock.current = false
       setSubmitting(false)
@@ -274,6 +276,7 @@ function DirectConfirm({ view }: { view: CampaignView }) {
   }, [])
 
   const { campaign } = view
+  const base = useOrgBase()
 
   function confirm() {
     if (lock.current) return
@@ -317,7 +320,7 @@ function DirectConfirm({ view }: { view: CampaignView }) {
         referralCode: current.referralCode,
       })
       clearPending()
-      navigate(`/campaigns/${campaign.id}/success/${saved.id}`)
+      navigate(`${base}/campaigns/${campaign.id}/success/${saved.id}`)
     } catch (problem) {
       lock.current = false
       setSubmitting(false)
@@ -325,7 +328,7 @@ function DirectConfirm({ view }: { view: CampaignView }) {
     }
   }
 
-  const backPath = campaignDetailsPath(campaign.id)
+  const backPath = campaignDetailsPath(campaign.id, base)
 
   return (
     <div className="confirm-page-pro">
@@ -403,7 +406,7 @@ function DirectConfirm({ view }: { view: CampaignView }) {
             <p className="muted">
               Choose an amount on the campaign page. If you already confirmed, that contribution is already included.
             </p>
-            <Link to={campaignDetailsPath(campaign.id)} className="btn btn-primary">
+            <Link to={campaignDetailsPath(campaign.id, base)} className="btn btn-primary">
               Back to campaign
             </Link>
           </div>

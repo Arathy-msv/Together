@@ -16,6 +16,7 @@ import './styles/pro.css'
 import './styles/how.css'
 import './styles/flow.css'
 import './styles/contribution.css'
+import './styles/org.css'
 import App from './App.tsx'
 
 createRoot(document.getElementById('root')!).render(

@@ -1,5 +1,6 @@
 import { shiftLocal } from '../lib/format.ts'
 import type { Campaign, Contribution, DemoStore } from '../lib/types.ts'
+import { ORG_HARBOUR, ORG_LUMEN, ORG_MAPLE } from './organizations.ts'
 
 function contribution(
   id: string,
@@ -45,6 +46,8 @@ export function createSeed(): DemoStore {
       participation: { direct: true, game: true },
       gameType: 'garden',
       createdAt: shiftLocal(-20, 9),
+      organizationId: 'org_together',
+      currency: 'INR',
     },
     {
       id: 'cmp_garden',
@@ -63,6 +66,8 @@ export function createSeed(): DemoStore {
       participation: { direct: true, game: true },
       gameType: 'puzzle',
       createdAt: shiftLocal(-14, 11),
+      organizationId: 'org_together',
+      currency: 'INR',
     },
     {
       id: 'cmp_winter',
@@ -81,6 +86,8 @@ export function createSeed(): DemoStore {
       participation: { direct: true, game: true },
       gameType: 'memory',
       createdAt: shiftLocal(-2, 15),
+      organizationId: 'org_together',
+      currency: 'INR',
     },
     {
       id: 'cmp_jacket',
@@ -99,6 +106,8 @@ export function createSeed(): DemoStore {
       participation: { direct: true, game: true },
       gameType: 'jacket',
       createdAt: shiftLocal(-5, 14),
+      organizationId: 'org_together',
+      currency: 'INR',
     },
     {
       id: 'cmp_circle',
@@ -118,7 +127,10 @@ export function createSeed(): DemoStore {
       participation: { direct: true, game: true },
       gameType: 'garden',
       createdAt: shiftLocal(-7, 11),
+      organizationId: 'org_together',
+      currency: 'INR',
     },
+    ...organizationCampaigns(),
   ]
 
   const contributions: Contribution[] = [
@@ -153,7 +165,204 @@ export function createSeed(): DemoStore {
       playerId: 'player_meera',
       playerName: 'Meera Shah',
     },
+    ...organizationContributions(),
   ]
 
-  return { version: 1, campaigns, contributions }
+  return { version: 2, campaigns, contributions }
+}
+
+type SampleInput = Pick<Campaign, 'id' | 'organizationId' | 'currency' | 'title' | 'description' | 'coverImageId' | 'organizerName' | 'goalAmount' | 'gameType'> &
+  Partial<Campaign> & { opensIn: number; closesIn: number; createdDaysAgo: number }
+
+function sample({ opensIn, closesIn, createdDaysAgo, ...input }: SampleInput): Campaign {
+  return {
+    access: 'open',
+    donationMode: 'fixed',
+    fixedAmounts: [],
+    autoCloseOnGoal: true,
+    participation: { direct: true, game: true },
+    opensAt: shiftLocal(opensIn, 9),
+    closesAt: shiftLocal(closesIn, 18),
+    createdAt: shiftLocal(-createdDaysAgo, 10),
+    ...input,
+  }
+}
+
+function organizationCampaigns(): Campaign[] {
+  return [
+    sample({
+      id: 'cmp_lumen_coats',
+      organizationId: ORG_LUMEN,
+      currency: 'USD',
+      title: 'Winter Coat Drive 2026',
+      description:
+        'Every Lumen office is collecting warm coats for partner shelters. Zip up a jacket in the game or give directly — the company matches every confirmed colleague gift.',
+      coverImageId: 'jacket',
+      organizerName: 'Lumen People Team',
+      goalAmount: 6000,
+      fixedAmounts: [10, 25, 50],
+      gameType: 'jacket',
+      opensIn: -9,
+      closesIn: 19,
+      createdDaysAgo: 10,
+    }),
+    sample({
+      id: 'cmp_lumen_laptops',
+      organizationId: ORG_LUMEN,
+      currency: 'USD',
+      title: 'Laptops for Learners — Team Challenge',
+      description:
+        'A private challenge for Lumen engineering teams. Match cards, climb the team board and fund refurbished laptops for students at our partner schools.',
+      coverImageId: 'reading',
+      organizerName: 'Lumen Engineering Volunteers',
+      access: 'closed',
+      accessCode: 'LUMEN26',
+      goalAmount: 12000,
+      donationMode: 'custom',
+      gameType: 'memory',
+      autoCloseOnGoal: false,
+      opensIn: -5,
+      closesIn: 30,
+      createdDaysAgo: 6,
+    }),
+    sample({
+      id: 'cmp_lumen_trees',
+      organizationId: ORG_LUMEN,
+      currency: 'USD',
+      title: 'Plant 500 Trees on Volunteer Day',
+      description:
+        'On our company volunteer day we will plant 500 native saplings along the river path. Grow the shared giving tree to fund saplings, tools and water.',
+      coverImageId: 'garden',
+      organizerName: 'Lumen Green Team',
+      goalAmount: 5000,
+      fixedAmounts: [10, 25, 50],
+      gameType: 'garden',
+      opensIn: -3,
+      closesIn: 25,
+      createdDaysAgo: 4,
+    }),
+    sample({
+      id: 'cmp_maple_lab',
+      organizationId: ORG_MAPLE,
+      currency: 'INR',
+      title: 'Science Lab Starter Kits',
+      description:
+        'Microscopes, circuit kits and safe chemistry sets for Grades 6–8. Piece the puzzle together and help our young scientists run real experiments.',
+      coverImageId: 'library',
+      organizerName: 'Maple Grove PTA',
+      goalAmount: 80000,
+      fixedAmounts: [100, 250, 500],
+      gameType: 'puzzle',
+      opensIn: -14,
+      closesIn: 16,
+      createdDaysAgo: 15,
+    }),
+    sample({
+      id: 'cmp_maple_sports',
+      organizationId: ORG_MAPLE,
+      currency: 'INR',
+      title: 'Sports Day Kits for Every House',
+      description:
+        'New bibs, relay batons and first-aid kits for all four school houses before Sports Day. Families can give directly or play a round of memory match.',
+      coverImageId: 'sports',
+      organizerName: 'Maple Grove PTA',
+      goalAmount: 40000,
+      donationMode: 'custom',
+      gameType: 'memory',
+      opensIn: -8,
+      closesIn: 22,
+      createdDaysAgo: 9,
+    }),
+    sample({
+      id: 'cmp_maple_garden',
+      organizationId: ORG_MAPLE,
+      currency: 'INR',
+      title: 'Our Kitchen Garden',
+      description:
+        'Raised beds, child-sized tools and a rain barrel so every class can grow vegetables and learn where food comes from.',
+      coverImageId: 'garden',
+      organizerName: 'Maple Grove Eco Club',
+      goalAmount: 25000,
+      fixedAmounts: [100, 250, 500],
+      gameType: 'garden',
+      opensIn: 10,
+      closesIn: 40,
+      createdDaysAgo: 2,
+    }),
+    sample({
+      id: 'cmp_harbour_blankets',
+      organizationId: ORG_HARBOUR,
+      currency: 'INR',
+      title: 'Winter Blankets for Shelters',
+      description:
+        'Thick blankets and winter jackets for our three night shelters. Wrap someone in warmth in the game, or give directly to keep beds warm all season.',
+      coverImageId: 'winter',
+      organizerName: 'Open Harbour Outreach',
+      goalAmount: 75000,
+      fixedAmounts: [250, 500, 1000],
+      gameType: 'jacket',
+      opensIn: -11,
+      closesIn: 34,
+      createdDaysAgo: 12,
+    }),
+    sample({
+      id: 'cmp_harbour_kitchen',
+      organizationId: ORG_HARBOUR,
+      currency: 'INR',
+      title: 'Community Kitchen Gardens',
+      description:
+        'Fresh produce for our community kitchens, grown by volunteers and families in two neighbourhood plots. Grow the giving tree to fund seeds, soil and tools.',
+      coverImageId: 'garden',
+      organizerName: 'Open Harbour Kitchens',
+      goalAmount: 60000,
+      fixedAmounts: [250, 500, 1000],
+      gameType: 'garden',
+      opensIn: -6,
+      closesIn: 39,
+      createdDaysAgo: 7,
+    }),
+    sample({
+      id: 'cmp_harbour_reading',
+      organizationId: ORG_HARBOUR,
+      currency: 'INR',
+      title: 'Reading Corners in Shelters',
+      description:
+        'Quiet reading corners with books, lamps and beanbags in every family shelter. Thanks to our supporters this goal has been reached.',
+      coverImageId: 'reading',
+      organizerName: 'Open Harbour Foundation',
+      goalAmount: 15000,
+      donationMode: 'custom',
+      gameType: 'memory',
+      participation: { direct: true, game: false },
+      opensIn: -30,
+      closesIn: 10,
+      createdDaysAgo: 31,
+    }),
+  ]
+}
+
+function gifts(prefix: string, campaignId: string, amounts: number[], startRef: number, startDaysAgo: number): Contribution[] {
+  return amounts.map((amount, index) =>
+    contribution(
+      `ctb_${prefix}_${String(index + 1).padStart(2, '0')}`,
+      campaignId,
+      amount,
+      index % 2 === 0 ? 'game' : 'direct',
+      `DEMO-${startRef + index}`,
+      Math.max(0, startDaysAgo - index),
+    ),
+  )
+}
+
+function organizationContributions(): Contribution[] {
+  return [
+    ...gifts('lumen_coats', 'cmp_lumen_coats', [250, 50, 100, 25, 50, 500, 25, 10, 100, 50], 1201, 9),
+    ...gifts('lumen_laptops', 'cmp_lumen_laptops', [500, 250, 120], 1215, 4),
+    ...gifts('lumen_trees', 'cmp_lumen_trees', [50, 25, 25, 10], 1220, 3),
+    ...gifts('maple_lab', 'cmp_maple_lab', [5000, 2500, 2500, 1000, 1000, 500, 500, 250, 250], 1301, 13),
+    ...gifts('maple_sports', 'cmp_maple_sports', [3000, 1500, 1200, 800, 500], 1315, 7),
+    ...gifts('harbour_blankets', 'cmp_harbour_blankets', [10000, 5000, 5000, 2500, 1000, 1000, 500], 1401, 10),
+    ...gifts('harbour_kitchen', 'cmp_harbour_kitchen', [4000, 2000, 1000, 1000, 500], 1410, 5),
+    ...gifts('harbour_reading', 'cmp_harbour_reading', [5000, 4000, 3000, 2000, 1000], 1420, 25),
+  ]
 }
