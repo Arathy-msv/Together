@@ -96,9 +96,9 @@ Use `{shown|spoken}` when subtitles and speech should differ, e.g. `{₹200|two 
 
 ## Video freshness
 
-- Last verified application commit: `a0ef9cd`
+- Last verified application commit: `575795d`
 - Recording date: 2026-10-20
 - Scenes affected by later changes: none
-- Final video: current (`output/together-demo.mp4`, 11:49, with chapter clips and `together-demo.en.srt`)
+- Final video: current (`output/together-demo.mp4`, 13:09, with chapter clips and `together-demo.en.srt`)
 
 Update this section whenever a user-facing change touches the walkthrough. If a scene or the final video could not be re-recorded, list the scene ids here and set the final video to stale, with the blocker.
