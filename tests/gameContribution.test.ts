@@ -54,6 +54,30 @@ describe('default rates', () => {
     })
   }
 
+  test('an action can set its own price without changing the campaign rate', () => {
+    const settings = defaultGameSettings('jacket')
+    const zip = recordAction(
+      emptyLedger('cmp', 'jacket'),
+      { actionId: 'zip', roundId: 'r', label: 'Zip jacket', amountPaise: 5000 },
+      settings,
+      now,
+      makeId,
+    )
+    const tag = recordAction(
+      zip.ledger,
+      { actionId: 'tag', roundId: 'r', label: 'Attach kindness tag', amountPaise: 2500 },
+      settings,
+      now,
+      makeId,
+    )
+    assert.equal(tag.outcome, 'added')
+    assert.equal(tag.ledger.session?.suggestedPaise, 7500)
+    assert.equal(tag.ledger.session?.actions[1].amountPaise, 2500)
+    const again = recordAction(tag.ledger, { actionId: 'tag', roundId: 'r', label: 'Attach kindness tag', amountPaise: 2500 }, settings, now, makeId)
+    assert.equal(again.outcome, 'duplicate')
+    assert.equal(again.ledger.session?.suggestedPaise, 7500)
+  })
+
   test('jacket stages add ₹50, ₹100, ₹150, ₹200 in turn', () => {
     let ledger = emptyLedger('cmp', 'jacket')
     const totals: number[] = []

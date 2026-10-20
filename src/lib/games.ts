@@ -34,9 +34,9 @@ export const GAMES: { id: GameType; name: string; blurb: string; hint: string; s
   },
   {
     id: 'jacket',
-    name: 'Zip the Jacket',
-    blurb: 'A little action goes a long way.',
-    hint: 'Pull the zip up in four stages.',
+    name: 'Wrap Someone in Warmth',
+    blurb: 'Small actions. A little more warmth.',
+    hint: 'Choose a colour, zip the jacket, add a lining and a kindness tag.',
     style: 'flow',
   },
 ]

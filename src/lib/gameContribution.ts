@@ -64,6 +64,9 @@ export function shortNoun(game: GameType): string {
 }
 
 export function gameIntroSentence(game: GameType, ratePaise: number): string {
+  if (game === 'jacket') {
+    return 'Zip the jacket and add a warm lining for ₹50 each, then attach a kindness tag for ₹25. You can edit the total before confirming. Nothing is charged while playing.'
+  }
   return `Each completed ${shortNoun(game)} adds ${formatPaise(ratePaise)} to your suggested contribution. You can edit the total before confirming. Nothing is charged while playing.`
 }
 
@@ -210,7 +213,7 @@ export function hasAction(ledger: GameLedger, actionId: string): boolean {
  */
 export function recordAction(
   ledger: GameLedger,
-  input: { actionId: string; roundId: string; label: string },
+  input: { actionId: string; roundId: string; label: string; amountPaise?: number },
   settings: GameContributionSettings,
   now: Date = new Date(),
   makeId: () => string = () => crypto.randomUUID(),
@@ -233,8 +236,9 @@ export function recordAction(
       createdAt: at,
       updatedAt: at,
     }
-  const room = base.capPaise == null ? base.ratePaise : Math.max(0, base.capPaise - base.suggestedPaise)
-  const amountPaise = Math.min(base.ratePaise, room)
+  const listPrice = isPositivePaise(input.amountPaise) ? input.amountPaise : base.ratePaise
+  const room = base.capPaise == null ? listPrice : Math.max(0, base.capPaise - base.suggestedPaise)
+  const amountPaise = Math.min(listPrice, room)
   const suggestedPaise = base.suggestedPaise + amountPaise
   const capReached = base.capPaise != null && suggestedPaise >= base.capPaise
   const session: PendingSession = {
@@ -247,7 +251,7 @@ export function recordAction(
   }
   return {
     ledger: { ...ledger, session },
-    outcome: amountPaise < base.ratePaise ? 'capped' : 'added',
+    outcome: amountPaise < listPrice ? 'capped' : 'added',
     addedPaise: amountPaise,
   }
 }
@@ -312,8 +316,10 @@ export function settleConfirmed(ledger: GameLedger, sessionId: string, now: Date
 
 export function actionBreakdown(session: PendingSession, config: GameContributionConfig): string {
   const count = session.actions.length
+  const prices = new Set(session.actions.map((action) => action.amountPaise))
+  if (prices.size > 1) return `${count} ${count === 1 ? 'care action' : 'care actions'}`
   const noun = count === 1 ? config.noun : config.nounPlural
-  return `${count} ${noun} × ${formatPaise(session.ratePaise)}`
+  return `${count} ${noun} × ${formatPaise(session.actions[0]?.amountPaise ?? session.ratePaise)}`
 }
 
 /* ---------- Validation for stored ledgers ---------- */

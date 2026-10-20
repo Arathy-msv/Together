@@ -37,6 +37,10 @@ export interface RecordInput {
   /** Dialog heading, e.g. "You planted a sunflower!". */
   heading: string
   roundComplete?: boolean
+  /** Overrides the campaign rate for this one action, in paise. */
+  amountPaise?: number
+  /** Records the suggestion without opening the checkpoint dialog. */
+  quiet?: boolean
 }
 
 function initialLedger(campaignId: string, game: GameType, preview: boolean): GameLedger {
@@ -90,11 +94,12 @@ export function useGameContribution({
     (input: RecordInput): boolean => {
       const result = recordAction(
         ledgerRef.current,
-        { actionId: input.actionId, roundId: input.roundId, label: input.label },
+        { actionId: input.actionId, roundId: input.roundId, label: input.label, amountPaise: input.amountPaise },
         settings,
       )
       if (result.outcome === 'duplicate') return false
       commit(result.ledger)
+      if (input.quiet) return true
       rememberFocus()
       setDialog({
         mode: 'checkpoint',
