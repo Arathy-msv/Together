@@ -125,6 +125,23 @@ html { scroll-padding-top: 84px; }
 .pro .status-completed { background: #e3ecf6; color: #2d5a87; }
 .pro .status-closed, .pro .status-draft { background: #eeece7; color: #6b7a73; }
 .pro .status-pending_review { background: var(--p-gold-soft); color: #9a6a10; }
+.pro .status-approved { background: #e3ecf6; color: #2d5a87; }
+.pro .status-badge[class*='delivery-'] { background: #f3efe4; color: #5b4a1f; }
+.pro .delivery-in_progress { background: var(--p-gold-soft); color: #7a5410; }
+.pro .delivery-reported_complete { background: var(--p-green-soft); color: var(--p-green-2); }
+.status-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.status-stack { display: grid; gap: 6px; justify-items: start; }
+.review-steps { display: flex; flex-wrap: wrap; gap: 6px 18px; list-style: none; margin: 0 0 12px; padding: 0; font-size: 0.85rem; font-weight: 600; color: var(--p-ink-2, #5b6a63); }
+.review-steps li { display: inline-flex; align-items: center; gap: 6px; }
+.review-steps li span[aria-hidden] { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; border: 1px solid currentColor; font-size: 0.75rem; }
+.review-steps li.done { color: var(--p-green-2, #1f6b4a); }
+.review-steps li.current { color: var(--p-ink, #15221c); }
+.review-steps li.current span[aria-hidden] { background: var(--p-ink, #15221c); color: #fff; border-color: transparent; }
+.review-facts { display: grid; gap: 6px; margin: 0 0 12px; }
+.review-facts div { display: grid; grid-template-columns: 150px 1fr; gap: 8px; font-size: 0.9rem; }
+.review-facts dt { font-weight: 700; }
+.review-facts dd { margin: 0; }
+@media (max-width: 640px) { .review-facts div { grid-template-columns: 1fr; gap: 0; } }
 .soon-pill { display: inline-flex; align-items: center; border-radius: 6px; padding: 3px 9px; font-size: 0.74rem; font-weight: 700; background: var(--p-gold-soft); color: #6e4e0c; vertical-align: middle; }
 .soon-pill.grey { background: #eceae4; color: #7a827e; }
 

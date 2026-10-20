@@ -25,7 +25,7 @@ const { can, PermissionError, visibleCampaigns } = await import('../src/lib/perm
 const { findOrganization, createOrganization, loadOrganizations } = await import('../src/lib/orgStorage.ts')
 const { saveOrganizationAs, setPlatformFeatureAvailability, platformSetPlan } = await import('../src/lib/orgActions.ts')
 const { addMember, removeMember, updateMember, grantMerchantAccess } = await import('../src/lib/members.ts')
-const { publishWithPolicy, reviewRevision, exportOrganizationRecords, formCampaignForOrg } = await import('../src/lib/featureActions.ts')
+const { publishWithPolicy, reviewRevision, publishApprovedRevision, exportOrganizationRecords, formCampaignForOrg } = await import('../src/lib/featureActions.ts')
 const { saveCampaignFields, saveMilestone } = await import('../src/lib/transparency.ts')
 const { addContribution, closeCampaign, deleteCampaign, getCampaign } = await import('../src/lib/campaigns.ts')
 const { createReferral, updateReferral, isMyReferral } = await import('../src/lib/referrals.ts')
@@ -117,9 +117,15 @@ test('review: organizer submits, live version stays public, organizer cannot app
   as(U.lumenAdmin)
   assert.throws(() => reviewRevision('cmp_lumen_coats', firstRevision, 'approve'), /no longer waiting/)
   const approved = reviewRevision('cmp_lumen_coats', secondRevision, 'approve')
-  assert.equal(approved.description, 'A second proposal that replaces the first one entirely.')
-  assert.equal(approved.approvedRevisionId, secondRevision)
-  assert.equal(approved.pendingRevision, undefined)
+  assert.equal(approved.description, before, 'approval alone never publishes')
+  assert.equal(approved.pendingRevision?.status, 'approved')
+  assert.equal(approved.pendingRevision?.reviewedBy, U.lumenAdmin)
+  assert.throws(() => publishApprovedRevision('cmp_lumen_coats', firstRevision), /not approved/)
+  const published = publishApprovedRevision('cmp_lumen_coats', secondRevision)
+  assert.equal(published.description, 'A second proposal that replaces the first one entirely.')
+  assert.equal(published.approvedRevisionId, secondRevision)
+  assert.equal(published.pendingRevision, undefined)
+  assert.equal(published.revisionHistory?.at(-1)?.action, 'published')
 
   // Approval does not carry over: the next material change needs review again.
   as(U.lumenOrganizer)
@@ -139,7 +145,23 @@ test('admins cannot approve their own revision; another admin can', () => {
   assert.equal(getCampaign('cmp_lumen_laptops')!.title, existing.title)
   assert.throws(() => reviewRevision('cmp_lumen_laptops', revision, 'approve'), /own revision/)
   as(U.lumenAdmin2)
-  assert.equal(reviewRevision('cmp_lumen_laptops', revision, 'approve').title, 'Laptops for the coding club')
+  assert.equal(reviewRevision('cmp_lumen_laptops', revision, 'approve').title, existing.title)
+  assert.equal(publishApprovedRevision('cmp_lumen_laptops', revision).title, 'Laptops for the coding club')
+})
+
+test('an approved revision is superseded by a later material change and needs review again', () => {
+  enableReview()
+  as(U.lumenOrganizer)
+  saveCampaignFields('cmp_lumen_coats', { description: 'Proposal that will be approved but not published yet.' })
+  const revision = getCampaign('cmp_lumen_coats')!.pendingRevision!.id
+  as(U.lumenAdmin)
+  reviewRevision('cmp_lumen_coats', revision, 'approve')
+  as(U.lumenOrganizer)
+  assert.equal(saveCampaignFields('cmp_lumen_coats', { description: 'Changed again after approval, so it goes back to review.' }).pendingReview, true)
+  const next = getCampaign('cmp_lumen_coats')!.pendingRevision!
+  assert.notEqual(next.id, revision)
+  assert.equal(next.status, 'pending')
+  assert.throws(() => publishApprovedRevision('cmp_lumen_coats', revision), /not approved/)
 })
 
 test('with no eligible reviewer the revision stays pending and is never silently approved', () => {
@@ -298,7 +320,8 @@ test('migration: organizations saved before roles get one admin; legacy pending 
   saveStore(store)
   const migrated = getCampaign('cmp_lumen_trees')!
   assert.equal(migrated.pendingRevision?.authorId, 'legacy')
-  assert.equal(reviewRevision('cmp_lumen_trees', migrated.pendingRevision!.id, 'approve').isDraft, false)
+  assert.equal(reviewRevision('cmp_lumen_trees', migrated.pendingRevision!.id, 'approve').isDraft, true)
+  assert.equal(publishApprovedRevision('cmp_lumen_trees', migrated.pendingRevision!.id).isDraft, false)
 })
 
 test('a new organization gets only its creator as admin, even when change listeners reload organizations', async () => {

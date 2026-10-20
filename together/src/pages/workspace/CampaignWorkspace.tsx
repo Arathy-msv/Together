@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { DELIVERY_LABEL, FUNDRAISING_LABEL, PUBLICATION_LABEL, deliveryState, fundraisingState, publicationState, revisionState } from '../../lib/lifecycle.ts'
 import { Link, NavLink, useNavigate, useParams } from 'react-router-dom'
 import { ReadinessPanel } from '../../components/ai/ReadinessPanel.tsx'
 import { SparkIcon } from '../../components/ai/AiUI.tsx'
@@ -164,22 +165,18 @@ function Overview({ campaign, view, store }: WorkspaceProps) {
         <h2 id="report-tasks-title">Keep supporters informed</h2>
         <ul className="status-lines">
           <li>
-            <strong>Fundraising:</strong>{' '}
-            {campaign.isDraft
-              ? view.status === 'pending_review'
-                ? 'Not open yet — waiting for an Organization Admin to approve it.'
-                : 'Not open yet — this campaign is a draft.'
-              : view.raised >= campaign.goalAmount
-              ? 'Goal reached.'
-              : fundraisingOpen
-                ? `In progress — ${view.percent}% of the goal raised.`
-                : `Closed at ${view.percent}% of the goal.`}
+            <strong>Publication:</strong> {PUBLICATION_LABEL[publicationState(campaign)]}
+            {revisionState(campaign) ? ` · Proposed changes: ${PUBLICATION_LABEL[revisionState(campaign)!]}` : ''}
           </li>
           <li>
-            <strong>Delivery:</strong>{' '}
+            <strong>Fundraising:</strong> {FUNDRAISING_LABEL[fundraisingState(view)]}
+            {campaign.isDraft ? '' : ` — ${view.percent}% of the goal raised.`}
+          </li>
+          <li>
+            <strong>Delivery:</strong> {DELIVERY_LABEL[deliveryState(campaignMilestones(store, campaign.id))]}
             {delivery.total === 0
-              ? 'No milestones added yet.'
-              : `${delivery.complete} of ${delivery.total} milestones marked complete by you. Supporters see this as organizer-reported.`}
+              ? ' — no activities planned yet.'
+              : ` — ${delivery.complete} of ${delivery.total} activities marked complete by you. Supporters see this as organizer-reported.`}
           </li>
           <li>
             <strong>Final report:</strong> {campaign.finalReport?.status === 'published' ? 'Published.' : campaign.finalReport ? 'Draft saved.' : 'Not started.'}

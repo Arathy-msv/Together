@@ -5,7 +5,7 @@ import { gameMeta } from '../lib/games.ts'
 import type { CampaignView } from '../lib/types.ts'
 import { CampaignCover } from './CampaignImage.tsx'
 import { ProgressBar } from './ProgressBar.tsx'
-import { StatusBadge } from './StatusBadge.tsx'
+import { FundraisingBadge } from './StatusBadge.tsx'
 import { useOrgBase } from './org/OrgContext.tsx'
 
 export function CampaignCard({ view, compact = false }: { view: CampaignView; compact?: boolean }) {
@@ -19,7 +19,7 @@ export function CampaignCard({ view, compact = false }: { view: CampaignView; co
         <div>
           <h3>{campaign.title}</h3>
           {status === 'scheduled' ? (
-            <StatusBadge status={status} />
+            <FundraisingBadge view={view} />
           ) : (
             <>
               <div className="money-row">
@@ -39,7 +39,7 @@ export function CampaignCard({ view, compact = false }: { view: CampaignView; co
     <Link to={to} className="campaign-tile">
       <div className="campaign-tile-media">
         <CampaignCover campaign={campaign} />
-        <StatusBadge status={status} />
+        <FundraisingBadge view={view} />
       </div>
       <div className="campaign-tile-body">
         <p className="muted small">

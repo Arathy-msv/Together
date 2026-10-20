@@ -238,7 +238,8 @@ export function saveCampaignFields(campaignId: string, patch: Partial<Pick<Campa
       if (MATERIAL_FIELDS.includes(key)) (proposed as Record<string, unknown>)[key] = patch[key]
       else (live as Record<string, unknown>)[key] = patch[key]
     }
-    const pending = campaign.pendingRevision?.status === 'pending' ? campaign.pendingRevision : undefined
+    // Changing an approved-but-unpublished revision replaces it, so it needs review again.
+    const pending = campaign.pendingRevision && campaign.pendingRevision.status !== 'rejected' ? campaign.pendingRevision : undefined
     const { pendingRevision: _p, revisionHistory: _h, ...current } = campaign
     void _p
     void _h

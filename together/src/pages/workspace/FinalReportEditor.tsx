@@ -8,6 +8,7 @@ import { StorageFullError } from '../../lib/storage.ts'
 import { nowIso } from '../../lib/inputs.ts'
 import { templateFor } from '../../lib/templates.ts'
 import { campaignMilestones, formatMinor, fundSummary, publicDocuments, publishedUpdates, saveCampaignFields } from '../../lib/transparency.ts'
+import { FUNDRAISING_LABEL, fundraisingState } from '../../lib/lifecycle.ts'
 import type { FinalReport } from '../../lib/types.ts'
 import type { WorkspaceProps } from './CampaignWorkspace.tsx'
 
@@ -72,7 +73,7 @@ export function FinalReportEditor({ campaign, view, store }: WorkspaceProps) {
       <section className="panel ws-card wide">
         <h2>Final report</h2>
         <p className="muted small">
-          Summarize what the campaign achieved once the work is done. Closing fundraising and publishing this report are separate steps. Fundraising is currently <strong>{view.status}</strong>; the report is{' '}
+          Summarize what the campaign achieved once the work is done. Closing fundraising and publishing this report are separate steps. Fundraising is currently <strong>{FUNDRAISING_LABEL[fundraisingState(view)]}</strong>; the report is{' '}
           <strong>{report.status === 'published' ? 'published' : 'a draft'}</strong>.
         </p>
         {notice ? (

@@ -3,9 +3,11 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { CampaignCover } from '../components/CampaignImage.tsx'
 import { Icon } from '../components/illustrations.tsx'
 import { ProgressBar } from '../components/ProgressBar.tsx'
-import { StatusBadge } from '../components/StatusBadge.tsx'
+import { DeliveryBadge, FundraisingBadge, StatusBadge } from '../components/StatusBadge.tsx'
 import { useOrg } from '../components/org/OrgContext.tsx'
-import { useCampaignViews } from '../hooks/useDemoStore.ts'
+import { useCampaignViews, useDemoStore } from '../hooks/useDemoStore.ts'
+import { deliveryState, PUBLICATION_LABEL, revisionState } from '../lib/lifecycle.ts'
+import { campaignMilestones } from '../lib/transparency.ts'
 import { closeCampaign, deleteCampaign } from '../lib/campaigns.ts'
 import { canUseFeature } from '../lib/features.ts'
 import { duplicateCampaign, exportOrganizationRecords, NO_REVIEWER_MESSAGE } from '../lib/featureActions.ts'
@@ -387,10 +389,11 @@ function Row({
   const { org } = useOrg()
   const user = useCurrentUser()
   const navigate = useNavigate()
+  const store = useDemoStore()
   const { campaign, raised, percent, supporters, status } = view
   const canClose = !campaign.isDraft && status !== 'closed' && status !== 'completed' && can(user, 'campaign.close', { campaign, organization: org })
   const canDelete = can(user, 'campaign.delete', { campaign, organization: org })
-  const pendingReview = status === 'pending_review'
+  const pendingReview = status === 'pending_review' || status === 'approved'
   const canReuse = canUseFeature(org, 'campaignDuplication') && status !== 'draft' && can(user, 'campaign.create', { organization: org })
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -435,9 +438,11 @@ function Row({
       </td>
       <td data-label="Contributions">{supporters === 1 ? '1 contribution' : `${supporters} contributions`}</td>
       <td data-label="Status">
-        <StatusBadge status={status} />
-        {campaign.pendingRevision?.status === 'pending' && !campaign.isDraft ? <span className="muted small block">Revision in review</span> : null}
-        {campaign.pendingRevision?.status === 'rejected' ? <span className="muted small block">Changes requested</span> : null}
+        <div className="status-stack">
+          {campaign.isDraft ? <StatusBadge status={status} /> : <FundraisingBadge view={view} />}
+          {campaign.isDraft ? null : <DeliveryBadge state={deliveryState(campaignMilestones(store, campaign.id))} />}
+        </div>
+        {revisionState(campaign) ? <span className="muted small block">Proposed changes: {PUBLICATION_LABEL[revisionState(campaign)!]}</span> : null}
       </td>
       <td data-label="Dates" className="small muted">
         {formatDate(campaign.opensAt)}
@@ -448,7 +453,7 @@ function Row({
         <div className="row-buttons">
           {pendingReview ? (
             <Link to={`${workspace}/campaigns/${campaign.id}`} className="btn btn-primary btn-sm">
-              Manage · Waiting for review
+              {status === 'approved' ? 'Manage · Approved, ready to publish' : 'Manage · Waiting for review'}
             </Link>
           ) : campaign.isDraft ? (
             <Link to={`${workspace}/campaigns/new?draft=${campaign.id}`} className="btn btn-outline btn-sm">

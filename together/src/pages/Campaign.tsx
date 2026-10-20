@@ -4,7 +4,7 @@ import { AmountPicker } from '../components/AmountPicker.tsx'
 import { CampaignCover, OrgLogo } from '../components/CampaignImage.tsx'
 import { Leaderboard, RankBanner } from '../components/Leaderboard.tsx'
 import { ProgressBar } from '../components/ProgressBar.tsx'
-import { StatusBadge } from '../components/StatusBadge.tsx'
+import { DeliveryBadge, FundraisingBadge } from '../components/StatusBadge.tsx'
 import { useOrg } from '../components/org/OrgContext.tsx'
 import { FundUseTab, StoryTab, TrustTab, UpdatesTab } from '../components/campaign/PublicSections.tsx'
 import { ReferralIntro } from '../components/referral/ReferralIntro.tsx'
@@ -15,7 +15,8 @@ import { campaignDetailsPath, campaignPlayPath, campaignSharePath } from '../lib
 import { followedAt, setFollowing } from '../lib/follows.ts'
 import { setShareContext } from '../lib/attribution.ts'
 import { canHaveSharingPages, shareWorkspacePath } from '../lib/referrals.ts'
-import { campaignMilestones, deliverySummary, latestUpdateDate } from '../lib/transparency.ts'
+import { campaignMilestones, deliverySummary, publishedUpdates } from '../lib/transparency.ts'
+import { deliveryState, isFunded } from '../lib/lifecycle.ts'
 import { OrgNotFound } from './org/OrgNotFound.tsx'
 import { formatDate, formatDateRange, formatINR, parseWholeRupees, shortPurpose } from '../lib/format.ts'
 import { canUseFeature, campaignUsesSponsor } from '../lib/features.ts'
@@ -101,6 +102,7 @@ function CampaignDetails({ view, referral }: { view: CampaignView; referral?: Re
   const campaignUrl = `${window.location.origin}${campaignSharePath(campaign.id, base)}`
 
   const followButton = <FollowButton campaignId={campaign.id} />
+  const closedFunded = isFunded(view) && !view.canGive
 
   return (
     <div className="container page-pad campaign">
@@ -120,7 +122,10 @@ function CampaignDetails({ view, referral }: { view: CampaignView; referral?: Re
           {referral ? null : <CampaignCover campaign={campaign} className="campaign-hero" />}
           <div className="campaign-title">
             <h1>{campaign.title}</h1>
-            <StatusBadge status={view.status} />
+            <span className="status-row">
+              <FundraisingBadge view={view} />
+              {campaign.isDraft ? null : <DeliveryBadge state={deliveryState(campaignMilestones(store, campaign.id))} />}
+            </span>
           </div>
           <div className="campaign-meta">
             <div className="org-line">
@@ -155,9 +160,15 @@ function CampaignDetails({ view, referral }: { view: CampaignView; referral?: Re
               <strong>{view.percent}%</strong>
             </div>
             <ProgressBar value={view.percent} muted={!view.canGive} />
-            <a href="#support" className="btn btn-primary btn-block">
-              Support this campaign
-            </a>
+            {closedFunded ? (
+              <button type="button" className="btn btn-primary btn-block" onClick={() => openSection('updates')}>
+                See what happens next
+              </button>
+            ) : (
+              <a href="#support" className="btn btn-primary btn-block">
+                Support this campaign
+              </a>
+            )}
           </div>
           {campaign.access === 'closed' && !needsCode ? <Leaderboard campaignId={campaign.id} /> : null}
           <div className="section-tabs" role="tablist" aria-label="Campaign information">
@@ -203,6 +214,9 @@ function CampaignDetails({ view, referral }: { view: CampaignView; referral?: Re
         </div>
 
         <aside className="support-column">
+          {closedFunded ? (
+            <FundedPanel view={view} store={store} onNext={() => openSection('updates')} />
+          ) : (
           <div className="panel support-panel" id="support">
             <h2>Support this campaign</h2>
             <span className="eyebrow-label">Campaign goal</span>
@@ -266,7 +280,8 @@ function CampaignDetails({ view, referral }: { view: CampaignView; referral?: Re
             )}
             {referral ? <p className="muted small">Your contribution goes to the original campaign. {referral.displayName}’s page is credited for sharing it.</p> : null}
           </div>
-          <DeliverySnapshot campaign={campaign} store={store} onOpen={() => openSection('updates')} />
+          )}
+          {closedFunded ? null : <DeliverySnapshot campaign={campaign} store={store} onOpen={() => openSection('updates')} />}
           <div className="panel aside-card share-card">
             <h2 className="aside-title">Help spread the word</h2>
             <ShareLinkButton url={campaignUrl} />
@@ -298,14 +313,15 @@ function CampaignDetails({ view, referral }: { view: CampaignView; referral?: Re
 function DeliverySnapshot({ campaign, store, onOpen }: { campaign: Campaign; store: DemoStore; onOpen: () => void }) {
   const milestones = campaignMilestones(store, campaign.id)
   const delivery = deliverySummary(milestones)
-  const last = latestUpdateDate(store, campaign.id)
+  const latest = publishedUpdates(store, campaign.id)[0]
   return (
     <div className="panel aside-card delivery-snapshot">
-      <span className="eyebrow-label">Progress reported by the organizer</span>
+      <span className="eyebrow-label">Delivery, as reported by the organizer</span>
+      <DeliveryBadge state={deliveryState(milestones)} />
       {delivery.total > 0 ? (
         <>
           <strong>
-            {delivery.complete} of {delivery.total} milestones reported complete
+            {delivery.complete} of {delivery.total} planned activities reported complete
           </strong>
           <span className="delivery-bar" aria-hidden="true">
             <i style={{ width: `${Math.round((delivery.complete / delivery.total) * 100)}%` }} />
@@ -313,11 +329,59 @@ function DeliverySnapshot({ campaign, store, onOpen }: { campaign: Campaign; sto
           {delivery.delayed ? <span className="small warn-text">{delivery.delayed} past expected date</span> : null}
         </>
       ) : (
-        <strong>No delivery milestones yet</strong>
+        <strong>No delivery activities planned yet</strong>
       )}
-      <span className="muted small">{last ? `Latest update ${formatDate(last)}` : 'Awaiting update'}</span>
+      {latest ? (
+        <span className="small">
+          Latest update · {formatDate(latest.date)}: <strong>{latest.title}</strong>
+        </span>
+      ) : (
+        <span className="muted small">No updates published yet</span>
+      )}
       <button type="button" className="link-button small" onClick={onOpen}>
         See updates and timeline
+      </button>
+    </div>
+  )
+}
+
+/** Replaces the contribution panel once the goal is met and contributions have stopped. */
+function FundedPanel({ view, store, onNext }: { view: CampaignView; store: DemoStore; onNext: () => void }) {
+  const { campaign } = view
+  const milestones = campaignMilestones(store, campaign.id)
+  const delivery = deliverySummary(milestones)
+  const latest = publishedUpdates(store, campaign.id)[0]
+  return (
+    <div className="panel support-panel funded-panel" id="support">
+      <h2>Funding goal reached</h2>
+      <div className="money-row big">
+        <span>
+          <strong>{formatINR(view.raised)}</strong> of {formatINR(campaign.goalAmount)}
+        </span>
+        <strong>{view.percent}%</strong>
+      </div>
+      <ProgressBar value={view.percent} />
+      <p className="muted small">
+        Fundraising has closed. {view.supporters === 1 ? '1 confirmed simulated contribution' : `${view.supporters} confirmed simulated contributions`}.
+      </p>
+      <div className="divider" />
+      <span className="eyebrow-label">Delivery, as reported by the organizer</span>
+      <DeliveryBadge state={deliveryState(milestones)} />
+      <p className="small">
+        {delivery.total > 0
+          ? `${delivery.complete} of ${delivery.total} planned activities reported complete.`
+          : 'The organizer has not planned delivery activities yet.'}{' '}
+        Reaching the goal does not mean the work is done.
+      </p>
+      {latest ? (
+        <p className="small">
+          Latest update · {formatDate(latest.date)}: <strong>{latest.title}</strong>
+        </p>
+      ) : (
+        <p className="muted small">No updates published yet.</p>
+      )}
+      <button type="button" className="btn btn-primary btn-block btn-lg" onClick={onNext}>
+        See what happens next
       </button>
     </div>
   )
@@ -403,6 +467,7 @@ function GivePanel({
   })
   const [error, setError] = useState('')
   const blocked = blockMessage(view.status, campaign.opensAt)
+  const overGoal = view.canGive && isFunded(view)
 
   return (
     <div>
@@ -417,6 +482,11 @@ function GivePanel({
         </div>
       ) : null}
 
+      {overGoal ? (
+        <p className="notice success compact small">
+          Funding goal reached. The organizer is still accepting contributions until {formatDate(campaign.closesAt)}.
+        </p>
+      ) : null}
       {blocked ? (
         <div className="notice warn compact">
           <div>
@@ -505,9 +575,9 @@ function blockMessage(status: string, opensAt: string): { title: string; body: s
         body: `Contributions open on ${new Date(opensAt).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}.`,
       }
     case 'closed':
-      return { title: 'Closed', body: 'This campaign is closed and cannot accept contributions.' }
+      return { title: 'Fundraising closed', body: 'This campaign is no longer accepting contributions.' }
     case 'completed':
-      return { title: 'Goal reached', body: 'This campaign reached its goal and closed. Thank you to everyone who took part.' }
+      return { title: 'Funding goal reached', body: 'Fundraising has closed. See the updates for what happens next.' }
     case 'draft':
       return { title: 'Draft', body: 'Publish this campaign before it can accept simulated contributions.' }
     default:

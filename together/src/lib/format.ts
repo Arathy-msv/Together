@@ -124,24 +124,6 @@ export function shiftLocal(dayOffset: number, hours: number, minutes = 0): strin
   return date.toISOString()
 }
 
-export function statusLabel(status: string): string {
-  switch (status) {
-    case 'draft':
-      return 'Draft'
-    case 'pending_review':
-      return 'Waiting for review'
-    case 'scheduled':
-      return 'Scheduled'
-    case 'active':
-      return 'Active'
-    case 'completed':
-      return 'Completed'
-    case 'closed':
-      return 'Closed'
-    default:
-      return status
-  }
-}
 
 export function plural(count: number, singular: string, pluralForm = `${singular}s`): string {
   return `${count} ${count === 1 ? singular : pluralForm}`

@@ -73,7 +73,8 @@ export function publishWithPolicy(campaign: Campaign, plan: { title: string; due
 
   if (campaignNeedsApproval(org)) {
     const id = revisionId()
-    if (existing?.pendingRevision?.status === 'pending') history.push({ revisionId: existing.pendingRevision.id, action: 'superseded', actorId: actor.id, at: now })
+    // A change after approval replaces the approved revision, so it needs review again.
+    if (existing?.pendingRevision && existing.pendingRevision.status !== 'rejected') history.push({ revisionId: existing.pendingRevision.id, action: 'superseded', actorId: actor.id, at: now })
     history.push({ revisionId: id, action: 'submitted', actorId: actor.id, at: now })
     const pendingRevision: CampaignRevision = { id, authorId: actor.id, submittedAt: now, status: 'pending', snapshot: snapshotOf({ ...base, isDraft: false }) }
     const livePublished = existing && !existing.isDraft
@@ -92,12 +93,13 @@ export function publishWithPolicy(campaign: Campaign, plan: { title: string; due
   return { mode: 'published', reviewerAvailable: true }
 }
 
-/** Fields that keep their live value when a revision is approved (they are not part of review). */
+/** Fields that keep their live value when an approved revision is published (they are not part of review). */
 const LIVE_FIELDS = ['manualClosedAt', 'finalReport', 'fundingNote', 'translations', 'demoVerification'] as const
 
 /**
  * An Organization Admin approves or rejects one specific revision. Authors can never review their
- * own revision, and an approval never carries over to a later revision.
+ * own revision, and an approval never carries over to a later revision. Approval does not publish:
+ * the approved revision waits for an explicit `publishApprovedRevision`.
  */
 export function reviewRevision(campaignId: string, revisionIdToReview: string, decision: 'approve' | 'reject', note = ''): Campaign {
   const store = loadStore()
@@ -114,37 +116,74 @@ export function reviewRevision(campaignId: string, revisionIdToReview: string, d
   if (revision.authorId === actor.id) throw new PermissionError('You can’t review your own revision. Another Organization Admin must review it.')
 
   const now = new Date().toISOString()
-  const history = [...(campaign.revisionHistory ?? []), { revisionId: revision.id, action: decision === 'approve' ? ('approved' as const) : ('rejected' as const), actorId: actor.id, at: now, note: note.trim().slice(0, 400) || undefined }]
-  let next: Campaign
-  if (decision === 'approve') {
-    const live: Partial<Campaign> = {}
-    for (const key of LIVE_FIELDS) (live as Record<string, unknown>)[key] = campaign[key]
-    next = {
-      ...revision.snapshot,
-      ...live,
-      id: campaign.id,
-      organizationId: campaign.organizationId,
-      createdBy: campaign.createdBy ?? revision.snapshot.createdBy,
-      createdAt: campaign.createdAt,
-      isDraft: false,
-      approvalStatus: 'approved',
-      approvalNote: undefined,
-      approvedRevisionId: revision.id,
-      pendingRevision: undefined,
-      revisionHistory: history,
-    }
-  } else {
-    next = {
-      ...campaign,
-      approvalStatus: campaign.isDraft ? 'rejected' : campaign.approvalStatus,
-      approvalNote: note.trim().slice(0, 400) || undefined,
-      pendingRevision: { ...revision, status: 'rejected', reviewNote: note.trim().slice(0, 400) || undefined, reviewedBy: actor.id },
-      revisionHistory: history,
-    }
-  }
+  const reviewNote = note.trim().slice(0, 400) || undefined
+  const history = [...(campaign.revisionHistory ?? []), { revisionId: revision.id, action: decision === 'approve' ? ('approved' as const) : ('rejected' as const), actorId: actor.id, at: now, note: reviewNote }]
+  const next: Campaign =
+    decision === 'approve'
+      ? {
+          ...campaign,
+          approvalStatus: campaign.isDraft ? 'approved' : campaign.approvalStatus,
+          approvalNote: reviewNote,
+          approvedRevisionId: revision.id,
+          pendingRevision: { ...revision, status: 'approved', reviewNote, reviewedBy: actor.id, reviewedAt: now },
+          revisionHistory: history,
+        }
+      : {
+          ...campaign,
+          approvalStatus: campaign.isDraft ? 'rejected' : campaign.approvalStatus,
+          approvalNote: reviewNote,
+          pendingRevision: { ...revision, status: 'rejected', reviewNote, reviewedBy: actor.id, reviewedAt: now },
+          revisionHistory: history,
+        }
   store.campaigns[index] = next
   saveStore(store)
   recordAudit(decision === 'approve' ? 'campaign.revision.approved' : 'campaign.revision.rejected', { organizationId: org.id, targetId: campaignId, detail: revision.id })
+  return next
+}
+
+/** Who may press Publish on an approved revision: any Organization Admin, or an organizer assigned to the campaign. */
+export function canPublishApproved(campaign: Campaign, org: Organization | null = organizationForCampaign(campaign)): boolean {
+  if (!org || campaign.pendingRevision?.status !== 'approved') return false
+  return canCurrent('campaign.publish', { campaign, organization: org }) || canCurrent('campaign.submit', { campaign, organization: org })
+}
+
+/**
+ * Makes an approved revision public. Exactly the reviewed snapshot is published; anything changed
+ * after approval would have created a new revision that needs review again.
+ */
+export function publishApprovedRevision(campaignId: string, revisionIdToPublish: string): Campaign {
+  const store = loadStore()
+  const index = store.campaigns.findIndex((item) => item.id === campaignId)
+  if (index < 0) throw new Error('Campaign not found.')
+  const campaign = store.campaigns[index]
+  const org = organizationForCampaign(campaign)
+  if (!org) throw new Error('Organization not found.')
+  const revision = campaign.pendingRevision
+  if (!revision || revision.status !== 'approved' || revision.id !== revisionIdToPublish) {
+    throw new Error('This revision is not approved for publishing. Open the campaign again to see its current review state.')
+  }
+  if (!canPublishApproved(campaign, org)) throw new PermissionError('Only an Organization Admin or the campaign’s organizer can publish this approved revision.')
+  const actor = assertCan('campaign.view', { campaign, organization: org })
+  const now = new Date().toISOString()
+  const live: Partial<Campaign> = {}
+  for (const key of LIVE_FIELDS) (live as Record<string, unknown>)[key] = campaign[key]
+  const next: Campaign = {
+    ...revision.snapshot,
+    ...live,
+    id: campaign.id,
+    organizationId: campaign.organizationId,
+    createdBy: campaign.createdBy ?? revision.snapshot.createdBy,
+    createdAt: campaign.createdAt,
+    isDraft: false,
+    approvalStatus: 'approved',
+    approvalNote: campaign.approvalNote,
+    approvedRevisionId: revision.id,
+    pendingRevision: undefined,
+    revisionHistory: [...(campaign.revisionHistory ?? []), { revisionId: revision.id, action: 'published', actorId: actor.id, at: now }],
+  }
+  store.campaigns[index] = next
+  saveStore(store)
+  recordAudit('campaign.published', { organizationId: org.id, targetId: campaignId, detail: revision.id })
   return next
 }
 

@@ -1,6 +1,7 @@
 export type AccessMode = 'open' | 'closed'
 export type DonationMode = 'fixed' | 'custom'
-export type CampaignStatus = 'draft' | 'pending_review' | 'scheduled' | 'active' | 'completed' | 'closed'
+/** Stored lifecycle state. Display labels come from lib/lifecycle.ts (publication, fundraising, delivery). */
+export type CampaignStatus = 'draft' | 'pending_review' | 'approved' | 'scheduled' | 'active' | 'completed' | 'closed'
 export type ContributionMethod = 'direct' | 'game'
 export type FlowerKind = 'sunflower' | 'marigold' | 'lavender'
 export type GameType = 'garden' | 'memory' | 'puzzle' | 'jacket'
@@ -136,9 +137,11 @@ export interface CampaignRevision {
   /** Demo identity that authored this revision, or 'legacy' for earlier demo data. */
   authorId: string
   submittedAt: string
-  status: 'pending' | 'rejected'
+  /** `approved` waits for an explicit Publish action; approval never publishes by itself. */
+  status: 'pending' | 'rejected' | 'approved'
   reviewNote?: string
   reviewedBy?: string
+  reviewedAt?: string
   snapshot: CampaignSnapshot
 }
 

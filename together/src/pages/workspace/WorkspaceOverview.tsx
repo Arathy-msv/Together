@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { BrandPreview } from '../../components/org/BrandPreview.tsx'
 import { useOrg } from '../../components/org/OrgContext.tsx'
 import { ProgressBar } from '../../components/ProgressBar.tsx'
-import { StatusBadge } from '../../components/StatusBadge.tsx'
+import { FundraisingBadge, StatusBadge } from '../../components/StatusBadge.tsx'
 import { useDemoStore } from '../../hooks/useDemoStore.ts'
 import { useOrganizations } from '../../hooks/useOrganizations.ts'
 import { toView } from '../../lib/campaigns.ts'
@@ -100,7 +100,7 @@ export function WorkspaceOverviewPage() {
                       </span>
                       <ProgressBar value={view.percent} />
                     </div>
-                    <StatusBadge status={view.status} />
+                    {view.campaign.isDraft ? <StatusBadge status={view.status} /> : <FundraisingBadge view={view} />}
                     <Link to={`${workspace}/campaigns/${view.campaign.id}`} className="btn btn-outline btn-sm">
                       Manage
                     </Link>

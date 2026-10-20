@@ -3,14 +3,14 @@ import { CampaignCard } from '../components/CampaignCard.tsx'
 import { Icon } from '../components/illustrations.tsx'
 import { useOrg } from '../components/org/OrgContext.tsx'
 import { useCampaignViews } from '../hooks/useDemoStore.ts'
-import type { CampaignStatus } from '../lib/types.ts'
+import { FUNDRAISING_LABEL, fundraisingState, type FundraisingState } from '../lib/lifecycle.ts'
 
-const FILTERS: Array<{ id: 'all' | CampaignStatus; label: string }> = [
+const FILTERS: Array<{ id: 'all' | FundraisingState; label: string }> = [
   { id: 'all', label: 'All' },
-  { id: 'active', label: 'Active' },
-  { id: 'scheduled', label: 'Scheduled' },
-  { id: 'completed', label: 'Completed' },
-  { id: 'closed', label: 'Closed' },
+  { id: 'accepting', label: FUNDRAISING_LABEL.accepting },
+  { id: 'opens_soon', label: FUNDRAISING_LABEL.opens_soon },
+  { id: 'goal_reached', label: FUNDRAISING_LABEL.goal_reached },
+  { id: 'closed', label: FUNDRAISING_LABEL.closed },
 ]
 
 export function ExplorePage() {
@@ -26,7 +26,7 @@ export function ExplorePage() {
   const visible = useMemo(() => {
     const needle = query.trim().toLowerCase()
     return views.filter((view) => {
-      if (filter !== 'all' && view.status !== filter) return false
+      if (filter !== 'all' && fundraisingState(view) !== filter) return false
       if (!needle) return true
       const haystack = `${view.campaign.title} ${view.campaign.description} ${view.campaign.organizerName}`.toLowerCase()
       return haystack.includes(needle)
