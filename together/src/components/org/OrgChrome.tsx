@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { canUseFeature } from '../../lib/features.ts'
 import { Link, NavLink, useLocation } from 'react-router-dom'
+import { canUseFeature } from '../../lib/features.ts'
 import { orgInitials } from '../../lib/organizations.ts'
 import type { Organization } from '../../lib/types.ts'
 import { BrandMark } from '../BrandMark.tsx'
@@ -75,9 +75,20 @@ export function OrgHeader({ org, base, workspace }: { org: Organization; base: s
           <NavLink to={`${base}/campaigns`}>Campaigns</NavLink>
           <NavLink to={`${base}/about`}>About</NavLink>
           {workspace ? (
-            <Link to={`${workspace}/overview`} className="oh-nav-manage">
-              Manage this website <span className="demo-badge small-badge">Demo</span>
-            </Link>
+            <div className="oh-nav-organizer">
+              <span className="oh-nav-organizer-label">
+                Organizer tools <span className="demo-badge small-badge">Demo</span>
+              </span>
+              <Link to={`${workspace}/campaigns/new`} className="oh-nav-manage primary">
+                Create a campaign
+              </Link>
+              <Link to={`${workspace}/campaigns`} className="oh-nav-manage">
+                Manage campaigns
+              </Link>
+              <Link to={`${workspace}/overview`} className="oh-nav-manage">
+                Manage this website
+              </Link>
+            </div>
           ) : null}
         </nav>
       </div>

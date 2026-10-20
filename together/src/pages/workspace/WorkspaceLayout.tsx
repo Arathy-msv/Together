@@ -1,7 +1,8 @@
-import { useEffect, useId, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { OrgLogoMark } from '../../components/org/OrgChrome.tsx'
 import { OrgContext, orgContextValue } from '../../components/org/OrgContext.tsx'
+import { OrgSwitcher } from '../../components/org/OrgSwitcher.tsx'
 import { useDocumentTheme, useScrollOnNavigate } from '../../hooks/useDocumentTheme.ts'
 import { useOrganizations } from '../../hooks/useOrganizations.ts'
 import { orgTypeLabel } from '../../lib/organizations.ts'
@@ -56,7 +57,7 @@ export function WorkspaceLayout() {
               Together
             </Link>
             <span className="demo-badge">Demo workspace</span>
-            <DemoWorkspaceSwitcher currentId={org.id} />
+            <OrgSwitcher currentId={org.id} />
           </div>
         </header>
         <div className="ws-org-head">
@@ -157,37 +158,6 @@ function WebsiteActions({ stored }: { stored: Parameters<typeof isPubliclyAvaila
       <span className="sr-only" role="status">
         {copied ? 'Link copied.' : ''}
       </span>
-    </div>
-  )
-}
-
-/** Demo control for jumping between organization workspaces. Never shown on public websites. */
-function DemoWorkspaceSwitcher({ currentId }: { currentId: string }) {
-  const organizations = useOrganizations()
-  const navigate = useNavigate()
-  const { pathname } = useLocation()
-  const id = useId()
-  return (
-    <div className="org-switcher">
-      <label htmlFor={id}>Switch organization</label>
-      <select
-        id={id}
-        value={currentId}
-        onChange={(event) => {
-          const next = organizations.find((org) => org.id === event.target.value)
-          if (!next) return
-          if (document.querySelector('.save-state.dirty') && !window.confirm('Switch organization and discard unsaved edits?')) return
-          const section = pathname.split('/')[3] ?? 'overview'
-          setActiveOrgId(next.id)
-          navigate(next.website.status === 'setup' ? `/start/${next.id}` : `/workspace/${next.id}/${['website', 'settings', 'plan', 'assistant', 'campaigns'].includes(section) ? section : 'overview'}`)
-        }}
-      >
-        {organizations.map((org) => (
-          <option key={org.id} value={org.id}>
-            {(org.website.draft?.name || org.name || 'Untitled organization') + (org.website.status === 'setup' ? ' (setup)' : '')}
-          </option>
-        ))}
-      </select>
     </div>
   )
 }
