@@ -1,59 +1,52 @@
-import { useEffect } from 'react'
+import { useEffect, type CSSProperties } from 'react'
 import { Link } from 'react-router-dom'
 import { Icon } from '../../components/illustrations.tsx'
 import { OrgLogoMark } from '../../components/org/OrgChrome.tsx'
-import { useDemoStore } from '../../hooks/useDemoStore.ts'
 import { useOrganizations } from '../../hooks/useOrganizations.ts'
+import { useStartWebsite } from '../../hooks/useStartWebsite.ts'
 import { DEFAULT_ORG_ID, orgBase, orgTypeLabel } from '../../lib/organizations.ts'
-import { DEMO_PLANS } from '../../lib/plans.ts'
 import { themeVars } from '../../lib/theme.ts'
-import type { CSSProperties } from 'react'
 
-const JOURNEY = [
-  { title: 'Choose a plan', text: 'Pick a demo plan. No payment is collected.' },
-  { title: 'Add organization details', text: 'Name, type, contact and a website address.' },
-  { title: 'Customize your website', text: 'Logo, colours, fonts, homepage and about page.' },
-  { title: 'Publish your demo site', text: 'Preview on desktop and mobile, then publish.' },
-  { title: 'Create campaigns', text: 'Use the form or the campaign assistant.' },
+const EXAMPLE_SLUG = 'maple-grove'
+
+const STEPS = [
+  { title: 'Add your organization', text: 'Your name, a short description and a contact email.' },
+  { title: 'Make the website yours', text: 'Pick your colours, a photo and a headline. Preview it as you go.' },
+  { title: 'Launch your first fundraiser', text: 'Describe your cause and set a goal. Supporters give directly or play a short game.' },
 ]
 
-const FEATURES = [
-  { icon: 'home', title: 'Your own branded website', text: 'Each organization gets its own address, colours, typography, homepage and about page.' },
-  { icon: 'game', title: 'Games that build a suggestion', text: 'Garden, memory match, puzzle and jacket games add to an amount supporters review before giving.' },
-  { icon: 'users', title: 'Personal sharing pages', text: 'Supporters introduce your campaign in their own words. Credit is tracked; totals count once.' },
-  { icon: 'chart', title: 'Updates and fund use', text: 'Milestones, updates and organizer-reported spending, kept separate from fundraising progress.' },
-  { icon: 'spark', title: 'Campaign assistant', text: 'A conversational creator and readiness checks. AI preview · Simulated in this prototype.' },
-  { icon: 'heart', title: 'Trust & documents', text: 'Clear labels for information provided, evidence attached and what is not verified.' },
+const AUDIENCES = [
+  { icon: 'home', label: 'Schools', text: 'Library books, sports kits, school gardens.' },
+  { icon: 'users', label: 'Companies', text: 'Employee giving and volunteer days.' },
+  { icon: 'heart', label: 'Clubs', text: 'Equipment, events and member support.' },
+  { icon: 'gift', label: 'Nonprofits', text: 'Programmes, appeals and seasonal drives.' },
 ]
 
-/** Together product homepage. */
+/** Together product homepage: what it is, who it's for, and one clear next step. */
 export function PlatformHomePage() {
   const organizations = useOrganizations()
-  const store = useDemoStore()
+  const startWebsite = useStartWebsite()
   const examples = organizations.filter((org) => org.website.status === 'published' && org.id !== DEFAULT_ORG_ID)
 
   useEffect(() => {
-    document.title = 'Together — Branded fundraising websites for communities'
+    document.title = 'Together — Your organization’s own fundraising website'
   }, [])
 
   return (
     <div className="platform-home">
       <section className="container platform-hero">
         <div>
-          <p className="oh-eyebrow">For schools, companies, clubs and nonprofits</p>
-          <h1>Your own fundraising website, ready in minutes.</h1>
-          <p className="oh-lead">
-            Together gives each organization a branded website for its campaigns — with games, personal sharing pages and transparent updates built in.
-          </p>
+          <h1>Your organization’s own fundraising website.</h1>
+          <p className="oh-lead">Create a branded website, launch campaigns, and let supporters give directly or take part through simple games.</p>
           <div className="oh-actions">
-            <Link to="/plans" className="btn btn-primary btn-lg">
-              Create your organization website
-            </Link>
-            <Link to="/workspace" className="btn btn-outline btn-lg">
-              Open demo workspace
+            <button type="button" className="btn btn-primary btn-lg" onClick={() => startWebsite()}>
+              Create your website
+            </button>
+            <Link to={orgBase(EXAMPLE_SLUG)} className="btn btn-outline btn-lg">
+              See an example
             </Link>
           </div>
-          <p className="muted small">Prototype: plans are demos and nothing is billed. Websites you create are stored only in this browser.</p>
+          <p className="muted small">For schools, companies, clubs and nonprofits. Demo only — no payment is taken.</p>
         </div>
         <div className="hero-stack" aria-hidden="true">
           {examples.slice(0, 3).map((org, index) => (
@@ -69,10 +62,10 @@ export function PlatformHomePage() {
         </div>
       </section>
 
-      <section id="how-it-works" className="container platform-section" aria-labelledby="journey-title">
-        <h2 id="journey-title">How it works</h2>
-        <ol className="journey">
-          {JOURNEY.map((step, index) => (
+      <section id="how-it-works" className="container platform-section" aria-labelledby="steps-title">
+        <h2 id="steps-title">How it works</h2>
+        <ol className="journey three">
+          {STEPS.map((step, index) => (
             <li key={step.title}>
               <span className="journey-num">{index + 1}</span>
               <strong>{step.title}</strong>
@@ -82,66 +75,57 @@ export function PlatformHomePage() {
         </ol>
       </section>
 
-      <section id="features" className="container platform-section" aria-labelledby="features-title">
-        <h2 id="features-title">Features</h2>
-        <div className="feature-grid">
-          {FEATURES.map((feature) => (
-            <article key={feature.title} className="feature-card">
+      <section className="container platform-section" aria-labelledby="audience-title">
+        <h2 id="audience-title">Who it’s for</h2>
+        <div className="audience-grid">
+          {AUDIENCES.map((item) => (
+            <article key={item.label} className="feature-card">
               <span className="oh-step-icon" aria-hidden="true">
-                <Icon name={feature.icon} size={22} />
+                <Icon name={item.icon} size={22} />
               </span>
-              <h3>{feature.title}</h3>
-              <p className="muted">{feature.text}</p>
+              <h3>{item.label}</h3>
+              <p className="muted small">{item.text}</p>
             </article>
           ))}
         </div>
       </section>
 
       <section id="examples" className="container platform-section" aria-labelledby="examples-title">
-        <h2 id="examples-title">Organization website examples</h2>
-        <p className="muted">Each example is a separate website with its own address, branding and campaigns.</p>
+        <h2 id="examples-title">Examples</h2>
+        <p className="muted">Each one is its own website, with its own address, look and campaigns.</p>
         <div className="example-grid">
-          {examples.map((org) => {
-            const count = store.campaigns.filter((campaign) => campaign.organizationId === org.id && !campaign.isDraft).length
-            return (
-              <article key={org.id} className="example-card" style={themeVars(org.branding) as CSSProperties}>
-                <img src={org.content.heroImage} alt="" />
-                <div className="example-body">
-                  <div className="example-brand">
-                    <OrgLogoMark org={org} size={36} />
-                    <div>
-                      <strong>{org.name}</strong>
-                      <span className="muted small">{orgTypeLabel(org.type)}</span>
-                    </div>
+          {examples.map((org) => (
+            <article key={org.id} className="example-card" style={themeVars(org.branding) as CSSProperties}>
+              <img src={org.content.heroImage} alt="" />
+              <div className="example-body">
+                <div className="example-brand">
+                  <OrgLogoMark org={org} size={36} />
+                  <div>
+                    <strong>{org.name}</strong>
+                    <span className="muted small">{orgTypeLabel(org.type)}</span>
                   </div>
-                  <p className="small">{org.tagline}</p>
-                  <code className="small">/o/{org.slug}</code>
-                  <span className="muted small">
-                    {count} campaign{count === 1 ? '' : 's'}
-                  </span>
-                  <Link to={orgBase(org.slug)} className="btn btn-primary btn-sm">
-                    Visit {org.name}
-                  </Link>
                 </div>
-              </article>
-            )
-          })}
+                <p className="small">{org.tagline}</p>
+                <Link to={orgBase(org.slug)} className="btn btn-primary btn-sm">
+                  Visit website
+                </Link>
+              </div>
+            </article>
+          ))}
         </div>
       </section>
 
-      <section className="container platform-section" aria-labelledby="plans-title">
-        <h2 id="plans-title">Demo plans</h2>
-        <div className="plan-teasers">
-          {DEMO_PLANS.map((plan) => (
-            <div key={plan.id} className="plan-teaser">
-              <strong>{plan.name}</strong>
-              <span className="muted small">{plan.audience}</span>
-            </div>
-          ))}
+      <section className="container platform-section closing-cta">
+        <h2>Ready to start?</h2>
+        <p className="muted">Setup takes four short steps. You can preview your website before publishing, and your progress is saved on this device.</p>
+        <div className="oh-actions">
+          <button type="button" className="btn btn-primary btn-lg" onClick={() => startWebsite()}>
+            Create your website
+          </button>
+          <Link to="/plans" className="link-button">
+            Compare demo plans
+          </Link>
         </div>
-        <Link to="/plans" className="btn btn-primary">
-          Compare demo plans
-        </Link>
       </section>
     </div>
   )

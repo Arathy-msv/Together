@@ -72,17 +72,26 @@ export function WorkspaceLayout() {
               <span className={`status-pill ${stored.website.status}`}>{websiteStatusLabel(stored)}</span>
               <code>{publicWebsiteUrl(org)}</code>
             </div>
-            <WebsiteActions stored={stored} root={root} />
+            <WebsiteActions stored={stored} />
           </div>
           <nav className="ws-nav" aria-label="Workspace">
             <NavLink to={`${root}/overview`}>Overview</NavLink>
-            <NavLink to={`${root}/website`}>Website editor</NavLink>
-            <NavLink to={`${root}/campaigns`} end={false}>
+            <NavLink to={`${root}/website`}>My website</NavLink>
+            <NavLink to={`${root}/campaigns`} end={false} className={({ isActive }) => (isActive || pathname.startsWith(`${root}/assistant`) ? 'active' : '')}>
               Campaigns
             </NavLink>
-            {org.visibility.assistant ? <NavLink to={`${root}/assistant`}>Create with assistant</NavLink> : null}
-            <NavLink to={`${root}/settings`}>Organization settings</NavLink>
-            <NavLink to={`${root}/plan`}>Demo plan</NavLink>
+            <NavLink to={`${root}/settings`} className={({ isActive }) => (isActive || pathname.startsWith(`${root}/plan`) ? 'active' : '')}>
+              Settings
+            </NavLink>
+            <details className="ws-help">
+              <summary>Help</summary>
+              <div className="ws-help-menu">
+                <Link to={`${root}/overview?checklist=1`}>Setup checklist</Link>
+                <Link to={`${root}/plan`}>Your demo plan</Link>
+                <Link to={`/o/${org.slug}/how-it-works`}>How giving works for supporters</Link>
+                <p className="muted small">Everything is saved on this device only.</p>
+              </div>
+            </details>
           </nav>
         </div>
         {stored.website.status === 'setup' ? (
@@ -106,7 +115,7 @@ export function WorkspaceLayout() {
   )
 }
 
-function WebsiteActions({ stored, root }: { stored: Parameters<typeof isPubliclyAvailable>[0]; root: string }) {
+function WebsiteActions({ stored }: { stored: Parameters<typeof isPubliclyAvailable>[0] }) {
   const navigate = useNavigate()
   const [copied, setCopied] = useState(false)
   const url = publicWebsiteUrl(stored)
@@ -142,11 +151,11 @@ function WebsiteActions({ stored, root }: { stored: Parameters<typeof isPublicly
           }
         }}
       >
-        {copied ? 'Link copied' : 'Copy website link'}
+        {copied ? 'Link copied.' : 'Copy website link'}
       </button>
-      <Link to={`${root}/campaigns/new?new=1`} className="btn btn-primary btn-sm">
-        Create campaign
-      </Link>
+      <span className="sr-only" role="status">
+        {copied ? 'Link copied.' : ''}
+      </span>
     </div>
   )
 }

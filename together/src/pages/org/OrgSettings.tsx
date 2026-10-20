@@ -1,5 +1,6 @@
 import { useEffect, useId, useMemo, useState, type ReactNode } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { demoPlan } from '../../lib/plans.ts'
 import { Icon } from '../../components/illustrations.tsx'
 import { BrandPreview } from '../../components/org/BrandPreview.tsx'
 import { OrgLogoMark } from '../../components/org/OrgChrome.tsx'
@@ -95,7 +96,7 @@ function SettingsEditor({ stored, variant }: { stored: Organization; variant: Va
   )
 
   useEffect(() => {
-    document.title = `${isWebsite ? 'Website editor' : 'Organization settings'} — ${saved.name}`
+    document.title = `${isWebsite ? 'My website' : 'Settings'} — ${saved.name}`
   }, [saved.name, isWebsite])
 
   useEffect(() => {
@@ -201,10 +202,7 @@ function SettingsEditor({ stored, variant }: { stored: Organization; variant: Va
     <div className="settings-page">
       <div className="settings-head container-wide">
         <div>
-          <p className="settings-kicker">
-            <span className="demo-badge">Demo control</span> Not secure tenant administration
-          </p>
-          <h1>{isWebsite ? 'Website editor' : 'Organization settings'}</h1>
+          <h1>{isWebsite ? 'My website' : 'Settings'}</h1>
           <p className="muted">
             {isWebsite
               ? published
@@ -212,6 +210,12 @@ function SettingsEditor({ stored, variant }: { stored: Organization; variant: Va
                 : 'Your website is not published yet. Publish it when you are ready.'
               : 'Fundraising preferences apply to new campaigns straight away.'}
           </p>
+          {!isWebsite ? (
+            <p className="small">
+              Demo plan: <strong>{demoPlan(stored.plan.id).name}</strong> ·{' '}
+              <Link to={`/workspace/${stored.id}/plan`}>View or change plan</Link>
+            </p>
+          ) : null}
         </div>
         <div className="settings-actions">
           <span className={dirty || (isWebsite && unpublished) ? 'save-state dirty' : 'save-state'} role="status">

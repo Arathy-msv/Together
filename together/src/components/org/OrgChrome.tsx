@@ -73,10 +73,6 @@ export function OrgHeader({ org, base }: { org: Organization; base: string }) {
           </NavLink>
           <NavLink to={`${base}/campaigns`}>Campaigns</NavLink>
           <NavLink to={`${base}/about`}>About</NavLink>
-          <NavLink to={`${base}/how-it-works`}>How it works</NavLink>
-          <NavLink to={`${base}/campaigns`} className="btn btn-primary btn-sm" end>
-            Support a campaign
-          </NavLink>
         </nav>
       </div>
     </header>
@@ -99,9 +95,9 @@ export function OrgHeaderPreview({ org }: { org: Organization }) {
           Menu
         </span>
         <nav className="oh-nav" aria-label="Preview navigation">
+          <span className="oh-nav-item">Home</span>
           <span className="oh-nav-item">Campaigns</span>
           <span className="oh-nav-item">About</span>
-          <span className="btn btn-primary btn-sm">Support a campaign</span>
         </nav>
       </div>
     </header>
@@ -142,7 +138,7 @@ export function OrgFooter({ org, base, workspace, preview = false }: { org: Orga
               <>
                 <Link to={`${base}/campaigns`}>Campaigns</Link>
                 <Link to={`${base}/about`}>About</Link>
-                <Link to={`${base}/how-it-works`}>How it works</Link>
+                <Link to={`${base}/how-it-works`}>How giving works</Link>
               </>
             )}
             {links.map((link) =>

@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { BrandMark } from '../../components/BrandMark.tsx'
 import { useDocumentTheme, useScrollOnNavigate } from '../../hooks/useDocumentTheme.ts'
 import { DEFAULT_BRANDING } from '../../lib/theme.ts'
+import { useStartWebsite } from '../../hooks/useStartWebsite.ts'
 
 /** Together, the product provider. Organization fundraising content lives on each organization's own site. */
 export function PlatformLayout() {
@@ -10,6 +11,7 @@ export function PlatformLayout() {
   const [menuPath, setMenuPath] = useState<string | null>(null)
   const open = menuPath === pathname + hash
   useDocumentTheme(DEFAULT_BRANDING)
+  const startWebsite = useStartWebsite()
   useScrollOnNavigate(pathname, hash)
 
   useEffect(() => {
@@ -45,15 +47,11 @@ export function PlatformLayout() {
           </button>
           <nav id="platform-nav" className={open ? 'oh-nav open' : 'oh-nav'} aria-label="Together">
             <Link to="/#how-it-works">How it works</Link>
-            <Link to="/#features">Features</Link>
             <Link to="/#examples">Examples</Link>
-            <NavLink to="/plans">Demo plans</NavLink>
-            <NavLink to="/workspace" className="btn btn-outline btn-sm" end>
-              Open demo workspace
-            </NavLink>
-            <NavLink to="/plans" className="btn btn-primary btn-sm" end>
-              Create your organization website
-            </NavLink>
+            <NavLink to="/plans">Plans</NavLink>
+            <button type="button" className="btn btn-primary btn-sm" onClick={() => startWebsite()}>
+              Create your website
+            </button>
           </nav>
         </div>
       </header>
@@ -66,16 +64,16 @@ export function PlatformLayout() {
             <BrandMark size={36} />
             <div>
               <strong>Together</strong>
-              <p>A browser-only prototype. Plans are demos, no payment is collected, and websites you create exist only in this browser.</p>
+              <p>Demo prototype. No payment is taken, and websites you create are saved on this device only.</p>
             </div>
           </div>
           <div className="oh-footer-side">
             <nav aria-label="Footer">
-              <Link to="/#features">Features</Link>
+              <Link to="/#how-it-works">How it works</Link>
               <Link to="/#examples">Examples</Link>
-              <Link to="/plans">Demo plans</Link>
+              <Link to="/plans">Plans</Link>
               <Link to="/start">Continue a setup</Link>
-              <Link to="/workspace">Demo workspace</Link>
+              <Link to="/workspace">Manage a demo website</Link>
             </nav>
           </div>
         </div>
