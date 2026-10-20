@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { SaveIndicator } from '../../components/drafts/DraftUI.tsx'
 import { BrandPreview } from '../../components/org/BrandPreview.tsx'
@@ -74,7 +74,9 @@ function Wizard({ stored }: { stored: Organization }) {
   const [device, setDevice] = useState<'desktop' | 'mobile'>('desktop')
   const [published, setPublished] = useState<Organization | null>(null)
   const snapshot = useMemo(() => ({ org, step }), [org, step])
+  const finished = useRef(false)
   const autosave = useAutosave(snapshot, (value) => {
+    if (finished.current) return
     const now = new Date().toISOString()
     saveOrganization({ ...value.org, website: { status: 'setup', draft: websiteConfigOf(value.org), updatedAt: now }, onboarding: { step: value.step, updatedAt: now, flow: 4 } })
   })
@@ -123,9 +125,11 @@ function Wizard({ stored }: { stored: Organization }) {
     const now = new Date().toISOString()
     const base: Organization = { ...org, website: { status: 'draft', draft: websiteConfigOf(org), updatedAt: now }, onboarding: undefined }
     const final = publish ? withPublishedWebsite(base) : { ...base, onboarding: undefined }
+    finished.current = true
     try {
       saveOrganization(final)
     } catch {
+      finished.current = false
       setErrors({ form: 'This browser could not save your website. Free up storage and try again.' })
       return
     }
@@ -522,7 +526,10 @@ function PublishedScreen({ org }: { org: Organization }) {
         <p className="muted">Your website works at this address on this device. Because this prototype has no server, other people can’t see it on their devices.</p>
         <code className="published-url">{url}</code>
         <div className="inline-actions">
-          <Link to={`/o/${org.slug}`} className="btn btn-primary">
+          <Link to={`/workspace/${org.id}/campaigns/new?new=1`} className="btn btn-primary">
+            Create your first campaign
+          </Link>
+          <Link to={`/o/${org.slug}`} className="btn btn-outline">
             Open website
           </Link>
           <button
@@ -537,13 +544,13 @@ function PublishedScreen({ org }: { org: Organization }) {
               }
             }}
           >
-            {copied ? 'Link copied' : 'Copy website link'}
+            {copied ? 'Link copied.' : 'Copy website link'}
           </button>
-          <Link to={`/workspace/${org.id}/campaigns/new?new=1`} className="btn btn-outline">
-            Create your first campaign
-          </Link>
+          <span className="sr-only" role="status">
+            {copied ? 'Link copied.' : ''}
+          </span>
           <Link to={`/workspace/${org.id}/overview`} className="link-button">
-            Go to workspace
+            Go to my workspace
           </Link>
         </div>
       </section>

@@ -1,15 +1,22 @@
 import { useNavigate } from 'react-router-dom'
+import { seededOrganization } from '../data/organizations.ts'
 import { createOrganization, loadOrganizations } from '../lib/orgStorage.ts'
 import type { PlanId } from '../lib/types.ts'
 
 /**
- * "Create your website": resumes an unfinished setup on this device if there is one, otherwise
- * starts a new organization on the default demo plan (changeable later in Settings).
+ * "Create your website": resumes a setup the visitor started on this device, otherwise starts a new
+ * organization on the default demo plan (changeable later in Settings). The seeded example setup is
+ * only offered from "Continue a setup", so first-time visitors start fresh.
  */
 export function useStartWebsite() {
   const navigate = useNavigate()
   return (plan: PlanId = 'community', { forceNew = false } = {}) => {
-    if (!forceNew && loadOrganizations().some((org) => org.website.status === 'setup')) {
+    const unfinished = loadOrganizations().filter((org) => org.website.status === 'setup' && !seededOrganization(org.id))
+    if (!forceNew && unfinished.length === 1) {
+      navigate(`/start/${unfinished[0].id}`)
+      return
+    }
+    if (!forceNew && unfinished.length > 1) {
       navigate('/start')
       return
     }
