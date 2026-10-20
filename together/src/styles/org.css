@@ -738,7 +738,7 @@ html.org-theme :focus-visible { outline-color: var(--org-focus); }
 .ws-stats dd { margin: 4px 0 0; font-weight: 800; font-size: 1.05rem; overflow-wrap: anywhere; }
 .negative-text { color: #8a4b00; }
 .prompt-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
-.prompt-list li, .prompt-inline { background: var(--org-accent-soft); border-left: 3px solid var(--org-accent); border-radius: 0 8px 8px 0; padding: 8px 12px; font-size: 0.9rem; color: var(--p-ink); }
+.prompt-list li, .prompt-inline { background: var(--org-secondary-soft); border-left: 3px solid var(--org-primary-tint); border-radius: 0 8px 8px 0; padding: 8px 12px; font-size: 0.9rem; color: var(--p-ink); }
 .prompt-inline { display: block; margin-top: 4px; font-size: 0.84rem; }
 .ws-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .ws-list li { display: flex; justify-content: space-between; gap: 12px; align-items: center; flex-wrap: wrap; border: 1px solid var(--p-line); border-radius: 10px; padding: 10px 12px; background: var(--p-surface); }

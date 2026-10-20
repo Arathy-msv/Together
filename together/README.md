@@ -23,7 +23,7 @@ npm run lint
 npm test
 ```
 
-`npm test` runs the contribution rules, stage gating, checkout, organization, theming, storage migration, and assistant tests with Node’s built-in test runner.
+`npm test` runs the contribution rules, stage gating, checkout, organization, theming, storage migration, assistant, referral attribution, fund summary, trust and draft tests with Node’s built-in test runner.
 
 ## Organizations
 
@@ -64,15 +64,46 @@ Campaign currency is fixed per campaign. The organization currency is only the d
 
 A scripted, question-by-question flow (no AI service). It asks for the purpose, name, target, dates, group type, participation, game, amounts, and cover, with quick-answer chips, back and edit, a live draft preview, and **Save draft** (kept per organization). Answers are validated with the same rules as the campaign form. Nothing is published until you choose **Create campaign** on the review step.
 
+## Sharing pages and attribution
+
+Any open campaign that is running or about to open has a **Create my sharing page** action. A sharing page lives at `/o/:organizationSlug/campaigns/:campaignId/r/:referralCode` and points at the original campaign — it is not a copy. A sharer can add a name, optional photo, headline, “Why I support this campaign” message, optional personal target (“My sharing goal”) and a cover from the approved gallery. They cannot change the story, organizer, campaign goal, currency, where contributions go, updates, fund use or verification indicators.
+
+The sharing workspace (`…/share` and `…/share/:code`) is a **demo control**: the device that created a page can edit it. A referral code is attribution, not an editing password.
+
+Attribution rule: **the sharing page used when you begin your contribution receives credit.** The referral is snapshotted when review begins (direct donation, game review, or the giving tree cart) and later page visits never change it. Only a confirmed simulated contribution stores `referralId`; it counts once in the campaign total and is also shown in the sharing page’s credited total. Donor names are never shown on sharing pages.
+
+## Transparency: updates, fund use and trust
+
+Campaign pages have **Story**, **Updates**, **Fund use** and **Trust & documents** tabs, with the contribution panel kept in a sticky side column.
+
+- **Fundraising progress and delivery progress are separate.** Reaching the goal never marks delivery complete. Milestones show Planned, In progress, Reported complete (organizer-reported) or Past expected date.
+- **Updates** show published updates only, newest first, with images (alt text required), optional short local video (never autoplays), related milestones and expenses. “Follow updates on this device” is a local bookmark; no emails are sent. The contribution receipt lists updates published since the contribution.
+- **Fund use** is a demo calculation in integer minor units: confirmed simulated contributions − published organizer-reported expenses. Planned budgets are shown separately, and draft expenses, game suggestions and failed attempts are never counted. A negative balance is shown exactly, with the organizer’s explanation. An expense linked from several updates is counted once.
+- **Trust & documents** separates “Information provided”, “Supporting document attached”, “Not independently verified” and “Demo verification example” (seeded on one campaign only). Uploading evidence never creates a verified badge, and organizers cannot grant one. Private verification placeholders use fictional samples, store no files and are never shown publicly; real identity review would need a future secure service.
+
+### Organizer workspace
+
+From the organizer dashboard, **Manage** opens `/o/:organizationSlug/dashboard/:campaignId` with Overview, Story & settings, Referral pages, Milestones, Updates, Expenses, Trust & documents and Final report. The overview suggests next steps (no published updates, past-due milestones, expenses without evidence, goal reached). Closing fundraising and publishing a final report are separate actions. Receipts can be kept organizer-only with a separate redacted public copy, and publishing asks for privacy confirmation.
+
+## Stories, templates and drafts
+
+Campaigns can have a short summary plus optional “Who this helps / What they need / What contributions will support / What happens next”, a beneficiary description, image story, video, budget breakdown and cost examples (each must state its cost basis). Text-only campaigns are fine.
+
+Category templates (Education, Clothing & essential supplies, Environment, Sports & clubs, Community projects, Other) suggest prompts, milestones, budget headings, a cover and a suitable game. The form shows a preview of exactly what changes; story text is never replaced, and lists are only replaced when you tick the option.
+
+The campaign form and the assistant autosave drafts on this device (“Saving…”, “Saved on this device”, or a visible “Not saved” error). Returning shows **Continue your campaign draft?** with Continue, Start another and Discard. Drafts have stable IDs per organization and starting another never overwrites one. Progress counts required fields only.
+
 ## Storage
 
 | Key | Contents |
 | --- | --- |
 | `together.organizations.v1` | Organization configurations |
-| `together.demo.v1` | Campaigns (with `organizationId` and `currency`) and simulated contributions, format version 2 |
-| `together.assistantDrafts.v1` | Assistant drafts, one per organization |
+| `together.demo.v1` | Format version 3: campaigns, contributions (optional `referralId`), referrals, milestones, campaignUpdates, expenses, supportingDocuments |
+| `together.campaignDrafts.v1` | Form and assistant drafts, each with a stable ID and organization |
+| `together.followed.v1` | Campaigns followed on this device |
+| `together.myReferrals.v1` | Sharing pages created on this device (demo editing only) |
 
-Each stored organization is repaired or skipped on its own, so one broken record never wipes the rest. Missing demo organizations and sample campaigns are added back.
+Each stored organization is repaired or skipped on its own, so one broken record never wipes the rest. Missing demo organizations and sample campaigns are added back. Loading version 1 or 2 data upgrades it to version 3 without removing campaigns or contributions; records that point at missing campaigns are dropped individually, and missing images fall back to a placeholder. Drafts and follows live in their own keys so autosave never rewrites campaign data. Earlier assistant drafts are imported automatically.
 
 ## What you can try
 
