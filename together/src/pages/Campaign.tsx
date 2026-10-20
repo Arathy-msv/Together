@@ -18,6 +18,7 @@ import { campaignMilestones, deliverySummary, latestUpdateDate } from '../lib/tr
 import { OrgNotFound } from './org/OrgNotFound.tsx'
 import { formatDate, formatDateRange, formatINR, parseWholeRupees } from '../lib/format.ts'
 import { canUseFeature, campaignUsesSponsor } from '../lib/features.ts'
+import { CampaignPartnerOffers } from './org/PartnerOffersPublic.tsx'
 import { GAME_EXPLANATION, campaignGameSettings, gameActionAmounts } from '../lib/gameContribution.ts'
 import { gameMeta } from '../lib/games.ts'
 import { getPending, isUnlocked, markGameIntroSeen, newToken, setPending, unlockCampaign } from '../lib/pending.ts'
@@ -283,6 +284,7 @@ function CampaignDetails({ view, referral }: { view: CampaignView; referral?: Re
               </>
             ) : null}
           </div>
+          <CampaignPartnerOffers campaign={campaign} />
           <div className="panel aside-card">{followButton}</div>
         </aside>
       </div>

@@ -86,6 +86,7 @@ export function blankForm(org: OrgFormContext = FALLBACK_CONTEXT): CampaignForm 
     ...emptyStoryFields(),
     sponsorEnabled: false,
     nextUpdateAt: '',
+    partnerOfferIds: [],
   }
 }
 
@@ -107,6 +108,7 @@ export function completeForm(form: Partial<CampaignForm> & Pick<CampaignForm, 'o
   if (!isCurrencyCode(merged.currency)) merged.currency = 'INR'
   if (typeof merged.sponsorEnabled !== 'boolean') merged.sponsorEnabled = false
   if (typeof merged.nextUpdateAt !== 'string') merged.nextUpdateAt = ''
+  if (!Array.isArray(merged.partnerOfferIds)) merged.partnerOfferIds = []
   for (const key of ['title', 'description', 'storyWho', 'storyNeed', 'storySupports', 'storyNext', 'beneficiary', 'coverImageData', 'logoData', 'puzzleImageData'] as const) {
     if (typeof merged[key] !== 'string') merged[key] = ''
   }
@@ -147,6 +149,7 @@ export function campaignToForm(campaign: Campaign): CampaignForm {
     milestonePlan: [],
     sponsorEnabled: Boolean(campaign.sponsorEnabled),
     nextUpdateAt: campaign.nextUpdateAt ? campaign.nextUpdateAt.slice(0, 10) : '',
+    partnerOfferIds: campaign.partnerOfferIds ?? [],
   }
 }
 
@@ -188,6 +191,7 @@ export function formToCampaign(form: CampaignForm, options: { isDraft: boolean; 
     nextUpdateAt: form.nextUpdateAt.trim() ? new Date(`${form.nextUpdateAt.trim()}T12:00:00`).toISOString() : undefined,
     approvalStatus: options.existing?.approvalStatus,
     approvalNote: options.existing?.approvalNote,
+    partnerOfferIds: form.partnerOfferIds.length > 0 ? [...form.partnerOfferIds] : undefined,
     createdAt: options.existing?.createdAt ?? new Date().toISOString(),
     manualClosedAt: options.isDraft ? undefined : options.existing?.manualClosedAt,
     isDraft: options.isDraft,

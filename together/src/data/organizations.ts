@@ -1,4 +1,4 @@
-import { recommendedFeatures } from '../lib/features.ts'
+import { emptyVoucherSettings, recommendedFeatures } from '../lib/features.ts'
 import { DEFAULT_ORG_ID, DEFAULT_ORG_SLUG, DEFAULT_VISIBILITY, IMPLEMENTED_GAMES } from '../lib/organizations.ts'
 import { DEFAULT_BRANDING } from '../lib/theme.ts'
 import type { Organization } from '../lib/types.ts'
@@ -45,6 +45,8 @@ function publishedSeeds(): Organization[] {
       visibility: { ...DEFAULT_VISIBILITY },
       plan: { id: 'organization', selectedAt: SEEDED_AT },
     features: recommendedFeatures('platform', 'organization'),
+    voucherSettings: emptyVoucherSettings(),
+    featureHistory: [],
       website: { status: 'published', publishedAt: SEEDED_AT, updatedAt: SEEDED_AT },
       createdAt: SEEDED_AT,
       updatedAt: SEEDED_AT,
@@ -88,6 +90,8 @@ function publishedSeeds(): Organization[] {
       visibility: { games: true, direct: true, impactStories: true, assistant: true, poweredBy: true },
       plan: { id: 'organization', selectedAt: SEEDED_AT },
     features: recommendedFeatures('company', 'organization'),
+    voucherSettings: emptyVoucherSettings(),
+    featureHistory: [],
       website: { status: 'published', publishedAt: SEEDED_AT, updatedAt: SEEDED_AT },
       createdAt: SEEDED_AT,
       updatedAt: SEEDED_AT,
@@ -134,6 +138,8 @@ function publishedSeeds(): Organization[] {
       visibility: { games: true, direct: true, impactStories: true, assistant: true, poweredBy: true },
       plan: { id: 'community', selectedAt: SEEDED_AT },
     features: recommendedFeatures('school', 'community'),
+    voucherSettings: emptyVoucherSettings(),
+    featureHistory: [],
       website: { status: 'published', publishedAt: SEEDED_AT, updatedAt: SEEDED_AT },
       createdAt: SEEDED_AT,
       updatedAt: SEEDED_AT,
@@ -177,6 +183,8 @@ function publishedSeeds(): Organization[] {
       visibility: { games: true, direct: true, impactStories: true, assistant: true, poweredBy: false },
       plan: { id: 'community', selectedAt: SEEDED_AT },
     features: recommendedFeatures('nonprofit', 'community'),
+    voucherSettings: emptyVoucherSettings(),
+    featureHistory: [],
       website: { status: 'published', publishedAt: SEEDED_AT, updatedAt: SEEDED_AT },
       createdAt: SEEDED_AT,
       updatedAt: SEEDED_AT,
@@ -216,6 +224,8 @@ export function unfinishedSetupSeed(): Organization {
     visibility: { games: true, direct: true, impactStories: false, assistant: true, poweredBy: true },
     plan: { id: 'starter', selectedAt: SEEDED_AT },
     features: recommendedFeatures('club', 'starter'),
+    voucherSettings: emptyVoucherSettings(),
+    featureHistory: [],
     website: {
       status: 'setup',
       draft: { name: 'Riverside Runners Club', tagline: 'Saturday 5k for everyone', about: 'A volunteer-run club organizing free weekly runs and charity races along the river.', logo: '', favicon: '', branding, content, visibility: { impactStories: false, poweredBy: true } },

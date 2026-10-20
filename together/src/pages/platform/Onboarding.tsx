@@ -14,13 +14,16 @@ import { COMING_SOON_GAMES, IMAGE_GALLERY, ORG_TYPES, slugify, validateOrganizat
 import { saveOrganization, setActiveOrgId } from '../../lib/orgStorage.ts'
 import {
   ALWAYS_INCLUDED,
+  capabilityName,
   clampFeaturesToPlan,
   enabledFeatureLabels,
   recommendedFeatures,
+  selectedCapabilities,
+  voucherSelectionError,
 } from '../../lib/features.ts'
 import { demoPlan, optionalFeatureNames } from '../../lib/plans.ts'
 import { contrastChecks, FONT_CHOICES, isHexColor } from '../../lib/theme.ts'
-import type { FontChoice, GameType, Organization, OrgFeatures, OrgType } from '../../lib/types.ts'
+import type { FontChoice, GameType, Organization, OrgFeatures, OrgType, VoucherSettings } from '../../lib/types.ts'
 import { previewOrganization, publicWebsiteUrl, resumeSetupStep, sampleWebsiteContent, SETUP_STEP_COUNT, websiteConfigOf, withPublishedWebsite } from '../../lib/website.ts'
 
 const STEPS = ['Your organization', 'Website features', 'Your look and content', 'Review selections', 'Confirm and publish']
@@ -38,6 +41,10 @@ function stepErrors(step: number, org: Organization, all: Organization[]): Recor
     if (!EMAIL.test(org.content.contactEmail.trim())) errors.contactEmail = 'Enter a public contact email like hello@example.org.'
     const slug = validateSlug(org.slug, org.id, all)
     if (slug) errors.slug = slug
+  }
+  if (step === 2) {
+    const voucher = voucherSelectionError(org.features, org.voucherSettings)
+    if (voucher) errors.vouchers = voucher
   }
   if (step === 3) {
     for (const key of ['primary', 'accent', 'background'] as const) if (!isHexColor(org.branding[key])) errors[key] = 'Use a hex colour like #123D36.'
@@ -94,6 +101,10 @@ function Wizard({ stored }: { stored: Organization }) {
   const patchContent = (next: Partial<Organization['content']>) => setOrg((current) => ({ ...current, content: { ...current.content, ...next } }))
   const patchBranding = (next: Partial<Organization['branding']>) => setOrg((current) => ({ ...current, branding: { ...current.branding, ...next } }))
   const patchFeatures = (features: OrgFeatures) => setOrg((current) => ({ ...current, features: clampFeaturesToPlan(features, current.plan.id) }))
+  const patchVoucherSettings = (voucherSettings: VoucherSettings) => {
+    setOrg((current) => ({ ...current, voucherSettings }))
+    setErrors((current) => ({ ...current, vouchers: '' }))
+  }
 
   function goNext() {
     const next = stepErrors(step, org, all)
@@ -207,7 +218,15 @@ function Wizard({ stored }: { stored: Organization }) {
             <>
               <h3 className="feature-heading">Choose what your fundraising website needs.</h3>
               <p className="muted">Start with the essentials. You can manage optional features later.</p>
-              <FeaturePicker features={org.features} planId={org.plan.id} orgType={org.type} onChange={patchFeatures} />
+              <FeaturePicker
+                features={org.features}
+                voucherSettings={org.voucherSettings}
+                planId={org.plan.id}
+                orgType={org.type}
+                onChange={patchFeatures}
+                onVoucherSettingsChange={patchVoucherSettings}
+                voucherError={errors.vouchers || undefined}
+              />
             </>
           ) : null}
           {step === 3 ? (
@@ -233,7 +252,15 @@ function Wizard({ stored }: { stored: Organization }) {
               </div>
               <div>
                 <dt>Selected optional features</dt>
-                <dd>{enabledFeatureLabels(org).length ? enabledFeatureLabels(org).join(' · ') : 'None — essentials only'}</dd>
+                <dd>
+                  {enabledFeatureLabels(org).filter((label) => label !== 'Give & Get Local').join(' · ') || 'None — essentials only'}
+                </dd>
+              </div>
+              <div>
+                <dt>Partner vouchers</dt>
+                <dd>
+                  <VoucherSelectionSummary org={org} onEdit={() => goTo(2)} />
+                </dd>
               </div>
               <div>
                 <dt>Always included</dt>
@@ -247,7 +274,12 @@ function Wizard({ stored }: { stored: Organization }) {
               </div>
               <div>
                 <dt>Configuration still needed</dt>
-                <dd>Detailed settings for each feature are collected when you first use them — nothing else is required to publish.</dd>
+                <dd>
+                  {org.features.partnerVouchers
+                    ? 'Add partner stores and offers under Partner offers after setup. '
+                    : ''}
+                  Detailed settings for each feature are collected when you first use them — nothing else is required to publish.
+                </dd>
               </div>
             </dl>
           ) : null}
@@ -264,6 +296,7 @@ function Wizard({ stored }: { stored: Organization }) {
               <p>
                 <strong>Selected:</strong> {enabledFeatureLabels(org).length ? enabledFeatureLabels(org).join(', ') : 'Essentials only'}.
               </p>
+              <VoucherSelectionSummary org={org} onEdit={() => goTo(2)} />
             </div>
           ) : null}
           {errors.form ? <p className="error-text">{errors.form}</p> : null}
@@ -310,6 +343,35 @@ function Wizard({ stored }: { stored: Organization }) {
           </div>
         </aside>
       </div>
+    </div>
+  )
+}
+
+function VoucherSelectionSummary({ org, onEdit }: { org: Organization; onEdit: () => void }) {
+  const capabilities = org.features.partnerVouchers ? selectedCapabilities(org.voucherSettings) : []
+  return (
+    <div className="voucher-summary">
+      {capabilities.length > 0 ? (
+        <>
+          <p>
+            <strong>Partner vouchers: Enabled</strong>
+          </p>
+          <p className="muted small">Selected capabilities:</p>
+          <ul>
+            {capabilities.map((capability) => (
+              <li key={capability}>{capabilityName(capability)}</li>
+            ))}
+          </ul>
+          <p className="muted small">Partner stores and offers are added after setup. Status: Included in your demo plan.</p>
+        </>
+      ) : (
+        <p>
+          <strong>Partner vouchers: Not selected</strong>
+        </p>
+      )}
+      <button type="button" className="link-button" onClick={onEdit}>
+        Edit selection
+      </button>
     </div>
   )
 }

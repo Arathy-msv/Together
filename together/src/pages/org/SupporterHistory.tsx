@@ -2,7 +2,10 @@ import { useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useOrg } from '../../components/org/OrgContext.tsx'
 import { useDemoStore } from '../../hooks/useDemoStore.ts'
+import { useSupporterProfile, useVoucherStore } from '../../hooks/useVoucherStore.ts'
 import { canUseFeature } from '../../lib/features.ts'
+import { holderVouchers } from '../../lib/vouchers.ts'
+import { VoucherList } from './PartnerOffersPublic.tsx'
 import { formatDateTime, formatMoney } from '../../lib/format.ts'
 import { OrgNotFound } from './OrgNotFound.tsx'
 
@@ -37,6 +40,9 @@ export function SupporterHistoryPage() {
   const { org, base } = useOrg()
   const store = useDemoStore()
   const ids = useMemo(() => readLocalHistory(org.id), [org.id])
+  const voucherStore = useVoucherStore()
+  const profile = useSupporterProfile()
+  const vouchers = holderVouchers(voucherStore, org.id, profile?.id)
 
   useEffect(() => {
     document.title = `Your contributions — ${org.name}`
@@ -76,6 +82,15 @@ export function SupporterHistoryPage() {
           ))}
         </ul>
       )}
+      {vouchers.length > 0 ? (
+        <section aria-labelledby="history-vouchers-title">
+          <h2 id="history-vouchers-title">Your partner vouchers</h2>
+          <p className="muted small">
+            For {profile?.name}. <Link to={`${base}/my-vouchers`}>Manage demo supporters in My vouchers</Link>
+          </p>
+          <VoucherList vouchers={vouchers} />
+        </section>
+      ) : null}
     </div>
   )
 }

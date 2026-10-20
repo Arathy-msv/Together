@@ -27,7 +27,7 @@ const FAQ = [
   },
   {
     q: 'Are vouchers available?',
-    a: 'Not yet. Voucher rewards are planned and shown as coming soon.',
+    a: 'Only if this organization has turned on Give & Get Local and a campaign shows a partner offer. Offers come from fictional partner stores in this demo, and any vouchers you receive stay in My vouchers on this device.',
     soon: true,
   },
 ]

@@ -26,6 +26,8 @@ import { SuccessPage } from './pages/Success.tsx'
 import { CampaignWorkspacePage } from './pages/workspace/CampaignWorkspace.tsx'
 import { PlanPage } from './pages/workspace/PlanPage.tsx'
 import { WebsiteFeaturesPage } from './pages/workspace/WebsiteFeaturesPage.tsx'
+import { PartnerOffersPage } from './pages/workspace/PartnerOffersPage.tsx'
+import { PublicOffersPage, StoreValuePurchasePage, VoucherWalletPage } from './pages/org/PartnerOffersPublic.tsx'
 import { WorkspaceLayout } from './pages/workspace/WorkspaceLayout.tsx'
 import { WorkspaceOverviewPage } from './pages/workspace/WorkspaceOverview.tsx'
 
@@ -48,6 +50,9 @@ export default function App() {
           <Route index element={<OrgHomePage />} />
           <Route path="about" element={<OrgAboutPage />} />
           <Route path="my-history" element={<SupporterHistoryPage />} />
+          <Route path="offers" element={<PublicOffersPage />} />
+          <Route path="offers/:offerId/buy" element={<StoreValuePurchasePage />} />
+          <Route path="my-vouchers" element={<VoucherWalletPage />} />
           <Route path="campaigns" element={<ExplorePage />} />
           <Route path="campaigns/:id" element={<CampaignScope />}>
             <Route index element={<CampaignPage />} />
@@ -82,6 +87,7 @@ export default function App() {
           <Route path="settings" element={<OrganizationSettingsPage />} />
           <Route path="plan" element={<PlanPage />} />
           <Route path="features" element={<WebsiteFeaturesPage />} />
+          <Route path="offers" element={<PartnerOffersPage />} />
           <Route path="*" element={<OrgNotFound kind="page" />} />
         </Route>
 

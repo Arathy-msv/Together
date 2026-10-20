@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link, NavLink, useLocation } from 'react-router-dom'
+import { useDemoStore } from '../../hooks/useDemoStore.ts'
+import { useSupporterProfile, useVoucherStore } from '../../hooks/useVoucherStore.ts'
 import { canUseFeature } from '../../lib/features.ts'
+import { holderVouchers, publicOffers } from '../../lib/vouchers.ts'
 import { orgInitials } from '../../lib/organizations.ts'
 import type { Organization } from '../../lib/types.ts'
 import { BrandMark } from '../BrandMark.tsx'
@@ -44,6 +47,9 @@ export function OrgHeader({ org, base, workspace }: { org: Organization; base: s
   const { pathname } = useLocation()
   const [menuPath, setMenuPath] = useState<string | null>(null)
   const open = menuPath === pathname
+  const vouchers = useVoucherStore()
+  const demo = useDemoStore()
+  const hasOffers = publicOffers(org, vouchers, demo).length > 0
 
   useEffect(() => {
     if (!open) return
@@ -74,6 +80,7 @@ export function OrgHeader({ org, base, workspace }: { org: Organization; base: s
           </NavLink>
           <NavLink to={`${base}/campaigns`}>Campaigns</NavLink>
           <NavLink to={`${base}/about`}>About</NavLink>
+          {hasOffers ? <NavLink to={`${base}/offers`}>Partner offers</NavLink> : null}
           {workspace ? (
             <div className="oh-nav-organizer">
               <span className="oh-nav-organizer-label">
@@ -123,6 +130,9 @@ export function OrgHeaderPreview({ org }: { org: Organization }) {
 
 export function OrgFooter({ org, base, workspace, preview = false }: { org: Organization; base: string; workspace?: string; preview?: boolean }) {
   const { content } = org
+  const vouchers = useVoucherStore()
+  const profile = useSupporterProfile()
+  const holdsVouchers = holderVouchers(vouchers, org.id, profile?.id).length > 0
   const links = [
     ...(content.website ? [{ label: 'Website', url: content.website }] : []),
     ...content.socialLinks.filter((link) => link.label.trim() && link.url.trim()),
@@ -157,6 +167,7 @@ export function OrgFooter({ org, base, workspace, preview = false }: { org: Orga
                 <Link to={`${base}/about`}>About</Link>
                 <Link to={`${base}/how-it-works`}>How giving works</Link>
                 {canUseFeature(org, 'supporterHistory') ? <Link to={`${base}/my-history`}>Your contributions</Link> : null}
+                {holdsVouchers && !canUseFeature(org, 'supporterHistory') ? <Link to={`${base}/my-vouchers`}>My vouchers</Link> : null}
               </>
             )}
             {links.map((link) =>

@@ -3,6 +3,9 @@ import { Link, NavLink, Outlet, useLocation, useNavigate, useParams } from 'reac
 import { OrgLogoMark } from '../../components/org/OrgChrome.tsx'
 import { OrgContext, orgContextValue } from '../../components/org/OrgContext.tsx'
 import { OrgSwitcher } from '../../components/org/OrgSwitcher.tsx'
+import { useVoucherStore } from '../../hooks/useVoucherStore.ts'
+import { canUseFeature } from '../../lib/features.ts'
+import { orgVouchers } from '../../lib/vouchers.ts'
 import { useDocumentTheme, useScrollOnNavigate } from '../../hooks/useDocumentTheme.ts'
 import { useOrganizations } from '../../hooks/useOrganizations.ts'
 import { orgTypeLabel } from '../../lib/organizations.ts'
@@ -21,6 +24,7 @@ export function WorkspaceLayout() {
   const stored = organizations.find((org) => org.id === organizationId)
   const org = useMemo(() => (stored ? previewOrganization(stored) : null), [stored])
   const value = useMemo(() => (org ? orgContextValue(org) : null), [org])
+  const voucherStore = useVoucherStore()
   useDocumentTheme(org?.branding ?? DEFAULT_BRANDING)
   useScrollOnNavigate(pathname, hash)
 
@@ -81,6 +85,7 @@ export function WorkspaceLayout() {
             <NavLink to={`${root}/campaigns`} end={false} className={({ isActive }) => (isActive || pathname.startsWith(`${root}/assistant`) ? 'active' : '')}>
               Campaigns
             </NavLink>
+            {canUseFeature(org, 'partnerVouchers') || orgVouchers(voucherStore, org.id).length > 0 ? <NavLink to={`${root}/offers`}>Partner offers</NavLink> : null}
             <NavLink to={`${root}/settings`} className={({ isActive }) => (isActive || pathname.startsWith(`${root}/plan`) ? 'active' : '')}>
               Settings
             </NavLink>

@@ -12,6 +12,7 @@ import { useAutosave } from '../hooks/useAutosave.ts'
 import { getCampaign } from '../lib/campaigns.ts'
 import { canUseFeature, campaignNeedsApproval } from '../lib/features.ts'
 import { formCampaignForOrg, publishWithPolicy } from '../lib/featureActions.ts'
+import { PartnerOfferChooser } from '../components/campaign/PartnerOfferChooser.tsx'
 import { deleteDraft, listDrafts, newDraftId, readDraft, saveDraft } from '../lib/drafts.ts'
 import { currencySymbol, formatDateTime, formatINR, setDisplayCurrency } from '../lib/format.ts'
 import { formatPaise, gameConfig } from '../lib/gameContribution.ts'
@@ -873,6 +874,9 @@ function SettingsStep({
         {form.game ? <GameGallery form={form} errors={errors} onChange={onChange} org={org} /> : null}
         {form.game ? <GameContributionSettingsPanel form={form} errors={errors} onChange={onChange} /> : null}
       </section>
+      {canUseFeature(org, 'partnerVouchers') ? (
+        <PartnerOfferChooser org={org} currency={form.currency} selected={form.partnerOfferIds} onChange={(partnerOfferIds) => onChange({ partnerOfferIds })} />
+      ) : null}
     </div>
   )
 }

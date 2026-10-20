@@ -1,4 +1,6 @@
-import type { Campaign, DemoStore, Organization, OrgType, PlanId } from './types.ts'
+import type { Campaign, DemoStore, FeatureKey, Organization, OrgFeatures, OrgType, PlanId, VoucherCapability, VoucherSettings } from './types.ts'
+
+export type { FeatureKey, OrgFeatures, VoucherCapability, VoucherSettings }
 
 /**
  * Optional organization features. Platform availability, plan entitlement and organization
@@ -15,11 +17,8 @@ export const FEATURE_KEYS = [
   'lowDataMode',
   'recordExports',
   'supporterHistory',
-] as const
-
-export type FeatureKey = (typeof FEATURE_KEYS)[number]
-
-export type OrgFeatures = Record<FeatureKey, boolean>
+  'partnerVouchers',
+] as const satisfies readonly FeatureKey[]
 
 export interface FeatureCard {
   key: FeatureKey
@@ -88,7 +87,54 @@ export const FEATURE_CARDS: FeatureCard[] = [
     explanation: 'Let supporters revisit their contributions and campaign updates on this device.',
     benefit: 'Someone who gave before can find their receipts again in this browser.',
   },
+  {
+    key: 'partnerVouchers',
+    name: 'Give & Get Local',
+    explanation: 'Offer partner-store rewards and vouchers that help support your campaigns.',
+    benefit: 'A local bookshop offers 10% off to supporters, or sells store credit with part going to your campaign.',
+  },
 ]
+
+export const VOUCHER_CAPABILITIES: { key: VoucherCapability; name: string; explanation: string }[] = [
+  { key: 'contributionRewards', name: 'Contribution rewards', explanation: 'Supporters receive an eligible partner offer after contributing.' },
+  { key: 'storeValueVouchers', name: 'Store-value vouchers', explanation: 'Supporters purchase store credit, with a stated portion supporting a campaign.' },
+  { key: 'onlineOffers', name: 'Online partner offers', explanation: 'Supporters access partner-issued website discounts or approved shopping links.' },
+]
+
+export const VOUCHER_SETUP_NOTE = 'You can add partner stores and offers after setting up your website.'
+
+export function emptyVoucherSettings(): VoucherSettings {
+  return { contributionRewards: false, storeValueVouchers: false, onlineOffers: false }
+}
+
+export function normalizeVoucherSettings(value: unknown): VoucherSettings {
+  const raw = value && typeof value === 'object' ? (value as Partial<VoucherSettings>) : {}
+  const next = emptyVoucherSettings()
+  for (const capability of VOUCHER_CAPABILITIES) if (raw[capability.key] === true) next[capability.key] = true
+  return next
+}
+
+export function selectedCapabilities(settings: VoucherSettings): VoucherCapability[] {
+  return VOUCHER_CAPABILITIES.filter((capability) => settings[capability.key]).map((capability) => capability.key)
+}
+
+/** Setup and Settings both require at least one capability once Give & Get Local is on. */
+export function voucherSelectionError(features: OrgFeatures, settings: VoucherSettings): string | undefined {
+  if (!features.partnerVouchers) return undefined
+  return selectedCapabilities(settings).length === 0 ? 'Choose at least one Give & Get Local capability, or turn Give & Get Local off.' : undefined
+}
+
+export function capabilityName(key: VoucherCapability): string {
+  return VOUCHER_CAPABILITIES.find((capability) => capability.key === key)!.name
+}
+
+/**
+ * A voucher capability is usable only when the module is usable (platform, plan, activation)
+ * and this capability is selected. Campaign-level opt-in is checked separately.
+ */
+export function canUseVoucherCapability(organization: Organization, capability: VoucherCapability): boolean {
+  return canUseFeature(organization, 'partnerVouchers') && Boolean(organization.voucherSettings?.[capability])
+}
 
 /** Every listed feature is implemented in this prototype. */
 export const PLATFORM_AVAILABLE: Record<FeatureKey, true> = {
@@ -100,12 +146,13 @@ export const PLATFORM_AVAILABLE: Record<FeatureKey, true> = {
   lowDataMode: true,
   recordExports: true,
   supporterHistory: true,
+  partnerVouchers: true,
 }
 
 /** Demo plan entitlements — labelled on the plan cards; not real billing. */
 export const PLAN_ENTITLEMENTS: Record<PlanId, FeatureKey[]> = {
   starter: ['shareKit', 'updateCommitments', 'campaignDuplication', 'lowDataMode'],
-  community: ['shareKit', 'updateCommitments', 'campaignDuplication', 'lowDataMode', 'recordExports', 'supporterHistory'],
+  community: ['shareKit', 'updateCommitments', 'campaignDuplication', 'lowDataMode', 'recordExports', 'supporterHistory', 'partnerVouchers'],
   organization: [
     'shareKit',
     'updateCommitments',
@@ -115,6 +162,7 @@ export const PLAN_ENTITLEMENTS: Record<PlanId, FeatureKey[]> = {
     'supporterHistory',
     'sponsorPlay',
     'reviewApproval',
+    'partnerVouchers',
   ],
 }
 
@@ -128,6 +176,7 @@ export function emptyFeatures(value = false): OrgFeatures {
     lowDataMode: value,
     recordExports: value,
     supporterHistory: value,
+    partnerVouchers: value,
   }
 }
 
@@ -153,6 +202,7 @@ export function recommendedFeatures(type: OrgType, planId: PlanId): OrgFeatures 
   features.supporterHistory = planEntitles(planId, 'supporterHistory')
   features.sponsorPlay = false
   features.reviewApproval = false
+  features.partnerVouchers = false
   void type
   return features
 }
@@ -163,7 +213,7 @@ export function recommendationReasons(type: OrgType, planId: PlanId): string[] {
   const group = type === 'other' || type === 'platform' ? 'groups' : `${type}s`
   const reasons = [
     `Sharing kit, update commitments, reuse past campaigns and low-data are on — useful for most ${group}.`,
-    `Sponsor-funded play and review and approval stay off until you choose them.`,
+    `Sponsor-funded play, review and approval, and Give & Get Local stay off until you choose them.`,
   ]
   if (planEntitles(planId, 'recordExports')) {
     reasons.push(`Record exports are on because they are included in the ${plan} demo plan.`)
@@ -296,6 +346,9 @@ export function disableImpact(org: Organization, key: FeatureKey, store: DemoSto
       break
     case 'supporterHistory':
       summary.push('The history page will hide. Confirmation screens and individual receipts stay available.')
+      break
+    case 'partnerVouchers':
+      summary.push('New partner offers and voucher purchases stop. Issued vouchers, balances, receipts and redemptions stay available.')
       break
   }
   return { blocked, summary }

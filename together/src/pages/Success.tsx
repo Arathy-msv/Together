@@ -7,6 +7,7 @@ import { useCampaignView, useDemoStore } from '../hooks/useDemoStore.ts'
 import { campaignPlayPath, goalReached } from '../lib/campaigns.ts'
 import { useOrg, useOrgBase } from '../components/org/OrgContext.tsx'
 import { rememberContribution } from './org/SupporterHistory.tsx'
+import { ContributionRewards } from './org/PartnerOffersPublic.tsx'
 import { GoalGesture } from '../components/GoalGesture.tsx'
 import { formatDate, formatDateTime, formatINR } from '../lib/format.ts'
 import { useCampaignBackPath } from '../hooks/useBackPath.ts'
@@ -114,6 +115,7 @@ export function SuccessPage() {
         <ProgressBar value={exactPercent} tone="gold" />
         <p className="muted small">{view.supporters === 1 ? '1 simulated contribution' : `${view.supporters} simulated contributions`}</p>
       </section>
+      <ContributionRewards campaign={view.campaign} contribution={contribution} />
       <section className="panel since-card" aria-labelledby="since-title">
         <h2 id="since-title">Updates since your contribution</h2>
         {since.length === 0 ? (

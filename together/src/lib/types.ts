@@ -89,6 +89,10 @@ export interface Organization {
   plan: { id: PlanId; selectedAt: string }
   /** Organization activation of optional features (separate from detailed feature settings). */
   features: OrgFeatures
+  /** Which Give & Get Local capabilities are selected (only used when `features.partnerVouchers`). */
+  voucherSettings: VoucherSettings
+  /** Feature on/off changes, newest last. Kept so deactivation is auditable. */
+  featureHistory: FeatureChange[]
   website: OrganizationWebsite
   /** `flow: 5` is the current setup (details → features → branding → review → confirm). */
   onboarding?: { step: number; updatedAt: string; flow?: number }
@@ -108,8 +112,18 @@ export type FeatureKey =
   | 'lowDataMode'
   | 'recordExports'
   | 'supporterHistory'
+  | 'partnerVouchers'
 
 export type OrgFeatures = Record<FeatureKey, boolean>
+
+export type VoucherCapability = 'contributionRewards' | 'storeValueVouchers' | 'onlineOffers'
+export type VoucherSettings = Record<VoucherCapability, boolean>
+
+export interface FeatureChange {
+  key: FeatureKey | `voucher:${VoucherCapability}`
+  enabled: boolean
+  at: string
+}
 
 export type ApprovalStatus = 'draft' | 'pending_review' | 'approved' | 'rejected'
 
@@ -168,6 +182,8 @@ export interface Campaign {
   /** Review workflow status when the organization has reviewApproval. */
   approvalStatus?: ApprovalStatus
   approvalNote?: string
+  /** Partner offers this campaign chose to show. Usable only while the organization allows them. */
+  partnerOfferIds?: string[]
 
   createdAt: string
   manualClosedAt?: string
@@ -410,6 +426,7 @@ export interface CampaignForm {
   milestonePlan: { id: string; title: string; due: string }[]
   sponsorEnabled: boolean
   nextUpdateAt: string
+  partnerOfferIds: string[]
 }
 
 export interface PendingDonation {

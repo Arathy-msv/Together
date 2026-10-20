@@ -1,4 +1,5 @@
-import { inferFeatures, normalizeFeatures, recommendedFeatures } from './features.ts'
+import { emptyVoucherSettings, inferFeatures, normalizeFeatures, normalizeVoucherSettings, planEntitles, recommendedFeatures } from './features.ts'
+import { voucherUsage } from './voucherUsage.ts'
 import { isCurrencyCode } from './format.ts'
 import { GAMES, isGameType } from './games.ts'
 import { DEFAULT_BRANDING, isFontChoice, isHexColor, normalizeHex } from './theme.ts'
@@ -203,13 +204,14 @@ export function normalizeOrganization(value: unknown): Organization | null {
     defaults: normalizeDefaults(raw.defaults),
     visibility: normalizeVisibility(raw.visibility),
     plan: normalizePlan(raw.plan, updatedAt),
-    features: normalizeOrgFeatures(raw.features, {
+    ...normalizeOrgFeatureConfig(raw, {
       ...raw,
       id: raw.id,
       type: ORG_TYPES.some((type) => type.id === raw.type) ? (raw.type as OrgType) : 'nonprofit',
       plan: normalizePlan(raw.plan, updatedAt),
       website: normalizeWebsite(raw.website, name, updatedAt),
     } as Organization),
+    featureHistory: normalizeFeatureHistory(raw.featureHistory),
     website: normalizeWebsite(raw.website, name, updatedAt),
     onboarding:
       raw.onboarding && typeof raw.onboarding === 'object' && Number.isInteger(raw.onboarding.step)
@@ -222,6 +224,33 @@ export function normalizeOrganization(value: unknown): Organization | null {
     createdAt: typeof raw.createdAt === 'string' ? raw.createdAt : updatedAt,
     updatedAt,
   }
+}
+
+const FEATURE_HISTORY_LIMIT = 100
+
+function normalizeFeatureHistory(value: unknown): Organization['featureHistory'] {
+  if (!Array.isArray(value)) return []
+  return value
+    .filter((item) => item && typeof item === 'object' && typeof item.key === 'string' && typeof item.enabled === 'boolean' && typeof item.at === 'string')
+    .slice(-FEATURE_HISTORY_LIMIT)
+}
+
+/**
+ * Feature activation plus voucher capability selection. Vouchers default off; an organization that
+ * already has voucher records keeps the capabilities it used, so outstanding access never disappears.
+ */
+function normalizeOrgFeatureConfig(raw: Partial<Organization>, partial: Organization): Pick<Organization, 'features' | 'voucherSettings'> {
+  const features = normalizeOrgFeatures(raw.features, partial)
+  const voucherSettings = raw.voucherSettings ? normalizeVoucherSettings(raw.voucherSettings) : emptyVoucherSettings()
+  const knewVouchers = Boolean(raw.features && typeof (raw.features as Partial<OrgFeatures>).partnerVouchers === 'boolean')
+  if (!knewVouchers) {
+    const used = voucherUsage(partial.id)
+    if (used.length > 0) {
+      features.partnerVouchers = planEntitles(partial.plan.id, 'partnerVouchers')
+      for (const capability of used) voucherSettings[capability] = true
+    }
+  }
+  return { features, voucherSettings }
 }
 
 function normalizeOrgFeatures(value: unknown, partial: Organization): OrgFeatures {

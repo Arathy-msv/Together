@@ -1118,3 +1118,42 @@ html.low-data .hero-stack, html.low-data .play-side { display: none; }
 @media (max-width: 640px) {
   .onboarding-steps { grid-template-columns: 1fr 1fr; }
 }
+
+/* ---------- Give & Get Local ---------- */
+
+.feature-card { flex-direction: column; align-items: stretch; }
+.feature-card-main { display: flex; justify-content: space-between; gap: 14px; align-items: flex-start; }
+.voucher-capabilities { margin: 12px 0 0; padding: 12px 14px; border: 1px solid var(--p-line); border-radius: 10px; display: grid; gap: 10px; }
+.voucher-capabilities legend { font-weight: 700; font-size: 0.9rem; padding: 0 4px; }
+.voucher-capability { display: flex; gap: 10px; align-items: flex-start; min-height: 44px; }
+.voucher-capability input { margin-top: 4px; width: 18px; height: 18px; flex: none; }
+.voucher-capability span { display: grid; gap: 2px; }
+.voucher-capability em { font-style: normal; color: var(--p-muted); font-size: 0.88rem; }
+.voucher-summary { display: grid; gap: 4px; }
+.voucher-summary p, .voucher-summary ul { margin: 0; }
+.impact-panel { border-color: #d9a441; }
+.impact-list { display: grid; gap: 8px; padding-left: 18px; }
+.impact-list li.blocked { color: #a3341f; font-weight: 600; }
+.voucher-impact h3 { margin: 12px 0 6px; font-size: 1rem; }
+.partner-offers .ws-card, .partner-offers .panel { margin-bottom: 16px; }
+.partner-empty { text-align: left; }
+.stack-form { display: grid; gap: 12px; margin-top: 12px; }
+.offer-admin-list, .partner-offer-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.offer-admin { border: 1px solid var(--p-line); border-radius: 12px; padding: 14px; display: grid; gap: 10px; }
+.offer-admin-head { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+.offer-admin-head > div { display: grid; gap: 3px; min-width: 0; }
+.inline-amount { width: 110px; min-height: 36px; }
+.offer-facts { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; margin: 8px 0; font-size: 0.88rem; }
+.offer-facts div { display: contents; }
+.offer-facts dt { color: var(--p-muted); }
+.offer-facts dd { margin: 0; }
+.partner-offer-list > li { display: grid; gap: 6px; }
+.partner-offers-card .partner-offer-list > li + li { border-top: 1px solid var(--p-line); padding-top: 10px; }
+.partner-offer-grid { list-style: none; padding: 0; display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+.partner-reward { display: grid; gap: 8px; }
+.supporter-profile { display: grid; gap: 8px; margin: 12px 0 18px; }
+.offer-claimed { display: grid; gap: 4px; }
+@media (max-width: 640px) {
+  .offer-admin-head { flex-direction: column; }
+  .offer-facts { grid-template-columns: 1fr; }
+}

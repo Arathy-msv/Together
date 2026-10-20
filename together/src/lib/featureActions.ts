@@ -2,6 +2,7 @@ import { canUseFeature, campaignNeedsApproval } from './features.ts'
 import { loadOrganizations } from './orgStorage.ts'
 import { loadStore, saveStore } from './storage.ts'
 import type { Campaign, CampaignForm, Organization } from './types.ts'
+import { eligibleOffersForCampaign, loadVoucherStore } from './vouchers.ts'
 import { formToCampaign } from './wizard.ts'
 
 /** Rejects a feature action when the organization cannot use it. */
@@ -115,16 +116,27 @@ export function exportOrganizationRecords(org: Organization): string {
   return JSON.stringify(payload, null, 2)
 }
 
+/** Keeps only offers this organization can currently attach to a campaign in this currency. */
+function eligiblePartnerOffers(form: CampaignForm, org: Organization): string[] {
+  if (!canUseFeature(org, 'partnerVouchers') || form.partnerOfferIds.length === 0) return []
+  const eligible = new Set(eligibleOffersForCampaign(org, loadVoucherStore(), { currency: form.currency, organizationId: org.id }).map((offer) => offer.id))
+  return form.partnerOfferIds.filter((id) => eligible.has(id))
+}
+
 /** Strip feature fields the organization cannot use before save. */
 export function sanitizeFormForOrg(form: CampaignForm, org: Organization): CampaignForm {
   return {
     ...form,
     sponsorEnabled: canUseFeature(org, 'sponsorPlay') ? form.sponsorEnabled : false,
     nextUpdateAt: canUseFeature(org, 'updateCommitments') ? form.nextUpdateAt : '',
+    partnerOfferIds: eligiblePartnerOffers(form, org),
   }
 }
 
 export function formCampaignForOrg(form: CampaignForm, org: Organization, options: { isDraft: boolean; existing?: Campaign }): Campaign {
   const clean = sanitizeFormForOrg(form, org)
+  // Offers already saved on this campaign stay recorded even while paused, so re-enabling restores them.
+  const kept = (options.existing?.partnerOfferIds ?? []).filter((id) => form.partnerOfferIds.includes(id))
+  clean.partnerOfferIds = [...new Set([...clean.partnerOfferIds, ...kept])]
   return formToCampaign(clean, options)
 }
