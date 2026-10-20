@@ -121,9 +121,10 @@ function withDefaultCampaigns(store: DemoStore): DemoStore {
   let changed = false
   const campaigns = store.campaigns.map((campaign) => {
     const sample = byId.get(campaign.id)
-    if (!sample || sample.gameType === campaign.gameType || campaign.title !== sample.title) return campaign
+    if (!sample || campaign.title !== sample.title) return campaign
+    if (sample.gameType === campaign.gameType && sample.coverImageId === campaign.coverImageId) return campaign
     changed = true
-    return { ...campaign, gameType: sample.gameType }
+    return { ...campaign, gameType: sample.gameType, coverImageId: sample.coverImageId }
   })
   const present = new Set(campaigns.map((campaign) => campaign.id))
   const missing = seeded.campaigns.filter((campaign) => !present.has(campaign.id))

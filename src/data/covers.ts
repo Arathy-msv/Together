@@ -6,6 +6,9 @@ export const COVERS: { id: string; label: string; alt: string; src: string }[] =
   { id: 'winter', label: 'Winter care', alt: 'Folded knitted sweaters and scarves', src: '/covers/cover-winter.jpg' },
   { id: 'sports', label: 'Sports & play', alt: 'A football on a school sports field', src: '/covers/cover-sports.jpg' },
   { id: 'reading', label: 'Reading room', alt: 'A bright school reading room with bookshelves', src: '/covers/cover-reading.jpg' },
+  { id: 'pages', label: 'Open pages', alt: 'A child’s drawing of friends in front of a school', src: '/covers/cover-pages.jpg' },
+  { id: 'jacket', label: 'Warm jacket', alt: 'A navy puffer jacket ready for cold weather', src: '/covers/cover-jacket.jpg' },
+  { id: 'pencil', label: 'Pencil and paper', alt: 'A yellow pencil on a clean sheet of paper', src: '/covers/cover-pencil.jpg' },
 ]
 
 const LEGACY: Record<string, string> = { books: 'library', readers: 'reading', nook: 'reading' }

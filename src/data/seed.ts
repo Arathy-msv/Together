@@ -105,7 +105,7 @@ export function createSeed(): DemoStore {
       title: 'Open a New Page',
       description:
         'Help stock sketchbooks, story pages and art supplies so children can unfold an idea and share it with the room.',
-      coverImageId: 'reading',
+      coverImageId: 'pages',
       organizerName: 'Riverside School PTA',
       access: 'open',
       goalAmount: 15000,
@@ -123,7 +123,7 @@ export function createSeed(): DemoStore {
       title: 'Zip Up for Winter',
       description:
         'Warm jackets for children who need one this season. A small action — and a working zip — goes a long way on a cold morning.',
-      coverImageId: 'winter',
+      coverImageId: 'jacket',
       organizerName: 'Neighbourhood Collective',
       access: 'open',
       goalAmount: 25000,
@@ -141,7 +141,7 @@ export function createSeed(): DemoStore {
       title: 'Write a Brighter Line',
       description:
         'Pencils, paper and a quiet corner for every child who wants to write a note, a story, or a hope for the year ahead.',
-      coverImageId: 'sports',
+      coverImageId: 'pencil',
       organizerName: 'Riverside School PTA',
       access: 'open',
       goalAmount: 12000,
