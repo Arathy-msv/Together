@@ -18,7 +18,10 @@ export function WorkspaceOverviewPage() {
   const store = useDemoStore()
   const [params, setParams] = useSearchParams()
   const campaigns = store.campaigns.filter((campaign) => campaign.organizationId === org.id && !campaign.isDraft)
-  const views = campaigns.map((campaign) => toView(campaign, store.contributions)).sort((a, b) => Date.parse(b.campaign.createdAt) - Date.parse(a.campaign.createdAt))
+  const visibleCampaigns = store.campaigns.filter(
+    (campaign) => campaign.organizationId === org.id && (!campaign.isDraft || campaign.approvalStatus === 'pending_review'),
+  )
+  const views = visibleCampaigns.map((campaign) => toView(campaign, store.contributions)).sort((a, b) => Date.parse(b.campaign.createdAt) - Date.parse(a.campaign.createdAt))
   const tasks = setupTasks(stored, campaigns.length, workspace)
   const next = tasks.find((task) => !task.done)
   const showChecklist = Boolean(next) || params.get('checklist') === '1'

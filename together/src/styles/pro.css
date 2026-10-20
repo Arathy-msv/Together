@@ -124,6 +124,7 @@ html { scroll-padding-top: 84px; }
 .pro .status-scheduled { background: var(--p-gold-soft); color: #9a6a10; }
 .pro .status-completed { background: #e3ecf6; color: #2d5a87; }
 .pro .status-closed, .pro .status-draft { background: #eeece7; color: #6b7a73; }
+.pro .status-pending_review { background: var(--p-gold-soft); color: #9a6a10; }
 .soon-pill { display: inline-flex; align-items: center; border-radius: 6px; padding: 3px 9px; font-size: 0.74rem; font-weight: 700; background: var(--p-gold-soft); color: #6e4e0c; vertical-align: middle; }
 .soon-pill.grey { background: #eceae4; color: #7a827e; }
 

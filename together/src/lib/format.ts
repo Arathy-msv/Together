@@ -121,6 +121,8 @@ export function statusLabel(status: string): string {
   switch (status) {
     case 'draft':
       return 'Draft'
+    case 'pending_review':
+      return 'Waiting for review'
     case 'scheduled':
       return 'Scheduled'
     case 'active':

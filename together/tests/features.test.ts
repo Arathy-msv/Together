@@ -31,6 +31,7 @@ const { createOrganization, loadOrganizations, saveOrganization } = await import
 const { exportOrganizationRecords, publishWithPolicy } = await import('../src/lib/featureActions.ts')
 const { blankForm, formToCampaign } = await import('../src/lib/wizard.ts')
 const { loadStore, saveStore } = await import('../src/lib/storage.ts')
+const { statusOf } = await import('../src/lib/campaigns.ts')
 
 beforeEach(() => local.clear())
 
@@ -93,6 +94,9 @@ test('review approval routes publish into pending_review', () => {
   const saved = loadStore().campaigns.find((item) => item.id === campaign.id)!
   assert.equal(saved.approvalStatus, 'pending_review')
   assert.equal(saved.isDraft, true)
+  // A campaign waiting for review must stay distinguishable from a plain unsubmitted draft so it
+  // is still reachable from "Manage" in the workspace list, not stuck behind only an "Edit" link.
+  assert.equal(statusOf(saved, []), 'pending_review')
 })
 
 test('export rejects when recordExports is off', () => {

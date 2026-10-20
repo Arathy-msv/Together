@@ -340,7 +340,8 @@ function Row({
   const navigate = useNavigate()
   const { campaign, raised, percent, supporters, status } = view
   const canClose = !campaign.isDraft && status !== 'closed' && status !== 'completed'
-  const canReuse = canUseFeature(org, 'campaignDuplication') && !campaign.isDraft
+  const pendingReview = status === 'pending_review'
+  const canReuse = canUseFeature(org, 'campaignDuplication') && status !== 'draft'
   const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -393,7 +394,11 @@ function Row({
       </td>
       <td data-label="Actions">
         <div className="row-buttons">
-          {campaign.isDraft ? (
+          {pendingReview ? (
+            <Link to={`${workspace}/campaigns/${campaign.id}`} className="btn btn-primary btn-sm">
+              Manage · Waiting for review
+            </Link>
+          ) : campaign.isDraft ? (
             <Link to={`${workspace}/campaigns/new?draft=${campaign.id}`} className="btn btn-outline btn-sm">
               Edit
             </Link>

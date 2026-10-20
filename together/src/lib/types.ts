@@ -1,6 +1,6 @@
 export type AccessMode = 'open' | 'closed'
 export type DonationMode = 'fixed' | 'custom'
-export type CampaignStatus = 'draft' | 'scheduled' | 'active' | 'completed' | 'closed'
+export type CampaignStatus = 'draft' | 'pending_review' | 'scheduled' | 'active' | 'completed' | 'closed'
 export type ContributionMethod = 'direct' | 'game'
 export type FlowerKind = 'sunflower' | 'marigold' | 'lavender'
 export type GameType = 'garden' | 'memory' | 'puzzle' | 'jacket'

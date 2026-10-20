@@ -29,6 +29,7 @@ export function supporterCount(campaignId: string, contributions: Contribution[]
 }
 
 export function statusOf(campaign: Campaign, contributions: Contribution[], now = Date.now()): CampaignStatus {
+  if (campaign.isDraft && campaign.approvalStatus === 'pending_review') return 'pending_review'
   if (campaign.isDraft) return 'draft'
   if (campaign.manualClosedAt) return 'closed'
   const open = Date.parse(campaign.opensAt)
