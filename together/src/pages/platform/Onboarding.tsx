@@ -10,7 +10,7 @@ import { useImagePicker } from '../../hooks/useImagePicker.tsx'
 import { useOrganizations } from '../../hooks/useOrganizations.ts'
 import { CURRENCIES, formatMoney, isCurrencyCode } from '../../lib/format.ts'
 import { GAMES } from '../../lib/games.ts'
-import { COMING_SOON_GAMES, IMAGE_GALLERY, ORG_TYPES, slugify, validateOrganization, validateSlug } from '../../lib/organizations.ts'
+import { COMING_SOON_GAMES, IMAGE_GALLERY, ORG_TYPES, slugFollowsName, slugify, validateOrganization, validateSlug } from '../../lib/organizations.ts'
 import { setActiveOrgId } from '../../lib/orgStorage.ts'
 import { saveOrganizationAs } from '../../lib/orgActions.ts'
 import { AccessDenied } from '../../components/identity/AccessDenied.tsx'
@@ -193,7 +193,7 @@ function Wizard({ stored }: { stored: Organization }) {
           {step === 1 ? (
             <>
               <p className="muted">Tell supporters who you are, and choose the link you’ll share. Fields marked Optional can be skipped.</p>
-              <TextInput label="Organization name" value={org.name} maxLength={80} error={errors.name} help="For example: Greenwood School" onChange={(name) => patch({ name, slug: org.slug.startsWith('new-') && name ? slugify(name) : org.slug })} />
+              <TextInput label="Organization name" value={org.name} maxLength={80} error={errors.name} help="For example: Greenwood School" onChange={(name) => patch({ name, slug: slugFollowsName(org) && slugify(name) ? slugify(name) : org.slug })} />
               <Select label="Type" value={org.type} options={ORG_TYPES.filter((type) => ONBOARDING_TYPES.includes(type.id)).map((type) => ({ value: type.id, label: type.label }))} onChange={(type) => patch({ type: type as OrgType, features: recommendedFeatures(type as OrgType, org.plan.id) })} />
               <TextArea label="Short description" value={org.about} maxLength={600} error={errors.about} help="One or two sentences, e.g. “A primary school of 400 pupils with a big garden and a bigger heart.” Shown on your About page." onChange={(about) => patch({ about })} />
               <TextInput label="Public contact email" type="email" value={org.content.contactEmail} maxLength={120} error={errors.contactEmail} help="Supporters can write to this address. For example: office@greenwood.example" onChange={(contactEmail) => patchContent({ contactEmail })} />

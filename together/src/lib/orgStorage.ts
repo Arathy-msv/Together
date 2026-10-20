@@ -1,6 +1,6 @@
 import { createOrganizationSeed } from '../data/organizations.ts'
 import { emptyVoucherSettings, recommendedFeatures } from './features.ts'
-import { currentUser, ensureOrganizationAdmins, grantCreatorAdmin, membership } from './identity.ts'
+import { currentUser, ensureOrganizationAdmins, grantCreatorAdmin, membership, writeMembership } from './identity.ts'
 import { DEFAULT_ORG_ID, normalizeOrganization } from './organizations.ts'
 import { notifyChange, StorageFullError } from './storage.ts'
 import type { Organization, PlanId } from './types.ts'
@@ -115,9 +115,15 @@ export function createOrganization(planId: PlanId): Organization {
     onboarding: { step: 1, updatedAt: now, flow: 5 },
   }
   org.website.draft = websiteConfigOf(org)
-  const saved = saveOrganization(org)
-  grantCreatorAdmin(saved.id)
-  return saved
+  // The creator must be an admin before the organization is visible, or the legacy-admin migration
+  // run by the save's change listeners would invent a placeholder admin for it.
+  const creator = grantCreatorAdmin(org.id)
+  try {
+    return saveOrganization(org)
+  } catch (error) {
+    writeMembership(null, { userId: creator.id, organizationId: org.id }, { action: 'organization.create_failed', organizationId: org.id })
+    throw error
+  }
 }
 
 /** Removes an organization whose setup was never finished. Published organizations are kept. */

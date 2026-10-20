@@ -179,6 +179,11 @@ export function slugify(value: string): string {
     .replace(/-+$/g, '')
 }
 
+/** During setup the address follows the organization name until someone edits the address itself. */
+export function slugFollowsName(org: { name: string; slug: string }): boolean {
+  return org.slug.startsWith('new-') || org.slug === slugify(org.name)
+}
+
 /**
  * Repairs one stored organization record. Returns null only when the record has no usable
  * identity, so a single broken field never discards the whole organization.

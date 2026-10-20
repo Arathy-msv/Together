@@ -300,3 +300,20 @@ test('migration: organizations saved before roles get one admin; legacy pending 
   assert.equal(migrated.pendingRevision?.authorId, 'legacy')
   assert.equal(reviewRevision('cmp_lumen_trees', migrated.pendingRevision!.id, 'approve').isDraft, false)
 })
+
+test('a new organization gets only its creator as admin, even when change listeners reload organizations', async () => {
+  const { subscribe } = await import('../src/lib/storage.ts')
+  loadOrganizations()
+  const stop = subscribe(() => loadOrganizations())
+  try {
+    const user = identity.createDemoUser('Grace Mensah')
+    switchIdentity(user.id)
+    const created = createOrganization('organization')
+    loadOrganizations()
+    const members = identity.orgMembers(created.id)
+    assert.deepEqual(members.map((item) => item.userId), [user.id])
+    assert.equal(identity.listUsers().some((item) => item.name.startsWith('Admin ·')), false)
+  } finally {
+    stop()
+  }
+})

@@ -128,3 +128,14 @@ test('the first-visit checklist is computed from saved state', async () => {
   assert.ok(done.every((task) => task.done))
   assert.equal(setupTasks(maple, 0, `/workspace/${maple.id}`).find((task) => !task.done)?.id, 'campaign')
 })
+
+test('setup website address keeps following the organization name until edited', async () => {
+  const { slugFollowsName, slugify } = await import('../src/lib/organizations.ts')
+  let org = { name: '', slug: 'new-abc123' }
+  for (const name of ['G', 'Gr', 'Greenwood', 'Greenwood School']) {
+    org = { name, slug: slugFollowsName(org) && slugify(name) ? slugify(name) : org.slug }
+  }
+  assert.equal(org.slug, 'greenwood-school')
+  const edited = { name: 'Greenwood School', slug: 'greenwood' }
+  assert.equal(slugFollowsName(edited), false)
+})

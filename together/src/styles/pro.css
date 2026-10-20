@@ -466,7 +466,7 @@ html { scroll-padding-top: 84px; }
 .review-card > .campaign-cover { width: 100%; aspect-ratio: 16 / 8; object-fit: cover; display: block; }
 .review-body { padding: 18px; display: grid; gap: 10px; }
 .detail-list { margin: 0; display: grid; }
-.detail-list div { display: flex; justify-content: space-between; gap: 16px; padding: 10px 0; border-bottom: 1px solid var(--p-line); }
+.detail-list > div { display: flex; justify-content: space-between; gap: 16px; padding: 10px 0; border-bottom: 1px solid var(--p-line); }
 .detail-list dt { color: var(--p-muted); }
 .detail-list dd { margin: 0; font-weight: 600; text-align: right; }
 

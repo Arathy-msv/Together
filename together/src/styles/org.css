@@ -173,10 +173,10 @@ html.org-theme :focus-visible { outline-color: var(--org-focus); }
 .oh-nav { display: flex; align-items: center; gap: 24px; flex: none; }
 .oh-nav a:not(.btn), .oh-nav-item { text-decoration: none; color: var(--p-ink-2); font-weight: 600; font-size: 0.95rem; padding: 6px 0; }
 .oh-nav a.active:not(.btn) { color: var(--p-ink); box-shadow: inset 0 -2px 0 var(--org-primary); }
-.oh-nav-manage { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; color: var(--p-ink-2); font-weight: 600; font-size: 0.85rem; padding: 6px 10px; border: 1px solid var(--p-line); border-radius: 999px; white-space: nowrap; }
-.oh-nav-manage:hover { border-color: var(--org-primary); color: var(--p-ink); }
-.oh-nav-manage.primary { background: var(--org-primary); color: #fff; border-color: var(--org-primary); }
-.oh-nav-manage.primary:hover { opacity: 0.92; color: #fff; }
+.oh-nav-manage, .oh-nav a.oh-nav-manage { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; color: var(--p-ink-2); font-weight: 600; font-size: 0.85rem; padding: 6px 10px; border: 1px solid var(--p-line); border-radius: 999px; white-space: nowrap; }
+.oh-nav a.oh-nav-manage:hover { border-color: var(--org-primary); color: var(--p-ink); }
+.oh-nav a.oh-nav-manage.primary { background: var(--org-primary); color: #fff; border-color: var(--org-primary); }
+.oh-nav a.oh-nav-manage.primary:hover { opacity: 0.92; color: #fff; }
 .oh-nav-organizer { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding-left: 14px; margin-left: 4px; border-left: 1px solid var(--p-line); }
 .oh-nav-organizer-label { display: inline-flex; align-items: center; gap: 6px; font-size: 0.74rem; font-weight: 700; color: var(--p-muted); text-transform: uppercase; letter-spacing: 0.03em; }
 .oh-menu-toggle { display: none; border: 1px solid var(--p-line); background: var(--p-surface); color: var(--p-ink); border-radius: 8px; padding: 8px 12px; font-weight: 700; min-height: 44px; align-items: center; }
