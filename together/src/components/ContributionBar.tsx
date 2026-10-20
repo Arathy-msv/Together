@@ -38,12 +38,23 @@ export function ContributionBar({ contribution }: { contribution: GameContributi
           Review & contribute
         </button>
       </div>
+      <p className="gc-feedback" role="status" aria-live="polite">
+        {contribution.feedback?.text ?? ''}
+      </p>
       <p className="gc-bar-note">
         {session
           ? session.capReached && session.capPaise != null
             ? `Giving limit of ${formatPaise(session.capPaise)} reached. Keep playing for fun — the suggestion won’t go higher.`
             : `${settings.allowCustom ? 'Your final contribution is your choice.' : 'Your contribution is the amount the game suggests.'} No payment is taken while you play.`
           : `${gameAmountRules(contribution.game, settings).join(' ')} No payment is taken while you play.`}
+        {session && !contribution.preview ? (
+          <>
+            {' '}
+            <button type="button" className="gc-link gc-new-session" onClick={() => contribution.requestNewSession()} disabled={contribution.paused}>
+              Start a new session
+            </button>
+          </>
+        ) : null}
       </p>
     </section>
   )

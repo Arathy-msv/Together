@@ -137,7 +137,7 @@ export function MemoryGame({ view, preview = false }: { view: CampaignView; prev
             </button>
           ) : null}
           <button type="button" className="replay" onClick={() => contribution.requestRestart(newRound)}>
-            ↻ Restart
+            ↻ New board
           </button>
         </aside>
       }

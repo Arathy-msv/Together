@@ -315,7 +315,7 @@ export function StagedFlowGame({
                 </button>
               )}
               <button type="button" className="flow-link" onClick={() => contribution.requestRestart(nextRound)}>
-                Start over
+                New board
               </button>
             </div>
           </div>

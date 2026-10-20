@@ -10,10 +10,12 @@ import {
   cancelSession,
   contributionRuleMessage,
   emptyLedger,
+  formatPaise,
   gameConfig,
   hasAction,
   recordAction,
   returnToPending,
+  selectedPaise,
   setCustomAmount,
   settleConfirmed,
   type GameLedger,
@@ -71,9 +73,17 @@ export function useGameContribution({
   const [ledger, setLedger] = useState(() => initialLedger(campaignId, game, preview))
   const ledgerRef = useRef(ledger)
   const [dialog, setDialog] = useState<CheckpointInfo | null>(null)
-  const [restartOpen, setRestartOpen] = useState(false)
-  const restartAction = useRef<(() => void) | null>(null)
+  const [newSessionOpen, setNewSessionOpen] = useState(false)
+  const [feedback, setFeedback] = useState<{ id: number; text: string } | null>(null)
   const returnFocus = useRef<HTMLElement | null>(null)
+
+  useEffect(() => {
+    if (!feedback) return
+    const timer = window.setTimeout(() => setFeedback((current) => (current?.id === feedback.id ? null : current)), 5000)
+    return () => window.clearTimeout(timer)
+  }, [feedback])
+
+  const notify = useCallback((text: string) => setFeedback({ id: Date.now() + Math.random(), text }), [])
 
   useEffect(() => {
     ledgerRef.current = ledger
@@ -92,7 +102,10 @@ export function useGameContribution({
     returnFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
   }
 
-  /** Records a completed action exactly once and opens the checkpoint. Returns false for repeats. */
+  /**
+   * Records a completed action exactly once. Ordinary actions get a short status message so play is
+   * never interrupted; finishing a round opens the checkpoint. Returns false for repeats.
+   */
   const record = useCallback(
     (input: RecordInput): boolean => {
       const result = recordAction(
@@ -103,17 +116,26 @@ export function useGameContribution({
       if (result.outcome === 'duplicate') return false
       commit(result.ledger)
       if (input.quiet) return true
+      if (!input.roundComplete) {
+        const total = result.ledger.session?.suggestedPaise ?? 0
+        notify(
+          result.outcome === 'capped' && result.addedPaise === 0
+            ? `${input.heading} Giving limit reached, so the suggestion stays at ${formatPaise(total)}.`
+            : `${input.heading} +${formatPaise(result.addedPaise)} · suggestion now ${formatPaise(total)}.`,
+        )
+        return true
+      }
       rememberFocus()
       setDialog({
         mode: 'checkpoint',
         heading: input.heading,
         latestPaise: result.addedPaise,
         outcome: result.outcome,
-        roundComplete: Boolean(input.roundComplete),
+        roundComplete: true,
       })
       return true
     },
-    [commit, settings],
+    [commit, settings, notify],
   )
 
   const alreadyCounted = useCallback((actionId: string) => hasAction(ledgerRef.current, actionId), [])
@@ -164,24 +186,25 @@ export function useGameContribution({
     return null
   }
 
-  /** Restarting with a pending total asks whether to keep or discard it first. */
+  /** A fresh board keeps the pending suggestion; only starting a new session clears it. */
   function requestRestart(run: () => void) {
-    if (!ledgerRef.current.session) {
-      run()
-      return
-    }
-    restartAction.current = run
-    rememberFocus()
-    setRestartOpen(true)
+    run()
+    const session = ledgerRef.current.session
+    if (session) notify(`New board. Your ${formatPaise(selectedPaise(session))} suggestion is kept.`)
   }
 
-  function resolveRestart(choice: 'keep' | 'discard' | 'back') {
-    const run = restartAction.current
-    restartAction.current = null
-    setRestartOpen(false)
-    if (choice === 'back' || !run) return
-    if (choice === 'discard') commit(cancelSession(ledgerRef.current))
-    run()
+  function requestNewSession() {
+    if (!ledgerRef.current.session) return
+    rememberFocus()
+    setNewSessionOpen(true)
+  }
+
+  /** Clears only the pending suggestion. Confirmed contributions live in the store and are never touched. */
+  function resolveNewSession(confirmed: boolean) {
+    setNewSessionOpen(false)
+    if (!confirmed) return
+    commit(cancelSession(ledgerRef.current))
+    notify('New session started. Your suggestion is back to zero. Confirmed contributions are not affected.')
   }
 
   return {
@@ -193,8 +216,9 @@ export function useGameContribution({
     ledger,
     session: ledger.session,
     dialog,
-    restartOpen,
-    paused: dialog !== null || restartOpen,
+    newSessionOpen,
+    feedback,
+    paused: dialog !== null || newSessionOpen,
     returnFocus,
     record,
     alreadyCounted,
@@ -204,7 +228,8 @@ export function useGameContribution({
     cancel,
     donate,
     requestRestart,
-    resolveRestart,
+    requestNewSession,
+    resolveNewSession,
   }
 }
 

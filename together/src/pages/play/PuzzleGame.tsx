@@ -262,7 +262,7 @@ export function PuzzleGame({
             </button>
           ) : null}
           <button type="button" className="replay puzzle-restart" onClick={() => contribution.requestRestart(newPuzzle)}>
-            ↻ Restart
+            ↻ New board
           </button>
           <FlowerMark />
         </aside>

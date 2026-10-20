@@ -574,3 +574,13 @@
 }
 .flow-shell:has(.dragging), .flow-scene { -webkit-user-select: none; user-select: none; }
 .flow-brand { text-decoration: none; }
+
+.gc-feedback {
+  width: min(1240px, 100%);
+  margin: 6px auto 0;
+  min-height: 1.45em;
+  color: #13332a;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+.gc-new-session { padding: 0; min-height: 24px; font-size: inherit; }

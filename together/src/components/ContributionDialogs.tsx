@@ -104,7 +104,7 @@ export function ContributionLayer({
       {contribution.dialog && contribution.session ? (
         <CheckpointDialog contribution={contribution} onNextRound={onNextRound} />
       ) : null}
-      {contribution.restartOpen ? <RestartDialog contribution={contribution} /> : null}
+      {contribution.newSessionOpen ? <NewSessionDialog contribution={contribution} /> : null}
     </>
   )
 }
@@ -301,36 +301,28 @@ function CheckpointDialog({ contribution, onNextRound }: { contribution: GameCon
   )
 }
 
-function RestartDialog({ contribution }: { contribution: GameContribution }) {
+function NewSessionDialog({ contribution }: { contribution: GameContribution }) {
   const headingId = useId()
   const textId = useId()
   const session = contribution.session
   return (
-    <Modal
-      labelledBy={headingId}
-      describedBy={textId}
-      onEscape={() => contribution.resolveRestart('back')}
-      returnFocus={contribution.returnFocus}
-    >
+    <Modal labelledBy={headingId} describedBy={textId} onEscape={() => contribution.resolveNewSession(false)} returnFocus={contribution.returnFocus}>
       <div className="gc-body">
         <h2 id={headingId} className="gc-heading" tabIndex={-1} data-autofocus>
-          Start a new round?
+          Start a new session?
         </h2>
         <p id={textId} className="gc-text">
-          You have a pending suggestion of {formatPaise(selectedPaise(session))}. Keep it to add new actions on top, or
-          discard it. Nothing is charged either way.
+          This clears your pending {formatPaise(selectedPaise(session))} suggestion so you can start from zero. Nothing is charged, and contributions you
+          already confirmed are kept.
         </p>
         <div className="gc-actions">
-          <button type="button" className="gc-btn gc-btn-primary" onClick={() => contribution.resolveRestart('keep')}>
+          <button type="button" className="gc-btn gc-btn-outline" onClick={() => contribution.resolveNewSession(true)}>
+            Start new session
+          </button>
+          <button type="button" className="gc-btn gc-btn-primary" onClick={() => contribution.resolveNewSession(false)}>
             Keep my suggestion
           </button>
-          <button type="button" className="gc-btn gc-btn-outline" onClick={() => contribution.resolveRestart('discard')}>
-            Discard and restart
-          </button>
         </div>
-        <button type="button" className="gc-text-btn" onClick={() => contribution.resolveRestart('back')}>
-          Back to the game
-        </button>
       </div>
     </Modal>
   )
