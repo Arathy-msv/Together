@@ -1118,6 +1118,7 @@ export const SCENES = [
       await r.click('label', { text: 'Low-data mode' })
       await r.sleep(800)
       if (!(await r.ev(`document.documentElement.classList.contains('low-data')`))) throw new Error('Low-data mode did not turn on')
+      if (await r.ev(`!!document.querySelector('.oh-hero-media img, img.campaign-cover')`)) throw new Error('Low-data mode should hold back the homepage and cover photos')
       await r.sleep(2500)
       await r.scrollBy(400)
       await r.sleep(1500)

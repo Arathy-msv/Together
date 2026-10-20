@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
+import { useLowData } from '../../lib/lowData.ts'
 import { featuredCampaigns, homeCopy } from '../../lib/orgHome.ts'
 import type { CampaignView, Organization } from '../../lib/types.ts'
 import { CampaignCard } from '../CampaignCard.tsx'
@@ -30,6 +31,7 @@ export function OrgHomeView({
   preview?: boolean
 }) {
   const copy = homeCopy(org)
+  const lowData = useLowData() && !preview
   const featured = featuredCampaigns(views)
   const showImpact = org.visibility.impactStories && org.content.impactStory.trim().length > 0
   const showAbout = org.about.trim().length > 0
@@ -46,7 +48,7 @@ export function OrgHomeView({
 
   return (
     <div className="oh-home">
-      <section className="oh-hero">
+      <section className={lowData ? 'oh-hero oh-hero-text' : 'oh-hero'}>
         <div className="oh-hero-copy">
           {org.tagline ? <p className="oh-eyebrow">{org.tagline}</p> : null}
           <h1>{copy.headline}</h1>
@@ -60,9 +62,11 @@ export function OrgHomeView({
             </MaybeLink>
           </div>
         </div>
-        <div className="oh-hero-media">
-          <img src={copy.heroImage} alt="" />
-        </div>
+        {lowData ? null : (
+          <div className="oh-hero-media">
+            <img src={copy.heroImage} alt="" />
+          </div>
+        )}
       </section>
 
       <section className="oh-section" aria-labelledby={preview ? undefined : 'oh-campaigns-title'}>
