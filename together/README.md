@@ -1,8 +1,8 @@
 # Together
 
-Together is a browser-only proof of concept for a fundraising platform. Companies, schools, clubs and nonprofits choose a demo plan, set up and publish their own branded fundraising website, and create campaigns from a management workspace. Supporters open a campaign link, which opens the campaign’s game when one is enabled (Grow Our Garden, Memory Match, Community Puzzle, or Zip the Jacket). Each completed game action adds a set amount to a suggested contribution that the supporter can edit, donate, or cancel. Direct giving stays available from the campaign details.
+Together is a browser-only proof of concept for a fundraising platform. Companies, schools, clubs and nonprofits set up and publish their own branded fundraising website in four short steps, then create campaigns from a simple workspace. Supporters open a campaign page that explains the cause first, then choose to **give directly** or **play a short game** (Grow Our Garden, Memory Match, Community Puzzle, or Zip the Jacket). Each completed game action adds a set amount to a *suggested contribution* that the supporter reviews, edits and confirms. No payment is taken while playing.
 
-The organiser and supporter screens use a clean, photographic product style. The games keep an illustrated, storybook style.
+The organizer and supporter screens use a clean, photographic product style. The games keep an illustrated, storybook style.
 
 One codebase serves every organization. Each has its own website address, logo, colours, fonts, homepage, about page, campaign defaults and available games, all driven by configuration rather than separate copies of the site.
 
@@ -25,49 +25,59 @@ npm test
 
 `npm test` runs the contribution rules, stage gating, checkout, organization, theming, storage migration, assistant, referral attribution, fund summary, trust, draft and AI-preview tests with Node’s built-in test runner.
 
+## The three journeys
+
+Every screen has one primary action, and advanced settings stay folded away until needed.
+
+| Who | Steps |
+| --- | --- |
+| Organization | **Create your website** (homepage) → Your organization → Your website address → Your look and content → Review and publish → Create your first campaign. The first workspace visit shows a four-item checklist computed from saved data; reopen it any time from **Help → Setup checklist**. |
+| Campaign creator | Choose **Guide me through it** (assistant) or **Use a form** → Your cause → Goal and dates → Ways to contribute → Review → **Publish campaign** → “Your campaign is ready to share.” with **Copy campaign link**. Both paths save the same draft and use the same validation; the assistant can switch to the form at any time. |
+| Supporter | Read the cause, organizer and progress at the top → **Give directly** or **Play a game** → review the amount → **Confirm simulated contribution**. A game link opens a short inline explanation with **Start playing** / **Give directly** before the game. |
+
+Organizers keep supporters informed from each campaign’s overview with four tasks: **Post an update**, **Add an expense**, **Update a milestone** and **Prepare final report**. Supporters can **Share campaign link** or **Create my sharing page** (their own message and link).
+
 ## Platform structure
 
 Together is now a platform where companies, schools, clubs and nonprofits each get their own branded fundraising website. There are three separate areas:
 
 | Area | Routes | Purpose |
 | --- | --- | --- |
-| Together platform website | `/`, `/plans`, `/start`, `/start/:organizationId`, `/workspace` | Product homepage (how it works, features, examples), demo plan selection, guided onboarding, demo workspace entry |
+| Together platform website | `/`, `/plans`, `/start`, `/start/:organizationId`, `/workspace` | Product homepage (how it works, examples, who it’s for), demo plans, four-step setup, demo workspace entry |
 | Organization public website | `/o/:organizationSlug`, `/about`, `/campaigns`, `/campaigns/:campaignId`, `/campaigns/:campaignId/r/:referralCode` (plus play, confirm, success, share) | One branded site per organization, showing only that organization’s campaigns |
-| Organization workspace | `/workspace/:organizationId/overview`, `/website`, `/campaigns`, `/campaigns/new`, `/campaigns/:campaignId/:tab`, `/assistant`, `/settings`, `/plan` | Management: website editor, campaigns (updates, milestones, expenses, evidence, sharing pages), assistant, settings, demo plan |
+| Organization workspace | `/workspace/:organizationId/overview`, `/website`, `/campaigns`, `/campaigns/new`, `/campaigns/:campaignId/:tab`, `/assistant`, `/settings`, `/plan` | Navigation: Overview, My website, Campaigns, Settings, plus a Help menu (setup checklist, demo plan, how giving works) |
 
-**Customer journey:** Choose a plan → Add organization details → Customize website → Publish demo site → Create campaigns.
-
-- **Demo plans:** three sample plans with features and illustrative limits. They have no prices. Confirmation is simulated: no payment, billing, renewals or invoices, and limits are not enforced.
-- **Onboarding:** six steps (details, website address, branding, content, fundraising preferences, review with desktop/mobile preview). Progress autosaves, and `/start` resumes an unfinished setup. Website addresses are lowercase, unique ignoring case, and can’t use reserved platform names.
+- **Demo plans:** three sample plans with features and illustrative limits. They have no prices. New websites start on the Community plan; change it any time under Settings. Confirmation is simulated: no payment, billing, renewals or invoices, and limits are not enforced.
+- **Setup:** four steps (your organization, website address, look and content, review and publish with desktop/mobile preview). Step 3 asks only for a main colour and homepage photo; **Use sample content** fills the text, and logo, fonts, footer and fundraising defaults sit under **Customize more**. Progress autosaves; clicking **Create your website** again resumes your unfinished setup, and setups saved in the older six-step format resume on the matching new step. Website addresses are lowercase, unique ignoring case, and can’t use reserved platform names.
 - **Website lifecycle:** *Setup in progress* → *Draft* → *Published*. The public site always uses the published settings. In the website editor, *Save draft*, *Preview changes*, *Publish changes* and *Discard unpublished changes* work on a separate draft. Organizer preview is a labelled demo control on this device only. Publishing a website never publishes campaign drafts. Before the first publish, the public address shows an “isn’t published yet” page.
 - **Website addresses are locked once published**, so shared links keep working.
 - **Isolation:** campaigns, sharing pages, drafts and totals are filtered by `organizationId`. A campaign or referral code under the wrong organization address shows not found. The demo organization switcher appears only in the workspace, never on public sites.
 - **Local only:** websites you create work at their addresses in this browser. Because there is no server, they are not visible on other devices.
 
-Seeded organizations: **Maple Grove Public School** (`/o/maple-grove`), **Lumen & Co.** (`/o/lumen-co`) and **Open Harbour Foundation** (`/o/open-harbour`). Each has distinct branding, a published site, an about page, campaigns and different games. **Together** (`/o/together`) keeps the original sample campaigns. **Riverside Runners Club** is an unfinished onboarding (step 3) you can resume from `/start`.
+Seeded organizations: **Maple Grove Public School** (`/o/maple-grove`), **Lumen & Co.** (`/o/lumen-co`) and **Open Harbour Foundation** (`/o/open-harbour`). Each has distinct branding, a published site, an about page, campaigns and different games. **Together** (`/o/together`) keeps the original sample campaigns. **Riverside Runners Club** is an unfinished setup (step 3) you can resume from **Continue a setup** (`/start`).
 
 Old links still work: `/campaigns/:id/...` goes to the campaign’s organization site; `/dashboard`, `/create` and `/o/:slug/dashboard|create|assistant|settings` go to the matching workspace page; `/explore` goes to the demo organization’s campaigns.
 
-## Sharing pages and attribution
+## Sharing pages
 
 Any open campaign that is running or about to open has a **Create my sharing page** action. A sharing page lives at `/o/:organizationSlug/campaigns/:campaignId/r/:referralCode` and points at the original campaign — it is not a copy. A sharer can add a name, optional photo, headline, “Why I support this campaign” message, optional personal target (“My sharing goal”) and a cover from the approved gallery. They cannot change the story, organizer, campaign goal, currency, where contributions go, updates, fund use or verification indicators.
 
-The sharing workspace (`…/share` and `…/share/:code`) is a **demo control**: the device that created a page can edit it. A referral code is attribution, not an editing password.
+The sharing page editor (`…/share` and `…/share/:code`) is a demo convenience: only the device that created a page can edit it. The code in the link records who shared it; it is not an editing password.
 
 Attribution rule: **the sharing page used when you begin your contribution receives credit.** The referral is snapshotted when review begins (direct donation, game review, or the giving tree cart) and later page visits never change it. Only a confirmed simulated contribution stores `referralId`; it counts once in the campaign total and is also shown in the sharing page’s credited total. Donor names are never shown on sharing pages.
 
 ## Transparency: updates, fund use and trust
 
-Campaign pages have **Story**, **Updates**, **Fund use** and **Trust & documents** tabs, with the contribution panel kept in a sticky side column.
+Campaign pages open with the title, a one-sentence purpose (**Read the full story**), organizer, progress and the contribution action (on mobile, a **Support this campaign** button sits right under the purpose). Below are three tabs: **Story**, **Updates** and **How funds are used**. Old `?tab=trust` links open **How funds are used**, which ends with “Who is running this campaign”.
 
 - **Fundraising progress and delivery progress are separate.** Reaching the goal never marks delivery complete. Milestones show Planned, In progress, Reported complete (organizer-reported) or Past expected date.
 - **Updates** show published updates only, newest first, with images (alt text required), optional short local video (never autoplays), related milestones and expenses. “Follow updates on this device” is a local bookmark; no emails are sent. The contribution receipt lists updates published since the contribution.
-- **Fund use** is a demo calculation in integer minor units: confirmed simulated contributions − published organizer-reported expenses. Planned budgets are shown separately, and draft expenses, game suggestions and failed attempts are never counted. A negative balance is shown exactly, with the organizer’s explanation. An expense linked from several updates is counted once.
-- **Trust & documents** separates “Information provided”, “Supporting document attached”, “Not independently verified” and “Demo verification example” (seeded on one campaign only). Uploading evidence never creates a verified badge, and organizers cannot grant one. Private verification placeholders use fictional samples, store no files and are never shown publicly; real identity review would need a future secure service.
+- **How funds are used** is a demo calculation in integer minor units: confirmed simulated contributions − published organizer-reported expenses. Planned budgets are shown separately, and draft expenses, game suggestions and failed attempts are never counted. A negative balance is shown exactly, with the organizer’s explanation. An expense linked from several updates is counted once.
+- **Who is running this campaign** shows organizer-provided details with light labels: “Organizer-reported expenses”, “Supporting document attached”, “Not independently verified” and “Demo verification example” (seeded on one campaign only). Uploading evidence never creates a verified badge, and organizers cannot grant one. Private verification placeholders use fictional samples, store no files and are never shown publicly; real identity review would need a future secure service.
 
 ### Organizer workspace
 
-In the workspace, Campaigns → **Manage** opens `/workspace/:organizationId/campaigns/:campaignId` with Overview, Story & settings, Referral pages, Milestones, Updates, Expenses, Trust & documents and Final report. The overview suggests next steps (no published updates, past-due milestones, expenses without evidence, goal reached). Closing fundraising and publishing a final report are separate actions. Receipts can be kept organizer-only with a separate redacted public copy, and publishing asks for privacy confirmation.
+In the workspace, Campaigns → **Manage** opens `/workspace/:organizationId/campaigns/:campaignId` with Overview, Story & settings, Sharing pages, Milestones, Updates, Expenses, Documents and Final report. The overview starts with the four reporting tasks and keeps fundraising status (goal reached, in progress, closed), delivery (organizer-reported milestones) and final report status on separate lines, followed by reminders (no published updates, past-due milestones, expenses without evidence). Closing fundraising and publishing a final report are separate actions. Receipts can be kept organizer-only with a separate redacted public copy, and publishing asks for privacy confirmation.
 
 ## Stories, templates and drafts
 
@@ -109,22 +119,22 @@ Each stored organization is repaired or skipped on its own, so one broken record
 
 ## What you can try
 
-- Create a campaign with the three-step story, settings, and review flow. Pick a cover template or upload your own cover, add an organisation logo, and choose which game supporters play.
-- Save a draft and finish it later from the organizer dashboard.
+- Create a campaign in four steps (your cause, goal and dates, ways to contribute, review). Pick a cover or upload your own, and choose which game supporters play. Logo, templates, budget and game rules are under the optional sections.
+- Leave mid-way and come back: **Continue your campaign draft?** offers the saved draft.
 - Open a campaign, confirm a simulated direct contribution, and see the progress update after refresh.
-- Play the campaign’s game. After every completed action (a plant, a correct piece, a matched pair, or a zip stage) a checkpoint shows what was added, the running suggestion, and an editable total. Donate now opens the demo payment review, and nothing is saved until you confirm there.
+- Play the campaign’s game. After every completed action (a plant, a correct piece, a matched pair, or a zip stage) a checkpoint shows “₹50 added to your suggestion.”, the suggested contribution and an editable final amount. **Review & contribute** opens the simulated payment review, and nothing is saved until you confirm there.
 - Set a custom total and keep playing: the game suggestion keeps growing while your chosen amount stays fixed until you edit it or reset to the game total.
 - Set the per-action rate, round size, custom-total permission, and an optional suggestion cap in Game contribution settings when you create a campaign.
-- Copy a campaign link, close a campaign, or reset the sample data from the organiser dashboard.
+- Copy a campaign link, close a campaign, or reset the sample data from Campaigns in the workspace.
 - Open Winter Care Kits to see a scheduled campaign that cannot accept contributions yet.
 
-Private campaigns use a demo access code shown to the organiser. That code is not secure access control.
+Private campaigns (“Invited group only”) use a demo access code shown to the organizer. That code is not secure access control.
 
 Uploaded covers and logos are resized in the browser and stored in `localStorage` with the campaign. Browsers allow only a few megabytes there, so very large or many uploads can fill it; the app shows a message if that happens.
 
 ## Sample data
 
-The Together organization has the original sample campaigns: Grow Our School Library (garden game), Community Garden (puzzle), Winter Care Kits (memory, scheduled), Zip Up for Winter (jacket), and Class Circle (private group). Each other organization has three campaigns of its own. Reset demo data on the dashboard restores sample campaigns and organization branding and clears simulated contributions created in this browser.
+The Together organization has the original sample campaigns: Grow Our School Library (garden game), Community Garden (puzzle), Winter Care Kits (memory, scheduled), Zip Up for Winter (jacket), and Class Circle (private group). Each other organization has three campaigns of its own. Reset demo data on the Campaigns page restores sample campaigns and organization branding and clears simulated contributions created in this browser.
 
 ## Game contributions
 
