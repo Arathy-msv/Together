@@ -1,4 +1,5 @@
 import { goalReached, raisedOf, statusOf } from '../campaigns.ts'
+import { beneficiaryText } from '../budget.ts'
 import { formatDate, formatMoney } from '../format.ts'
 import { campaignGameSettings, gameIntroSentence } from '../gameContribution.ts'
 import { gameMeta } from '../games.ts'
@@ -116,7 +117,7 @@ export function answerPublicQuestion(question: string, snapshot: PublicSnapshot)
       return result({ intent, text, tab: 'story', known: true, organizerReported: true }, { sources: [{ kind: 'campaign', id: campaign.id, label: 'Story' }] })
     }
     case 'beneficiary': {
-      const who = campaign.story?.beneficiary?.trim() || campaign.story?.whoItHelps?.trim()
+      const who = beneficiaryText(campaign.story)
       if (!who) return unknown('trust')
       return result({ intent, text: `The organizer describes the beneficiaries as: “${who}”`, tab: 'trust', known: true, organizerReported: true }, { sources: [{ kind: 'campaign', id: campaign.id, label: 'Trust & documents' }] })
     }

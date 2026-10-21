@@ -657,7 +657,7 @@ function StepInput({
       return (
         <>
           <label className="field-label" htmlFor="a-who">
-            Who this helps
+            Who will benefit?
           </label>
           <textarea id="a-who" data-autofocus rows={2} maxLength={600} value={form.storyWho} placeholder={template.prompts.who} onChange={(event) => onChange({ storyWho: event.target.value })} />
           <label className="field-label" htmlFor="a-supports">

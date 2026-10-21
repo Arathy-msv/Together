@@ -661,6 +661,27 @@ html.org-theme :focus-visible { outline-color: var(--org-focus); }
 .budget-bar-cell { width: 30%; }
 .budget-bar { display: block; height: 6px; border-radius: 999px; background: var(--org-secondary-soft); overflow: hidden; }
 .budget-bar i { display: block; height: 100%; background: var(--org-primary); opacity: 0.55; }
+.budget-line-detail { display: block; font-size: 0.8rem; color: var(--p-muted); font-weight: 500; margin-top: 2px; }
+.budget-summary { display: flex; flex-wrap: wrap; gap: 8px 22px; margin: 4px 0 0; padding: 10px 12px; background: var(--p-surface-2); border: 1px solid var(--p-line); border-radius: 10px; }
+.budget-summary > div { display: grid; gap: 2px; }
+.budget-summary dt { font-size: 0.78rem; color: var(--p-muted); }
+.budget-summary dd { margin: 0; font-weight: 800; font-variant-numeric: tabular-nums; }
+.budget-summary .is-over dd { color: #8a5a00; }
+.budget-editor { display: grid; gap: 8px; }
+.budget-items { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.budget-item { border: 1px solid var(--p-line); border-radius: 12px; padding: 10px 12px; background: var(--p-surface); display: grid; gap: 8px; }
+.budget-item-main { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 0.7fr) minmax(0, 1fr) minmax(0, 1.1fr) auto; gap: 8px; align-items: end; }
+.budget-item-extra { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; }
+.budget-cell { display: grid; gap: 3px; min-width: 0; }
+.budget-cell > .small { color: var(--p-muted); font-weight: 600; }
+.budget-computed { display: flex; align-items: center; min-height: 42px; padding: 0 10px; border-radius: 10px; background: var(--p-surface-2); font-weight: 800; font-variant-numeric: tabular-nums; }
+.budget-remove { align-self: end; }
+@media (max-width: 760px) {
+  .budget-item-main { grid-template-columns: 1fr 1fr; }
+  .budget-desc { grid-column: 1 / -1; }
+  .budget-remove { grid-column: 2; justify-self: end; grid-row: 1; }
+  .budget-desc { grid-row: 1; grid-column: 1 / 2; }
+}
 .impact-examples ul, .plain-list { margin: 8px 0 0; padding-left: 18px; display: grid; gap: 8px; }
 .impact-examples li { display: grid; gap: 2px; }
 .story-game { background: var(--org-secondary-soft); border-radius: var(--p-radius); padding: 16px; display: grid; gap: 4px; }

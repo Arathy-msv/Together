@@ -1,4 +1,6 @@
 import { CampaignCover } from '../CampaignImage.tsx'
+import { budgetSummary, draftsToBudget } from '../../lib/budget.ts'
+import { formatMinor } from '../../lib/transparency.ts'
 import { formatDateTime, formatINR } from '../../lib/format.ts'
 import { formatPaise, gameConfig } from '../../lib/gameContribution.ts'
 import { gameMeta } from '../../lib/games.ts'
@@ -21,13 +23,21 @@ type Row = [label: string, value: string]
 /** Review summary shared by the assistant and the form, in the same four groups as setup. */
 export function DraftReviewSummary({ form, items, onEdit }: { form: CampaignForm; items: RequiredItem[]; onEdit: (group: 1 | 2 | 3) => void }) {
   const goal = Number(form.goalAmount)
-  const budgetTotal = form.budget.reduce((sum, line) => sum + (Number(line.amount) || 0), 0)
+  const budget = budgetSummary(draftsToBudget(form.budget), Number.isFinite(goal) && goal > 0 ? Math.round(goal * 100) : 0)
+  const budgetLines = draftsToBudget(form.budget).length
   const cause: Row[] = [
     ['Title', form.title.trim() || 'Not set'],
     ['What you’re raising money for', clip(form.description) || 'Not set'],
-    ['Who it helps', clip(form.storyWho) || 'Optional · not added'],
+    ['Who will benefit', clip(form.storyWho) || 'Optional · not added'],
     ['Organizer shown to supporters', form.organizerName.trim() || 'Not set'],
-    ['Budget', form.budget.length ? `${form.budget.length} line${form.budget.length === 1 ? '' : 's'} · ${formatINR(budgetTotal, form.currency)}` : 'Optional · not added'],
+    [
+      'Budget',
+      budgetLines
+        ? `${budgetLines} item${budgetLines === 1 ? '' : 's'} · ${formatMinor(budget.plannedMinor, form.currency)} planned${
+            budget.overTargetMinor > 0 ? ` · ${formatMinor(budget.overTargetMinor, form.currency)} above the target` : budget.unallocatedMinor > 0 ? ` · ${formatMinor(budget.unallocatedMinor, form.currency)} of the target not assigned` : ''
+          }${form.budgetApproximate ? ' · estimate' : ''}`
+        : 'Optional · not added',
+    ],
   ]
   const dates: Row[] = [
     ['Goal', Number.isFinite(goal) && goal > 0 ? formatINR(goal, form.currency) : 'Not set'],

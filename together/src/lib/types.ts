@@ -1,3 +1,5 @@
+import type { BudgetLineDraft } from './budget.ts'
+
 export type AccessMode = 'open' | 'closed'
 export type DonationMode = 'fixed' | 'custom'
 /** Stored lifecycle state. Display labels come from lib/lifecycle.ts (publication, fundraising, delivery). */
@@ -228,6 +230,9 @@ export interface Campaign {
   story?: CampaignStory
   /** Organizer's planned budget. Planned amounts are never treated as spending. */
   budget?: BudgetLine[]
+  /** The organizer marked the budget as an estimate; `budgetNote` explains the basis. */
+  budgetApproximate?: boolean
+  budgetNote?: string
   impactExamples?: ImpactExample[]
   finalReport?: FinalReport
   /** Organizer explanation shown when reported spending exceeds simulated contributions. */
@@ -270,8 +275,13 @@ export interface CampaignStory {
 export interface BudgetLine {
   id: string
   label: string
-  /** Integer minor units (paise, cents). */
+  /** Integer minor units (paise, cents). Equals quantity × unitCostMinor when both are set. */
   amountMinor: number
+  quantity?: number
+  unitCostMinor?: number
+  milestoneId?: string
+  /** Short organizer explanation of the item. */
+  note?: string
 }
 
 export interface ImpactExample {
@@ -420,7 +430,7 @@ export interface Contribution {
 }
 
 export interface DemoStore {
-  version: 4
+  version: 5
   campaigns: Campaign[]
   contributions: Contribution[]
   referrals: Referral[]
@@ -462,7 +472,9 @@ export interface CampaignForm {
   storySupports: string
   storyNext: string
   beneficiary: string
-  budget: { id: string; label: string; amount: string }[]
+  budget: BudgetLineDraft[]
+  budgetApproximate: boolean
+  budgetNote: string
   milestonePlan: { id: string; title: string; due: string }[]
   sponsorEnabled: boolean
   nextUpdateAt: string

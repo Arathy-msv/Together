@@ -1,4 +1,5 @@
 import { formatDateTime, formatMoney } from './format.ts'
+import { draftsToBudget } from './budget.ts'
 import { gameMeta } from './games.ts'
 import { coverTemplate } from '../data/covers.ts'
 import { templateFor } from './templates.ts'
@@ -156,8 +157,8 @@ export function answerSummary(step: AssistantStepId, form: CampaignForm): string
     case 'goal':
       return formatMoney(Number(form.goalAmount) || 0, form.currency)
     case 'budget': {
-      const lines = form.budget.filter((line) => line.label.trim())
-      return lines.length ? lines.map((line) => `${line.label}${line.amount ? ` ${formatMoney(Number(line.amount) || 0, form.currency)}` : ''}`).join(' · ') : 'Skipped for now'
+      const lines = draftsToBudget(form.budget)
+      return lines.length ? lines.map((line) => `${line.label} ${formatMoney(line.amountMinor / 100, form.currency)}`).join(' · ') : 'Skipped for now'
     }
     case 'dates':
       return `${safeStamp(form.opensAt)} → ${safeStamp(form.closesAt)}`

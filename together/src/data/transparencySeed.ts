@@ -26,8 +26,8 @@ export function seedStoryFields(): Record<string, Partial<StoryFields>> {
         ],
       },
       budget: [
-        { id: 'hb-b1', label: 'Thick blankets (300)', amountMinor: rupees(45000) },
-        { id: 'hb-b2', label: 'Children’s winter jackets (80)', amountMinor: rupees(22000) },
+        { id: 'hb-b1', label: 'Thick blankets', amountMinor: rupees(45000), quantity: 300, unitCostMinor: rupees(150), note: 'Supplier quotation (sample) for 300 blankets.' },
+        { id: 'hb-b2', label: 'Children’s winter jackets', amountMinor: rupees(22000), quantity: 80, unitCostMinor: rupees(275) },
         { id: 'hb-b3', label: 'Transport to three shelters', amountMinor: rupees(5000) },
         { id: 'hb-b4', label: 'Administration and packaging', amountMinor: rupees(3000) },
       ],

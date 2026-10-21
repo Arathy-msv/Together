@@ -42,7 +42,7 @@ type TextKey = 'title' | 'description' | 'storyWho' | 'storyNeed' | 'storySuppor
 const TEXT_FIELDS: Array<{ key: TextKey; label: string; pick: (content: CampaignDraftSuggestion) => string }> = [
   { key: 'title', label: 'Suggested title', pick: (content) => content.title },
   { key: 'description', label: 'Short summary', pick: (content) => content.summary },
-  { key: 'storyWho', label: 'Who this helps', pick: (content) => content.story.whoItHelps },
+  { key: 'storyWho', label: 'Who will benefit?', pick: (content) => content.story.whoItHelps },
   { key: 'storyNeed', label: 'What they need', pick: (content) => content.story.whatTheyNeed },
   { key: 'storySupports', label: 'What contributions will support', pick: (content) => content.story.whatItSupports },
   { key: 'storyNext', label: 'What happens next', pick: (content) => content.story.whatHappensNext },

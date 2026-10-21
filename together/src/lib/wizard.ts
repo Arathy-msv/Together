@@ -1,3 +1,4 @@
+import { budgetLineError, budgetToDrafts, draftsToBudget } from './budget.ts'
 import { makeAccessCode } from './campaigns.ts'
 import { fromDatetimeLocal, isCurrencyCode, toDatetimeLocal } from './format.ts'
 import {
@@ -92,16 +93,21 @@ export function blankForm(org: OrgFormContext = FALLBACK_CONTEXT): CampaignForm 
 
 export function emptyStoryFields(): Pick<
   CampaignForm,
-  'category' | 'storyWho' | 'storyNeed' | 'storySupports' | 'storyNext' | 'beneficiary' | 'budget' | 'milestonePlan'
+  'category' | 'storyWho' | 'storyNeed' | 'storySupports' | 'storyNext' | 'beneficiary' | 'budget' | 'budgetApproximate' | 'budgetNote' | 'milestonePlan'
 > {
-  return { category: 'other', storyWho: '', storyNeed: '', storySupports: '', storyNext: '', beneficiary: '', budget: [], milestonePlan: [] }
+  return { category: 'other', storyWho: '', storyNeed: '', storySupports: '', storyNext: '', beneficiary: '', budget: [], budgetApproximate: false, budgetNote: '', milestonePlan: [] }
 }
 
 /** Fills fields added after a draft was saved, so old drafts keep working. */
 export function completeForm(form: Partial<CampaignForm> & Pick<CampaignForm, 'organizationId'>): CampaignForm {
   const base = { ...blankForm(), ...emptyStoryFields() }
   const merged = { ...base, ...form } as CampaignForm
-  if (!Array.isArray(merged.budget)) merged.budget = []
+  merged.budget = Array.isArray(merged.budget)
+    ? merged.budget
+        .filter((line) => line && typeof line === 'object' && typeof line.id === 'string')
+        .map((line) => ({ quantity: '', unitCost: '', milestoneId: '', note: '', ...line, label: String(line.label ?? ''), amount: String(line.amount ?? '') }))
+    : []
+  if (typeof merged.budgetApproximate !== 'boolean') merged.budgetApproximate = false
   if (!Array.isArray(merged.milestonePlan)) merged.milestonePlan = []
   if (!Array.isArray(merged.fixedAmounts)) merged.fixedAmounts = base.fixedAmounts
   if (!isGameType(merged.gameType)) merged.gameType = 'garden'
@@ -109,9 +115,11 @@ export function completeForm(form: Partial<CampaignForm> & Pick<CampaignForm, 'o
   if (typeof merged.sponsorEnabled !== 'boolean') merged.sponsorEnabled = false
   if (typeof merged.nextUpdateAt !== 'string') merged.nextUpdateAt = ''
   if (!Array.isArray(merged.partnerOfferIds)) merged.partnerOfferIds = []
-  for (const key of ['title', 'description', 'storyWho', 'storyNeed', 'storySupports', 'storyNext', 'beneficiary', 'coverImageData', 'logoData', 'puzzleImageData'] as const) {
+  for (const key of ['title', 'description', 'storyWho', 'storyNeed', 'storySupports', 'storyNext', 'beneficiary', 'budgetNote', 'coverImageData', 'logoData', 'puzzleImageData'] as const) {
     if (typeof merged[key] !== 'string') merged[key] = ''
   }
+  // Older drafts kept who benefits only in the separate beneficiary field.
+  if (!merged.storyWho.trim() && merged.beneficiary.trim()) merged.storyWho = merged.beneficiary
   return merged
 }
 
@@ -140,12 +148,14 @@ export function campaignToForm(campaign: Campaign): CampaignForm {
     gameType: isGameType(campaign.gameType) ? campaign.gameType : 'garden',
     ...gameSettingsFields(campaign.gameType, campaignGameSettings(campaign)),
     category: campaign.category ?? 'other',
-    storyWho: campaign.story?.whoItHelps ?? '',
+    storyWho: campaign.story?.whoItHelps || campaign.story?.beneficiary || '',
     storyNeed: campaign.story?.whatTheyNeed ?? '',
     storySupports: campaign.story?.whatItSupports ?? '',
     storyNext: campaign.story?.whatHappensNext ?? '',
     beneficiary: campaign.story?.beneficiary ?? '',
-    budget: (campaign.budget ?? []).map((line) => ({ id: line.id, label: line.label, amount: paiseToInput(line.amountMinor) })),
+    budget: budgetToDrafts(campaign.budget),
+    budgetApproximate: Boolean(campaign.budgetApproximate),
+    budgetNote: campaign.budgetNote ?? '',
     milestonePlan: [],
     sponsorEnabled: Boolean(campaign.sponsorEnabled),
     nextUpdateAt: campaign.nextUpdateAt ? campaign.nextUpdateAt.slice(0, 10) : '',
@@ -153,12 +163,17 @@ export function campaignToForm(campaign: Campaign): CampaignForm {
   }
 }
 
-/** Budget lines with a label and a valid amount, in minor units. */
+/** Budget lines with a description and a valid total, in minor units. Plan milestones get their published ids. */
 export function formBudget(form: CampaignForm) {
-  return form.budget
-    .filter((line) => line.label.trim())
-    .map((line) => ({ id: line.id, label: line.label.trim(), amountMinor: parseRupeesToPaise(line.amount) ?? 0 }))
-    .filter((line) => line.amountMinor > 0)
+  const planIds = new Set(form.milestonePlan.map((item) => item.id))
+  return draftsToBudget(form.budget).map((line) =>
+    line.milestoneId && planIds.has(line.milestoneId) ? { ...line, milestoneId: planMilestoneId(line.milestoneId) } : line,
+  )
+}
+
+/** Milestone id given to a plan row when the campaign is first published, so budget items can point at it. */
+export function planMilestoneId(planId: string): string {
+  return planId.startsWith('ms_') ? planId : `ms_${planId}`
 }
 
 export function formToCampaign(form: CampaignForm, options: { isDraft: boolean; existing?: Campaign }): Campaign {
@@ -206,6 +221,8 @@ export function formToCampaign(form: CampaignForm, options: { isDraft: boolean; 
       video: options.existing?.story?.video,
     },
     budget: formBudget(form),
+    budgetApproximate: form.budgetApproximate || undefined,
+    budgetNote: form.budgetNote.trim().slice(0, 400) || undefined,
     impactExamples: options.existing?.impactExamples,
     finalReport: options.existing?.finalReport,
     fundingNote: options.existing?.fundingNote,
@@ -241,8 +258,9 @@ export function validateStory(form: CampaignForm): FormErrors {
   if (form.access === 'closed' && form.accessCode.trim().length < 4) {
     errors.accessCode = 'Private campaigns need a demo access code of at least 4 characters.'
   }
-  const badLine = form.budget.find((line) => (line.label.trim() || line.amount.trim()) && (!line.label.trim() || parseRupeesToPaise(line.amount) == null))
-  if (badLine) errors.budget = 'Each budget line needs a label and an amount greater than zero, or leave it empty.'
+  const budgetError = budgetLineError(form.budget)
+  if (budgetError) errors.budget = budgetError
+  else if (form.budgetApproximate && !form.budgetNote.trim()) errors.budget = 'Explain how you estimated the budget, or untick “These amounts are estimates”.'
   return errors
 }
 

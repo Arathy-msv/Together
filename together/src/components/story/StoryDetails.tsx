@@ -1,7 +1,6 @@
 import { useId, useState } from 'react'
-import { currencySymbol, formatMoney } from '../../lib/format.ts'
-import { parseRupeesToPaise } from '../../lib/gameContribution.ts'
 import { gameMeta } from '../../lib/games.ts'
+import { BudgetEditor } from './BudgetEditor.tsx'
 import { applyTemplate, TEMPLATES, templateFor, type CategoryTemplate, type TemplateChange } from '../../lib/templates.ts'
 import type { CampaignForm, GameType } from '../../lib/types.ts'
 import { gameSettingsFields, type FormErrors } from '../../lib/wizard.ts'
@@ -124,19 +123,19 @@ export function StoryDetails({ form, errors, onChange, hideWho = false }: { form
         <span className="muted small">Optional — supporters find a structured story easier to scan. You can skip this and add it later.</span>
       </summary>
       <div className="story-details-body">
-        {hideWho ? null : <StoryField fieldId="story-who" label="Who this helps" value={form.storyWho} placeholder={template.prompts.who} onChange={(storyWho) => onChange({ storyWho })} />}
+        {hideWho ? null : (
+          <StoryField
+            fieldId="story-who"
+            label="Who will benefit?"
+            value={form.storyWho}
+            placeholder={template.prompts.who}
+            onChange={(storyWho) => onChange({ storyWho })}
+            help="Describe the group, not individuals. Avoid names, addresses or details that identify anyone."
+          />
+        )}
         <StoryField label="What they need" value={form.storyNeed} placeholder={template.prompts.need} onChange={(storyNeed) => onChange({ storyNeed })} />
         <StoryField fieldId="story-supports" label="What contributions will support" value={form.storySupports} placeholder={template.prompts.supports} onChange={(storySupports) => onChange({ storySupports })} />
         <StoryField fieldId="story-next" label="What happens next" value={form.storyNext} placeholder={template.prompts.next} onChange={(storyNext) => onChange({ storyNext })} />
-        <StoryField
-          fieldId="story-beneficiary"
-          label="Beneficiary description"
-          value={form.beneficiary}
-          placeholder={template.prompts.beneficiary}
-          onChange={(beneficiary) => onChange({ beneficiary })}
-          help="Describe the group who benefits. Avoid names, addresses or details that identify individuals."
-        />
-
         <BudgetLines form={form} onChange={onChange} error={errors.budget} />
 
         <div className="field" id="milestone-plan" tabIndex={-1}>
@@ -175,55 +174,21 @@ export function StoryDetails({ form, errors, onChange, hideWho = false }: { form
   )
 }
 
-/** Organizer-supplied budget lines with a running total compared against the target. */
+/** The form's budget plan: the shared editor bound to the draft. Plan milestones can be linked. */
 export function BudgetLines({ form, onChange, error }: { form: CampaignForm; onChange: (patch: Partial<CampaignForm>) => void; error?: string }) {
-  const budgetTotal = form.budget.reduce((sum, line) => sum + (parseRupeesToPaise(line.amount) ?? 0), 0)
   const goal = Number(form.goalAmount)
-  const goalMinor = Number.isFinite(goal) && goal > 0 ? goal * 100 : 0
   return (
-        <div className="field" id="budget-plan" tabIndex={-1}>
-          <span className="field-label">
-            Budget plan <span className="optional-tag">Optional</span>
-          </span>
-          <p className="help">Planned amounts are shown as a plan, never as spending.</p>
-          {form.budget.map((line, index) => (
-            <div key={line.id} className="plan-row">
-              <input
-                aria-label={`Budget line ${index + 1} label`}
-                value={line.label}
-                maxLength={120}
-                placeholder="What it pays for"
-                onChange={(event) => onChange({ budget: form.budget.map((item) => (item.id === line.id ? { ...item, label: event.target.value } : item)) })}
-              />
-              <div className="input-prefix">
-                <span>{currencySymbol(form.currency)}</span>
-                <input
-                  aria-label={`Budget line ${index + 1} amount`}
-                  inputMode="decimal"
-                  value={line.amount}
-                  placeholder="0"
-                  onChange={(event) => onChange({ budget: form.budget.map((item) => (item.id === line.id ? { ...item, amount: event.target.value } : item)) })}
-                />
-              </div>
-              <button type="button" className="btn btn-outline btn-sm icon-only" aria-label={`Remove budget line ${index + 1}`} onClick={() => onChange({ budget: form.budget.filter((item) => item.id !== line.id) })}>
-                ×
-              </button>
-            </div>
-          ))}
-          <div className="inline-actions">
-            {form.budget.length < 12 ? (
-              <button type="button" className="btn btn-outline btn-sm" onClick={() => onChange({ budget: [...form.budget, { id: crypto.randomUUID(), label: '', amount: '' }] })}>
-                + Add budget line
-              </button>
-            ) : null}
-            {budgetTotal > 0 ? <span className="muted small">Planned total {formatMoney(budgetTotal / 100, form.currency)}</span> : null}
-          </div>
-          {error ? <p className="error-text">{error}</p> : null}
-          {budgetTotal > 0 && goalMinor > 0 && budgetTotal !== goalMinor ? (
-        <p className="help">
-          Budget lines total {formatMoney(budgetTotal / 100, form.currency)}; the target is {formatMoney(goal, form.currency)}. That’s fine for now — readiness checks will remind you.
-        </p>
-      ) : null}
-        </div>
+    <BudgetEditor
+      lines={form.budget}
+      onLines={(budget) => onChange({ budget })}
+      currency={form.currency}
+      targetMinor={Number.isFinite(goal) && goal > 0 ? Math.round(goal * 100) : 0}
+      milestones={form.milestonePlan}
+      approximate={form.budgetApproximate}
+      note={form.budgetNote}
+      onApproximate={(budgetApproximate) => onChange({ budgetApproximate })}
+      onNote={(budgetNote) => onChange({ budgetNote })}
+      error={error}
+    />
   )
 }

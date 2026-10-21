@@ -1,4 +1,5 @@
 import { coverTemplate } from '../data/covers.ts'
+import { blankBudgetLine } from './budget.ts'
 import { gameMeta } from './games.ts'
 import type { CampaignCategory, CampaignForm, ExpenseCategory, GameType } from './types.ts'
 
@@ -174,7 +175,7 @@ export function applyTemplate(form: CampaignForm, template: CategoryTemplate, op
   const currentBudget = form.budget.filter((line) => line.label.trim() || line.amount.trim())
   if (template.budgetLabels.length > 0) {
     if (currentBudget.length === 0 || options.replaceLists) {
-      next.budget = template.budgetLabels.map((label) => ({ id: crypto.randomUUID(), label, amount: '' }))
+      next.budget = template.budgetLabels.map((label) => ({ ...blankBudgetLine(), label }))
       changes.push({
         field: 'Budget headings (amounts left blank)',
         kind: currentBudget.length ? 'replace' : 'add',

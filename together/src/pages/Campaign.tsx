@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
+import { organizerLine } from '../lib/budget.ts'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { AmountPicker } from '../components/AmountPicker.tsx'
 import { CampaignCover, OrgLogo } from '../components/CampaignImage.tsx'
@@ -131,7 +132,8 @@ function CampaignDetails({ view, referral }: { view: CampaignView; referral?: Re
             <div className="org-line">
               <OrgLogo name={campaign.organizerName} logoData={campaign.logoData} size={36} />
               <span>
-                {referral ? 'Original campaign organized by' : 'Organized by'} <strong>{campaign.organizerName}</strong> · {org.name}
+                {referral ? 'Original campaign organized by' : 'Organized by'} <strong>{campaign.organizerName}</strong>
+                {organizerLine(campaign.organizerName, org.name) !== campaign.organizerName.trim() ? ` · ${org.name}` : ''}
               </span>
             </div>
             <span className="muted small">{formatDateRange(campaign.opensAt, campaign.closesAt)}</span>

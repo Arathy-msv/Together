@@ -70,7 +70,7 @@ const FIELD_TARGETS: Partial<Record<ReadinessField, { step: number; selector: st
   participation: { step: 3, selector: '.option-card' },
   puzzle: { step: 3, selector: '#puzzle-image' },
   whoItHelps: { step: 1, selector: '#story-who' },
-  beneficiary: { step: 1, selector: '#story-beneficiary', inDetails: true },
+  beneficiary: { step: 1, selector: '#story-who' },
   whatItSupports: { step: 1, selector: '#story-supports', inDetails: true },
   whatHappensNext: { step: 1, selector: '#story-next', inDetails: true },
   budget: { step: 1, selector: '#budget-plan', inDetails: true },
@@ -559,7 +559,7 @@ function StoryStep({
         />
       </Field>
 
-      <Field label="Who will this help?" htmlFor="story-who" optional hint="Describe the group, not individuals. For example: “Grade 4 students at our school”.">
+      <Field label="Who will benefit?" htmlFor="story-who" optional hint="Describe the group, not individuals. For example: “Grade 4 students at our school”.">
         <textarea id="story-who" rows={2} maxLength={600} value={form.storyWho} onChange={(event) => onChange({ storyWho: event.target.value })} />
       </Field>
 

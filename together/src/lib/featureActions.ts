@@ -5,7 +5,7 @@ import { addCampaignToScope, membership, orgAdmins, recordAudit } from './identi
 import { assertCan, canCurrent, PermissionError } from './permissions.ts'
 import type { Campaign, CampaignForm, CampaignRevision, CampaignSnapshot, Organization } from './types.ts'
 import { eligibleOffersForCampaign, loadVoucherStore } from './vouchers.ts'
-import { formToCampaign } from './wizard.ts'
+import { formToCampaign, planMilestoneId } from './wizard.ts'
 
 /** Rejects a feature action when the organization cannot use it. */
 export function assertCanUseFeature(org: Organization, key: Parameters<typeof canUseFeature>[1]): void {
@@ -49,7 +49,7 @@ export const NO_REVIEWER_MESSAGE =
  * published campaign is revised, supporters keep seeing the last published version until an
  * admin who did not author the revision approves it.
  */
-export function publishWithPolicy(campaign: Campaign, plan: { title: string; due: string }[] = []): PublishResult {
+export function publishWithPolicy(campaign: Campaign, plan: { id?: string; title: string; due: string }[] = []): PublishResult {
   const org = organizationForCampaign(campaign)
   if (!org) throw new Error('Organization not found.')
   if (campaign.sponsorEnabled) assertCanUseFeature(org, 'sponsorPlay')
@@ -187,7 +187,7 @@ export function publishApprovedRevision(campaignId: string, revisionIdToPublish:
   return next
 }
 
-function writeCampaign(campaign: Campaign, plan: { title: string; due: string }[]): void {
+function writeCampaign(campaign: Campaign, plan: { id?: string; title: string; due: string }[]): void {
   const store = loadStore()
   const index = store.campaigns.findIndex((item) => item.id === campaign.id)
   if (index >= 0) store.campaigns[index] = campaign
@@ -200,7 +200,7 @@ function writeCampaign(campaign: Campaign, plan: { title: string; due: string }[
       .forEach((item, order) => {
         const due = item.due && !Number.isNaN(Date.parse(item.due)) ? new Date(item.due).toISOString() : campaign.closesAt
         store.milestones.push({
-          id: `ms_${crypto.randomUUID()}`,
+          id: planMilestoneId(item.id ?? crypto.randomUUID()),
           campaignId: campaign.id,
           title: item.title.trim().slice(0, 120),
           description: '',

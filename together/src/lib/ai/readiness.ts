@@ -1,4 +1,5 @@
 import { formatMoney } from '../format.ts'
+import { beneficiaryText } from '../budget.ts'
 import { extractAmount } from './parse.ts'
 import { campaignMilestones, formatMinor, publicDocuments, publishedUpdates } from '../transparency.ts'
 import type { Campaign, CampaignForm, CurrencyCode, DemoStore, GameType, Organization } from '../types.ts'
@@ -53,6 +54,8 @@ export interface ReadinessInput {
   currency: CurrencyCode
   story: { whoItHelps: string; whatTheyNeed: string; whatItSupports: string; whatHappensNext: string; beneficiary: string }
   budget: { label: string; amountMinor: number }[]
+  /** Organizer's explanation of the budget basis. A mismatch with the target is fine when it is explained. */
+  budgetNote?: string
   milestoneCount: number
   impactExampleCount: number
   contactEmail: string
@@ -111,7 +114,7 @@ export function checkReadiness(input: ReadinessInput): ReadinessItem[] {
       field: 'description',
     })
   }
-  if (!story.beneficiary.trim() && !story.whoItHelps.trim()) {
+  if (!beneficiaryText(story)) {
     items.push({
       id: 'beneficiary',
       level: 'recommended',
@@ -129,18 +132,18 @@ export function checkReadiness(input: ReadinessInput): ReadinessItem[] {
       why: 'Adding a budget breakdown could help supporters understand your target.',
       field: 'budget',
     })
-  } else if (input.goalAmount && budgetTotal !== input.goalAmount * 100) {
+  } else if (input.goalAmount && budgetTotal !== input.goalAmount * 100 && !input.budgetNote?.trim()) {
     const goalMinor = input.goalAmount * 100
     const difference = goalMinor - budgetTotal
     items.push({
       id: 'budget-mismatch',
       level: 'recommended',
-      issue: `Budget lines add up to ${formatMinor(budgetTotal, input.currency)}, but the target is ${formatMoney(input.goalAmount, input.currency)}.`,
+      issue: `Budget items add up to ${formatMinor(budgetTotal, input.currency)}, but the target is ${formatMoney(input.goalAmount, input.currency)}.`,
       why: 'When the budget and target differ, supporters may wonder where the rest goes.',
       field: 'budget',
       suggestion:
         difference > 0
-          ? `Add a budget line for the remaining ${formatMinor(difference, input.currency)}, or explain what it covers.`
+          ? `Add a budget item for the remaining ${formatMinor(difference, input.currency)}, or explain the difference in the budget note.`
           : `The budget is ${formatMinor(-difference, input.currency)} more than the target. Explain how the extra will be funded, or adjust the budget.`,
     })
   }
@@ -216,6 +219,7 @@ export function readinessFromForm(form: CampaignForm, org: Organization, allowed
     currency: form.currency,
     story: { whoItHelps: form.storyWho, whatTheyNeed: form.storyNeed, whatItSupports: form.storySupports, whatHappensNext: form.storyNext, beneficiary: form.beneficiary },
     budget: formBudget(form),
+    budgetNote: form.budgetNote,
     milestoneCount: form.milestonePlan.filter((item) => item.title.trim()).length,
     impactExampleCount: 0,
     contactEmail: org.content.contactEmail,
@@ -238,13 +242,14 @@ export function readinessFromCampaign(campaign: Campaign, store: DemoStore, org:
     goalAmount: campaign.goalAmount,
     currency: campaign.currency,
     story: {
-      whoItHelps: campaign.story?.whoItHelps ?? '',
+      whoItHelps: beneficiaryText(campaign.story),
       whatTheyNeed: campaign.story?.whatTheyNeed ?? '',
       whatItSupports: campaign.story?.whatItSupports ?? '',
       whatHappensNext: campaign.story?.whatHappensNext ?? '',
       beneficiary: campaign.story?.beneficiary ?? '',
     },
     budget: campaign.budget ?? [],
+    budgetNote: campaign.budgetNote ?? '',
     milestoneCount: campaignMilestones(store, campaign.id).length,
     impactExampleCount: campaign.impactExamples?.length ?? 0,
     contactEmail: org.content.contactEmail,

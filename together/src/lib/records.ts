@@ -67,12 +67,14 @@ function normalizeVideo(value: unknown): MediaVideo | undefined {
 export function normalizeStory(value: unknown): CampaignStory | undefined {
   const raw = obj(value)
   if (!raw) return undefined
+  const beneficiary = str(raw.beneficiary, 400)
   return {
-    whoItHelps: str(raw.whoItHelps, 600),
+    // Older records kept who benefits only in `beneficiary`; that is the same fact, so it fills the main field.
+    whoItHelps: str(raw.whoItHelps, 600) || beneficiary,
     whatTheyNeed: str(raw.whatTheyNeed, 600),
     whatItSupports: str(raw.whatItSupports, 600),
     whatHappensNext: str(raw.whatHappensNext, 600),
-    beneficiary: str(raw.beneficiary, 400),
+    beneficiary,
     imageStory: normalizeMedia(raw.imageStory),
     video: normalizeVideo(raw.video),
   }
@@ -84,7 +86,21 @@ export function normalizeBudget(value: unknown): BudgetLine[] | undefined {
     .map(obj)
     .filter((line): line is Record<string, unknown> => !!line && typeof line.label === 'string' && minor(line.amountMinor) !== undefined)
     .slice(0, 12)
-    .map((line, index) => ({ id: str(line.id, 80) || `budget-${index}`, label: str(line.label, 120), amountMinor: line.amountMinor as number }))
+    .map((line, index) => {
+      const quantity = typeof line.quantity === 'number' && Number.isInteger(line.quantity) && line.quantity > 0 ? line.quantity : undefined
+      const unitCostMinor = minor(line.unitCostMinor)
+      const itemized = quantity !== undefined && unitCostMinor !== undefined && unitCostMinor > 0 && quantity * unitCostMinor === line.amountMinor
+      const milestoneId = str(line.milestoneId, 80)
+      const note = str(line.note, 200)
+      return {
+        id: str(line.id, 80) || `budget-${index}`,
+        label: str(line.label, 120),
+        amountMinor: line.amountMinor as number,
+        ...(itemized ? { quantity, unitCostMinor } : {}),
+        ...(milestoneId ? { milestoneId } : {}),
+        ...(note ? { note } : {}),
+      }
+    })
 }
 
 export function normalizeImpact(value: unknown): ImpactExample[] | undefined {
@@ -147,6 +163,8 @@ export function normalizeCampaignExtras(campaign: Campaign): Campaign {
   next.category = CATEGORIES.includes(campaign.category as CampaignCategory) ? campaign.category : undefined
   next.story = normalizeStory(campaign.story)
   next.budget = normalizeBudget(campaign.budget)
+  next.budgetApproximate = campaign.budgetApproximate === true ? true : undefined
+  next.budgetNote = str(campaign.budgetNote, 400) || undefined
   next.impactExamples = normalizeImpact(campaign.impactExamples)
   next.finalReport = normalizeFinalReport(campaign.finalReport)
   next.fundingNote = typeof campaign.fundingNote === 'string' ? campaign.fundingNote.slice(0, 1000) : undefined

@@ -228,10 +228,10 @@ export const deleteExpense = (id: string) => remove('expenses', id)
 export const saveDocument = (record: SupportingDocument) => upsert('supportingDocuments', record)
 export const deleteDocument = (id: string) => remove('supportingDocuments', id)
 
-type EditableField = 'description' | 'category' | 'story' | 'budget' | 'impactExamples' | 'finalReport' | 'fundingNote' | 'translations'
+type EditableField = 'description' | 'category' | 'story' | 'budget' | 'budgetApproximate' | 'budgetNote' | 'impactExamples' | 'finalReport' | 'fundingNote' | 'translations'
 
 /** Campaign facts that need review again when the organization requires approval. */
-const MATERIAL_FIELDS: EditableField[] = ['description', 'category', 'story', 'budget', 'impactExamples']
+const MATERIAL_FIELDS: EditableField[] = ['description', 'category', 'story', 'budget', 'budgetApproximate', 'budgetNote', 'impactExamples']
 
 /**
  * Updates organizer-editable campaign fields. The demo verification flag can never be changed here.

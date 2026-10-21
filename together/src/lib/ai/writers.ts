@@ -61,7 +61,7 @@ export function suggestCampaignDraft(form: CampaignForm, org: Organization, allo
     title: form.title.trim() || placeholder('Short, specific campaign title'),
     summary: summaryParts.join(' '),
     story: {
-      whoItHelps: form.storyWho.trim() || placeholder('Who this helps — describe the group, not individuals'),
+      whoItHelps: form.storyWho.trim() || placeholder('Who will benefit — describe the group, not individuals'),
       whatTheyNeed: form.storyNeed.trim() || placeholder('What they need today'),
       whatItSupports: supports,
       whatHappensNext: form.storyNext.trim() || placeholder('What happens after fundraising'),

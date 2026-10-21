@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { MediaEditor, Select, TextArea, TextInput, VideoEditor } from '../../components/workspace/fields.tsx'
+import { BudgetEditor } from '../../components/story/BudgetEditor.tsx'
+import { budgetLineError, budgetToDrafts, draftsToBudget, type BudgetLineDraft } from '../../lib/budget.ts'
 import { TranslationEditor } from '../../components/ai/Translation.tsx'
 import { currencySymbol, formatDateRange, formatMoney } from '../../lib/format.ts'
 import { gameMeta } from '../../lib/games.ts'
@@ -7,7 +9,7 @@ import { parseRupeesToPaise } from '../../lib/gameContribution.ts'
 import { minorToInput } from '../../lib/inputs.ts'
 import { StorageFullError } from '../../lib/storage.ts'
 import { TEMPLATES, templateFor } from '../../lib/templates.ts'
-import { saveCampaignFields } from '../../lib/transparency.ts'
+import { campaignMilestones, saveCampaignFields } from '../../lib/transparency.ts'
 import type { CampaignCategory, CampaignStory } from '../../lib/types.ts'
 import type { WorkspaceProps } from './CampaignWorkspace.tsx'
 
@@ -21,7 +23,7 @@ interface ImpactDraft extends LineDraft {
   costBasis: string
 }
 
-export function StoryEditor({ campaign, view }: WorkspaceProps) {
+export function StoryEditor({ campaign, view, store }: WorkspaceProps) {
   // While a revision waits for review, keep editing the proposed version rather than the live one.
   const source = campaign.pendingRevision?.status === 'pending' ? campaign.pendingRevision.snapshot : campaign
   const [summary, setSummary] = useState(source.description)
@@ -29,7 +31,9 @@ export function StoryEditor({ campaign, view }: WorkspaceProps) {
   const [story, setStory] = useState<CampaignStory>(
     source.story ?? { whoItHelps: '', whatTheyNeed: '', whatItSupports: '', whatHappensNext: '', beneficiary: '', imageStory: [] },
   )
-  const [budget, setBudget] = useState<LineDraft[]>((source.budget ?? []).map((line) => ({ id: line.id, label: line.label, amount: minorToInput(line.amountMinor) })))
+  const [budget, setBudget] = useState<BudgetLineDraft[]>(budgetToDrafts(source.budget))
+  const [budgetApproximate, setBudgetApproximate] = useState(Boolean(source.budgetApproximate))
+  const [budgetNote, setBudgetNote] = useState(source.budgetNote ?? '')
   const [impact, setImpact] = useState<ImpactDraft[]>(
     (source.impactExamples ?? []).map((item) => ({ id: item.id, label: '', amount: minorToInput(item.amountMinor), outcome: item.outcome, costBasis: item.costBasis })),
   )
@@ -40,9 +44,9 @@ export function StoryEditor({ campaign, view }: WorkspaceProps) {
   function save() {
     const next: Record<string, string> = {}
     if (summary.trim().length < 20) next.summary = 'Keep a short summary of at least 20 characters.'
-    if (budget.some((line) => (line.label.trim() || line.amount.trim()) && (!line.label.trim() || parseRupeesToPaise(line.amount) == null))) {
-      next.budget = 'Each budget line needs a label and an amount, or remove it.'
-    }
+    const budgetError = budgetLineError(budget)
+    if (budgetError) next.budget = budgetError
+    else if (budgetApproximate && !budgetNote.trim()) next.budget = 'Explain how you estimated the budget, or untick “These amounts are estimates”.'
     if (impact.some((item) => !item.outcome.trim() || !item.costBasis.trim() || parseRupeesToPaise(item.amount) == null)) {
       next.impact = 'Each cost example needs an amount, an outcome and where the cost figure comes from.'
     }
@@ -61,7 +65,9 @@ export function StoryEditor({ campaign, view }: WorkspaceProps) {
           whatHappensNext: story.whatHappensNext.trim(),
           beneficiary: story.beneficiary.trim(),
         },
-        budget: budget.filter((line) => line.label.trim()).map((line) => ({ id: line.id, label: line.label.trim(), amountMinor: parseRupeesToPaise(line.amount)! })),
+        budget: draftsToBudget(budget),
+        budgetApproximate: budgetApproximate || undefined,
+        budgetNote: budgetNote.trim().slice(0, 400) || undefined,
         impactExamples: impact.map((item) => ({ id: item.id, amountMinor: parseRupeesToPaise(item.amount)!, outcome: item.outcome.trim(), costBasis: item.costBasis.trim() })),
       })
       setNotice(
@@ -101,18 +107,18 @@ export function StoryEditor({ campaign, view }: WorkspaceProps) {
         />
         <TextArea label="Short opening summary" value={summary} maxLength={1000} error={errors.summary} onChange={setSummary} />
         <div className="two-col">
-          <TextArea label="Who this helps" optional value={story.whoItHelps} placeholder={template.prompts.who} maxLength={600} onChange={(whoItHelps) => setStory({ ...story, whoItHelps })} />
+          <TextArea label="Who will benefit?" optional value={story.whoItHelps} placeholder={template.prompts.who} maxLength={600} onChange={(whoItHelps) => setStory({ ...story, whoItHelps })} />
           <TextArea label="What they need" optional value={story.whatTheyNeed} placeholder={template.prompts.need} maxLength={600} onChange={(whatTheyNeed) => setStory({ ...story, whatTheyNeed })} />
           <TextArea label="What contributions will support" optional value={story.whatItSupports} placeholder={template.prompts.supports} maxLength={600} onChange={(whatItSupports) => setStory({ ...story, whatItSupports })} />
           <TextArea label="What happens next" optional value={story.whatHappensNext} placeholder={template.prompts.next} maxLength={600} onChange={(whatHappensNext) => setStory({ ...story, whatHappensNext })} />
         </div>
         <TextArea
-          label="Beneficiary description"
+          label="Extra note about who benefits"
           optional
           value={story.beneficiary}
-          placeholder={template.prompts.beneficiary}
+          placeholder="e.g. We never publish residents’ names or photos."
           maxLength={400}
-          help="Shown under “How funds are used”. Describe the group, not individuals."
+          help="Shown under “Who benefits” in Trust & details, only when it adds something to “Who will benefit?”."
           onChange={(beneficiary) => setStory({ ...story, beneficiary })}
         />
         <MediaEditor items={story.imageStory} error={errors.media} onChange={(imageStory) => setStory({ ...story, imageStory })} />
@@ -121,23 +127,19 @@ export function StoryEditor({ campaign, view }: WorkspaceProps) {
 
       <section className="panel ws-card wide">
         <h2>Budget breakdown</h2>
-        <p className="muted small">Your plan. It is shown as planned spending and never counted as an expense. Template headings: {template.budgetLabels.join(', ') || 'none'}.</p>
-        {budget.map((line, index) => (
-          <div key={line.id} className="plan-row">
-            <input aria-label={`Budget line ${index + 1} label`} value={line.label} maxLength={120} onChange={(event) => setBudget(budget.map((item) => (item.id === line.id ? { ...item, label: event.target.value } : item)))} />
-            <div className="input-prefix">
-              <span>{symbol}</span>
-              <input aria-label={`Budget line ${index + 1} amount`} inputMode="decimal" value={line.amount} onChange={(event) => setBudget(budget.map((item) => (item.id === line.id ? { ...item, amount: event.target.value } : item)))} />
-            </div>
-            <button type="button" className="btn btn-outline btn-sm icon-only" aria-label={`Remove budget line ${index + 1}`} onClick={() => setBudget(budget.filter((item) => item.id !== line.id))}>
-              ×
-            </button>
-          </div>
-        ))}
-        <button type="button" className="btn btn-outline btn-sm" onClick={() => setBudget([...budget, { id: crypto.randomUUID(), label: '', amount: '' }])}>
-          + Add budget line
-        </button>
-        {errors.budget ? <p className="error-text">{errors.budget}</p> : null}
+        <p className="muted small">Template headings: {template.budgetLabels.join(', ') || 'none'}.</p>
+        <BudgetEditor
+          lines={budget}
+          onLines={setBudget}
+          currency={campaign.currency}
+          targetMinor={Math.round(campaign.goalAmount * 100)}
+          milestones={campaignMilestones(store, campaign.id)}
+          approximate={budgetApproximate}
+          note={budgetNote}
+          onApproximate={setBudgetApproximate}
+          onNote={setBudgetNote}
+          error={errors.budget}
+        />
       </section>
 
       <section className="panel ws-card wide">

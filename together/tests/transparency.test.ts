@@ -70,12 +70,12 @@ test('migrating a v2 store keeps every campaign and contribution and adds the ne
   }
   local.setItem(STORAGE_KEY, JSON.stringify(v2))
   const store = loadStore()
-  assert.equal(store.version, 4)
+  assert.equal(store.version, 5)
   assert.ok(store.campaigns.some((item) => item.id === 'cmp_mine'))
   assert.ok(store.contributions.some((item) => item.id === 'gift_1'))
   assert.ok(store.referrals.some((item) => item.code === 'priya-shares'))
   assert.ok(store.milestones.length > 0 && store.expenses.length > 0 && store.campaignUpdates.length > 0)
-  assert.equal(JSON.parse(local.getItem(STORAGE_KEY)!).version, 4)
+  assert.equal(JSON.parse(local.getItem(STORAGE_KEY)!).version, 5)
 })
 
 test('records pointing at missing campaigns are dropped individually', () => {

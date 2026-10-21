@@ -159,10 +159,11 @@ export function loadStore(): DemoStore {
       supportingDocuments: list(record.supportingDocuments),
     }
     const merged = withDefaultCampaigns(draft)
-    const changed = merged.changed || retired || version !== 4
+    const changed = merged.changed || retired || version !== 5
     draft = merged.store
     if (version < 3) draft = withSeededTransparency(draft)
     if (version < 4) draft = withSeededTranslations(draft)
+    // v5: budget items gain quantity, unit cost, milestone and note; beneficiaries use one field (see normalizeStory).
     const store = withRelationships(draft)
     if (changed) {
       try {
@@ -211,7 +212,7 @@ function withRelationships(raw: RawStore): DemoStore {
   const expenseMap = new Map(expenses.map((item) => [item.id, item]))
   const referralMap = new Map(uniqueReferrals.map((item) => [item.id, item]))
   return {
-    version: 4,
+    version: 5,
     campaigns,
     contributions: raw.contributions.map((contribution) => normalizeContributionReferral(contribution, referralMap)),
     referrals: uniqueReferrals,

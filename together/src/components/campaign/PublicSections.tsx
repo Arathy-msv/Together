@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react'
+import { beneficiaryNote, beneficiaryText, budgetSummary, organizerLine } from '../../lib/budget.ts'
 import { formatDate, formatDateTime } from '../../lib/format.ts'
 import { gameMeta } from '../../lib/games.ts'
 import { GAME_EXPLANATION } from '../../lib/gameContribution.ts'
@@ -211,6 +212,83 @@ export function MilestoneTimeline({ milestones, compact = false, links }: { mile
   )
 }
 
+/** The organizer's planned budget, compared with the target. Planned items are never shown as purchases. */
+export function BudgetPlan({ campaign, milestones }: { campaign: Campaign; milestones: Milestone[] }) {
+  const budget = campaign.budget ?? []
+  const summary = budgetSummary(budget, Math.round(campaign.goalAmount * 100))
+  const titleOf = (id: string | undefined) => (id ? milestones.find((item) => item.id === id)?.title : undefined)
+  return (
+    <section className="budget-card" aria-labelledby="planned-budget-title">
+      <h3 id="planned-budget-title">Planned budget{campaign.budgetApproximate ? ' (estimate)' : ''}</h3>
+      <p className="muted small">What the organizer plans to spend. These are plans, not purchases — reported expenses are under “How funds are used”.</p>
+      <table className="budget-table">
+        <thead className="sr-only">
+          <tr>
+            <th scope="col">Item</th>
+            <th scope="col">Planned amount</th>
+            <th scope="col">Share of plan</th>
+          </tr>
+        </thead>
+        <tbody>
+          {budget.map((line) => {
+            const milestone = titleOf(line.milestoneId)
+            return (
+              <tr key={line.id}>
+                <th scope="row">
+                  {line.label}
+                  {line.quantity && line.unitCostMinor ? (
+                    <span className="budget-line-detail">
+                      {line.quantity.toLocaleString('en')} × {formatMinor(line.unitCostMinor, campaign.currency)}
+                    </span>
+                  ) : null}
+                  {milestone ? <span className="budget-line-detail">For milestone: {milestone}</span> : null}
+                  {line.note ? <span className="budget-line-detail">{line.note}</span> : null}
+                </th>
+                <td>{formatMinor(line.amountMinor, campaign.currency)}</td>
+                <td className="budget-bar-cell" aria-hidden="true">
+                  <span className="budget-bar">
+                    <i style={{ width: `${summary.plannedMinor ? Math.round((line.amountMinor / summary.plannedMinor) * 100) : 0}%` }} />
+                  </span>
+                </td>
+              </tr>
+            )
+          })}
+        </tbody>
+        <tfoot>
+          <tr>
+            <th scope="row">Planned total</th>
+            <td>{formatMinor(summary.plannedMinor, campaign.currency)}</td>
+            <td />
+          </tr>
+        </tfoot>
+      </table>
+      <dl className="budget-summary">
+        <div>
+          <dt>Fundraising target</dt>
+          <dd>{formatMinor(summary.targetMinor, campaign.currency)}</dd>
+        </div>
+        {summary.overTargetMinor > 0 ? (
+          <div className="is-over">
+            <dt>Plan above the target</dt>
+            <dd>{formatMinor(summary.overTargetMinor, campaign.currency)}</dd>
+          </div>
+        ) : (
+          <div>
+            <dt>Target not assigned to an item</dt>
+            <dd>{formatMinor(summary.unallocatedMinor, campaign.currency)}</dd>
+          </div>
+        )}
+      </dl>
+      {campaign.budgetNote ? (
+        <p className="small">
+          <strong>{campaign.budgetApproximate ? 'How the organizer estimated this: ' : 'Organizer’s note: '}</strong>
+          {campaign.budgetNote}
+        </p>
+      ) : null}
+    </section>
+  )
+}
+
 export function StoryTab({ campaign, store, onShowUpdates }: { campaign: Campaign; store: DemoStore; onShowUpdates: () => void }) {
   const story = campaign.story
   const [language, setLanguage] = useState<LanguageCode>('en')
@@ -225,7 +303,6 @@ export function StoryTab({ campaign, store, onShowUpdates }: { campaign: Campaig
     ] as Array<[string, CampaignTextKey, string | undefined]>
   ).filter((entry): entry is [string, CampaignTextKey, string] => Boolean(entry[2]?.trim()))
   const budget = campaign.budget ?? []
-  const budgetTotal = budget.reduce((sum, line) => sum + line.amountMinor, 0)
   const milestones = campaignMilestones(store, campaign.id)
   return (
     <div className="tab-body" lang={language}>
@@ -248,34 +325,7 @@ export function StoryTab({ campaign, store, onShowUpdates }: { campaign: Campaig
         </section>
       ) : null}
       <VideoBlock video={story?.video} />
-      {budget.length > 0 ? (
-        <section className="budget-card">
-          <h3>Planned budget</h3>
-          <p className="muted small">The organizer’s plan. Planned amounts are not spending — see “How funds are used” for reported expenses.</p>
-          <table className="budget-table">
-            <tbody>
-              {budget.map((line) => (
-                <tr key={line.id}>
-                  <th scope="row">{line.label}</th>
-                  <td>{formatMinor(line.amountMinor, campaign.currency)}</td>
-                  <td className="budget-bar-cell" aria-hidden="true">
-                    <span className="budget-bar">
-                      <i style={{ width: `${budgetTotal ? Math.round((line.amountMinor / budgetTotal) * 100) : 0}%` }} />
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              <tr>
-                <th scope="row">Planned total</th>
-                <td>{formatMinor(budgetTotal, campaign.currency)}</td>
-                <td />
-              </tr>
-            </tfoot>
-          </table>
-        </section>
-      ) : null}
+      {budget.length > 0 ? <BudgetPlan campaign={campaign} milestones={milestones} /> : null}
       {campaign.impactExamples?.length ? (
         <section className="impact-examples">
           <h3>Organizer’s cost examples</h3>
@@ -606,7 +656,7 @@ export function TrustTab({ campaign, store, org }: { campaign: Campaign; store: 
   const documents = publicDocuments(store, campaign.id)
   const lastUpdate = latestUpdateDate(store, campaign.id)
   const rows: Array<{ label: string; value: string; state: ReactNode }> = [
-    { label: 'Organizer', value: `${campaign.organizerName} · ${org.name}`, state: null },
+    { label: 'Organizer', value: organizerLine(campaign.organizerName, org.name), state: null },
     {
       label: 'Organizer-provided contact',
       value: org.content.contactEmail || 'Not provided',
@@ -614,7 +664,7 @@ export function TrustTab({ campaign, store, org }: { campaign: Campaign; store: 
     },
     {
       label: 'Who benefits',
-      value: campaign.story?.beneficiary?.trim() || 'Not provided',
+      value: [beneficiaryText(campaign.story), beneficiaryNote(campaign.story)].filter(Boolean).join(' ') || 'Not provided',
       state: null,
     },
     {
