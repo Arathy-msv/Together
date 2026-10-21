@@ -359,22 +359,30 @@ function AssistantChat({ org, start }: { org: Organization; start: ChatStart }) 
           </div>
         </div>
       </div>
-      <p className="assistant-note">
-        <AiBadge />
-        <span>
+      <details className="assistant-note">
+        <summary>
+          <AiBadge />
+          <span className="small">What does this mean?</span>
+        </summary>
+        <p className="small">
           A simulated conversation built on fixed rules. It only uses what you type and your organization’s settings — it never invents beneficiaries, costs,
           dates or impact. Nothing is published until you choose <strong>{campaignNeedsApproval(org) ? 'Submit for review' : 'Publish campaign'}</strong>.
-        </span>
-      </p>
+        </p>
+      </details>
       <div className="draft-bar">
         <SaveIndicator status={autosave.status} savedAt={autosave.savedAt} error={autosave.error} />
         <span className="inline-actions">
-          <Link to={`${workspace}/assistant?new=1`} reloadDocument className="link-button">
-            Start another draft
-          </Link>
-          <button type="button" className="link-button danger" onClick={discard}>
-            Discard draft
-          </button>
+          <details className="draft-menu">
+            <summary className="link-button">More</summary>
+            <div className="draft-menu-list">
+              <Link to={`${workspace}/assistant?new=1`} reloadDocument className="link-button">
+                Start another draft
+              </Link>
+              <button type="button" className="link-button danger" onClick={discard}>
+                Discard draft
+              </button>
+            </div>
+          </details>
           <button type="button" className="btn btn-outline btn-sm" onClick={saveAndExit}>
             Save and exit
           </button>

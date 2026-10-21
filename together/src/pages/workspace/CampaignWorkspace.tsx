@@ -231,7 +231,7 @@ function Overview({ campaign, view, store }: WorkspaceProps) {
           <p className="small muted">An Organization Admin can close fundraising.</p>
         ) : (
           <p className="small">
-            Fundraising is {view.status === 'completed' ? 'complete' : 'closed'}. Publishing a final report is a separate step.
+            {FUNDRAISING_LABEL[fundraisingState(view)]}. Contributions have stopped; delivery is reported separately, and publishing a final report is another step.
           </p>
         )}
       </section>

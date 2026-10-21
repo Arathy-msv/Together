@@ -30,7 +30,7 @@ Below the headline, campaign cards show a fundraising status, such as Accepting 
 
 ## op-game
 On a campaign, the heading is How would you like to help?
-One choice is Give an amount. The other is Play Memory Match. Each choice explains what happens next.
+One choice is Give directly. The other is Play to support, and beside it the page explains: play to build a suggested contribution, then review your final amount before confirming.
 The bar under the game states the rule in words: each matched pair suggests {₹50|fifty rupees}, and the final contribution is the player’s choice.
 Nothing is charged while they play. Review and contribute stays disabled until there is a suggestion to review.
 
@@ -165,7 +165,7 @@ Both use the same four groups: Your cause, Goal and dates, Ways to contribute, a
 She chooses Guide me through it.
 
 ## og-assistant
-The assistant is a simulated conversation. The note on the page says it follows fixed rules and is not connected to an {AI|A I} service.
+The assistant is a simulated conversation. A short badge says {AI preview · Simulated|A I preview, simulated}. What does this mean? expands the explanation: fixed rules, no {AI|A I} service, nothing invented. Discard draft is tucked into a More menu, away from the task.
 The first box asks what the campaign is for. Olivia types the purpose, including a target of {₹60,000|sixty thousand rupees}, in her own words.
 Continue. The assistant replies that it noted the target, and it asks which type of campaign is closest. It has pre-selected Education, and she can change it.
 Suggest a setup opens a panel marked {AI preview · Simulated|A I preview, simulated}. It suggests a category, a story template, a game and milestone examples. Nothing is added until she accepts it.
@@ -266,13 +266,14 @@ She opens School supplies for every Greenwood pupil.
 The page shows two badges side by side: the fundraising badge, Accepting contributions, and the delivery badge.
 
 ## sp-trust
+The story is split into short questions: What is needed?, Who will benefit?, How will funds be used?, and What happens next? Each answer is the organizer’s own words.
 Before giving, she reads Updates. The update Our supply list is ready is there, linked to its milestone.
 How funds are used shows the planned spending. There are no expenses yet, and the page does not pretend there are.
 Partner offers shows Corner Stationery, the reward, the {₹200|two hundred rupee} minimum, and the terms.
 None of this is a receipt or an audit. It is what the organizer and the partner store entered.
 
 ## sp-direct
-Back at How would you like to help?, Give an amount is selected.
+Back at How would you like to help?, Give directly is selected.
 Suggested amounts are buttons, {₹250|two hundred and fifty rupees} and {₹500|five hundred rupees}. She chooses {₹500|five hundred rupees}.
 Continue to review opens Confirm your contribution. The screen says No payment will be collected.
 Confirm simulated contribution is the only way the total moves. Closing the screen would leave the campaign unchanged.
@@ -284,7 +285,7 @@ Claim reward saves a voucher on this device. It does not email anyone, and it do
 The voucher card names the store, the offer and the state Ready to use.
 
 ## sp-game
-She opens the campaign again and chooses Play Memory Match.
+She opens the campaign again and chooses Play to support. The game is Memory Match.
 The rules are on the page before the first card: each matched pair suggests {₹50|fifty rupees}, suggestions stop if a giving limit is set, and the final contribution is her choice.
 Start playing opens the board. A short instructions step explains the game, then the cards are face down.
 Each matched pair adds {₹50|fifty rupees} and shows a one-line message under the board. Play is not interrupted by a dialog.

@@ -491,7 +491,7 @@ html { scroll-padding-top: 84px; }
 .crumbs a { text-decoration: none; }
 .crumbs span:last-child { color: var(--p-ink); font-weight: 600; }
 .campaign-grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(320px, 0.9fr); gap: 24px; align-items: start; }
-.campaign-hero { width: 100%; aspect-ratio: 16 / 8; object-fit: cover; border-radius: 16px; display: block; }
+.campaign-hero { width: 100%; aspect-ratio: 16 / 6; max-height: 300px; object-fit: cover; border-radius: 16px; display: block; }
 .campaign-title { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-top: 18px; }
 .campaign-title h1 { font-size: clamp(1.8rem, 3vw, 2.4rem); font-weight: 800; }
 .campaign-meta { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 10px 0 14px; flex-wrap: wrap; }

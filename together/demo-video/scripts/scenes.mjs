@@ -872,7 +872,7 @@ export const SCENES = [
     },
     async run(r) {
       await r.scrollToSel('h2', { text: 'Support this campaign' })
-      await r.click('label.give-option', { text: 'Play Memory Match' })
+      await r.click('label.give-option', { text: 'Play to support' })
       await r.sleep(900)
       await r.press('Start playing', { selector: 'a, button' })
       await r.waitFor('.mem-card')
@@ -910,7 +910,9 @@ export const SCENES = [
     chapter: 'supporter',
     async run(r) {
       await r.scrollBy(380)
-      await r.sleep(2000)
+      await r.sleep(800)
+      await r.scrollToSel('.story-grid h3', { text: 'Who will benefit?' })
+      await r.mark(0.25)
       await r.press('Updates', { selector: '[role=tab], button', exact: true })
       await r.sleep(1200)
       await r.expectText('Our supply list is ready')
@@ -926,7 +928,7 @@ export const SCENES = [
     chapter: 'supporter',
     async run(r) {
       await r.scrollToSel('h2', { text: 'Support this campaign' })
-      await r.click('label.give-option', { text: 'Give an amount' }).catch(() => {})
+      await r.click('label.give-option', { text: 'Give directly' }).catch(() => {})
       await r.sleep(800)
       await r.press('₹250', { selector: 'button.amount-choice' })
       await r.sleep(900)
@@ -963,7 +965,7 @@ export const SCENES = [
       await r.nav(`/o/greenwood-school/campaigns/${state.campaignId}`)
       await r.waitFor('Support this campaign')
       await r.scrollToSel('h2', { text: 'Support this campaign' })
-      await r.click('label.give-option', { text: 'Play Memory Match' })
+      await r.click('label.give-option', { text: 'Play to support' })
       await r.sleep(1000)
       await r.press('Start playing', { selector: 'a, button' })
       await r.waitFor('.mem-card')

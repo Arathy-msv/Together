@@ -498,15 +498,17 @@ function GivePanel({
           <label className={tab === 'direct' ? 'give-option selected' : 'give-option'}>
             <input type="radio" name={`give-${campaign.id}`} checked={tab === 'direct'} onChange={() => onTab('direct')} />
             <span>
-              <strong>Give an amount</strong>
+              <strong>Give directly</strong>
               <em>Choose an amount, review it, then confirm.</em>
             </span>
           </label>
           <label className={tab === 'game' ? 'give-option selected' : 'give-option'}>
             <input type="radio" name={`give-${campaign.id}`} checked={tab === 'game'} onChange={() => onTab('game')} />
             <span>
-              <strong>Play {gameMeta(campaign.gameType).name}</strong>
-              <em>Each action suggests an amount. Review before you confirm.</em>
+              <strong>Play to support</strong>
+              <em>
+                {gameMeta(campaign.gameType).name}. Play to build a suggested contribution. Review your final amount before confirming.
+              </em>
             </span>
           </label>
         </fieldset>

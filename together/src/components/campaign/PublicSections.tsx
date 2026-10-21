@@ -218,10 +218,10 @@ export function StoryTab({ campaign, store, onShowUpdates }: { campaign: Campaig
   const shown = (key: CampaignTextKey, original: string) => (language === 'ml' ? ml?.[key] : original)
   const sections = (
     [
-      ['Who this helps', 'whoItHelps', story?.whoItHelps],
-      ['What they need', 'whatTheyNeed', story?.whatTheyNeed],
-      ['What contributions will support', 'whatItSupports', story?.whatItSupports],
-      ['What happens next', 'whatHappensNext', story?.whatHappensNext],
+      ['What is needed?', 'whatTheyNeed', story?.whatTheyNeed],
+      ['Who will benefit?', 'whoItHelps', story?.whoItHelps],
+      ['How will funds be used?', 'whatItSupports', story?.whatItSupports],
+      ['What happens next?', 'whatHappensNext', story?.whatHappensNext],
     ] as Array<[string, CampaignTextKey, string | undefined]>
   ).filter((entry): entry is [string, CampaignTextKey, string] => Boolean(entry[2]?.trim()))
   const budget = campaign.budget ?? []
