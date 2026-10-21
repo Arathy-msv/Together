@@ -1,7 +1,10 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, Navigate, Outlet, useLocation, useParams } from 'react-router-dom'
 import { useDocumentTheme, useScrollOnNavigate } from '../../hooks/useDocumentTheme.ts'
 import { useOrganizations } from '../../hooks/useOrganizations.ts'
+import { canUseFeature } from '../../lib/features.ts'
+import { setDisplayTimeZone } from '../../lib/format.ts'
+import { readStoredLowData, setLowDataActive } from '../../lib/lowData.ts'
 import { DEFAULT_BRANDING } from '../../lib/theme.ts'
 import { isPreviewingWebsite, isPubliclyAvailable, previewOrganization, setWebsitePreview, websiteStatusLabel, workspacePath } from '../../lib/website.ts'
 import { OrgNotFound } from '../../pages/org/OrgNotFound.tsx'
@@ -27,6 +30,11 @@ export function OrgLayout() {
 
   useDocumentTheme(available && shown ? shown.branding : DEFAULT_BRANDING, available && shown ? shown.favicon || shown.logo || '/favicon.svg' : '/favicon.svg')
   useScrollOnNavigate(pathname, hash)
+  setDisplayTimeZone(shown?.timezone)
+  const lowDataOn = Boolean(shown && available && canUseFeature(shown, 'lowDataMode') && readStoredLowData())
+  if (typeof document !== 'undefined') document.documentElement.classList.toggle('low-data', lowDataOn)
+  setLowDataActive(lowDataOn)
+  useEffect(() => () => setDisplayTimeZone(undefined), [])
 
   if (!org || !value || !shown) {
     return (

@@ -9,6 +9,7 @@ import { holderVouchers } from '../../lib/vouchers.ts'
 import { VoucherList } from './PartnerOffersPublic.tsx'
 import { formatDateTime, formatMoney } from '../../lib/format.ts'
 import { listFollowed } from '../../lib/follows.ts'
+import { mySharingPages, ownsReferral, referralPath, shareWorkspacePath } from '../../lib/referrals.ts'
 import { updatesSince } from '../../lib/transparency.ts'
 import { campaignDetailsPath } from '../../lib/campaigns.ts'
 
@@ -61,6 +62,7 @@ export function SupporterHistoryPage() {
         .filter((row) => row.campaign?.organizationId === org.id)
         .sort((a, b) => Date.parse(b.item.createdAt) - Date.parse(a.item.createdAt))
     : []
+  const sharingPages = mySharingPages(org.id)
   const followed = listFollowed()
     .map((follow) => ({ follow, campaign: store.campaigns.find((item) => item.id === follow.campaignId && item.organizationId === org.id && !item.isDraft) }))
     .filter((row): row is { follow: (typeof row)['follow']; campaign: NonNullable<(typeof row)['campaign']> } => Boolean(row.campaign))
@@ -130,6 +132,42 @@ export function SupporterHistoryPage() {
                   <Link to={`${campaignDetailsPath(campaign.id, base)}?tab=updates`} className="btn btn-outline btn-sm">
                     Open updates
                   </Link>
+                </li>
+              )
+            })}
+          </ul>
+        )}
+      </section>
+
+      <section aria-labelledby="activity-sharing">
+        <h2 id="activity-sharing">Sharing pages</h2>
+        <p className="muted small">Pages you created for {org.name}. Opening this list does not create another page.</p>
+        {sharingPages.length === 0 ? (
+          <p className="awaiting">
+            No sharing pages for this supporter yet. <Link to={`${base}/campaigns`}>Choose a campaign</Link> and create one from its share tools.
+          </p>
+        ) : (
+          <ul className="history-list ws-list">
+            {sharingPages.map((page) => {
+              const campaign = store.campaigns.find((item) => item.id === page.campaignId && item.organizationId === org.id)
+              return (
+                <li key={page.id}>
+                  <div>
+                    <strong>{page.displayName}</strong>
+                    <span className="muted small">
+                      {campaign?.title ?? 'Campaign'} · {page.headline}
+                    </span>
+                  </div>
+                  <span className="inline-actions">
+                    <Link to={referralPath(base, page.campaignId, page.code)} className="btn btn-outline btn-sm">
+                      Open page
+                    </Link>
+                    {ownsReferral(page) ? (
+                      <Link to={shareWorkspacePath(base, page.campaignId, page.code)} className="btn btn-primary btn-sm">
+                        Edit and share
+                      </Link>
+                    ) : null}
+                  </span>
                 </li>
               )
             })}

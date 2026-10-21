@@ -298,3 +298,43 @@ test('a store-value voucher with a remaining balance is partially used, and a di
     'used',
   )
 })
+
+test('cancelling a partly used voucher keeps terms and history and rejects later redemption', () => {
+  const org = makeOrg('community', { storeValueVouchers: true })
+  const campaign = addCampaign(org, 'Library books')
+  const { offer } = setupOffer(org, 'storeValueVouchers')
+  v.assignOfferToCampaign(org, offer.id, campaign.id, true)
+  const voucher = v.purchaseStoreValue(org, offer.id, campaign.id)
+  assert.throws(() => v.redeemVoucher(org, voucher.id, 900), /remaining balance/)
+  const partial = v.redeemVoucher(org, voucher.id, 200)
+  assert.equal(partial.balance, 300)
+  assert.equal(partial.status, 'active')
+  assert.equal(v.issuedVoucherState(partial), 'partial')
+  const contributions = loadStore().contributions.length
+  const adminId = identity.currentUser()!.id
+  identity.switchIdentity(identity.DEMO_USERS.supporter)
+  assert.throws(() => v.cancelVoucher(org, voucher.id, 'Supporter cannot cancel'), /Organization Admin/)
+  identity.switchIdentity(adminId)
+  assert.throws(() => v.cancelVoucher(org, voucher.id, 'no'), /at least 3/)
+  const cancelled = v.cancelVoucher(org, voucher.id, 'Supporter asked to stop using the remaining credit')
+  assert.equal(cancelled.status, 'cancelled')
+  assert.equal(cancelled.balance, 300)
+  assert.equal(cancelled.terms, voucher.terms)
+  assert.equal(cancelled.redemptions.length, 1)
+  assert.equal(cancelled.cancelReason, 'Supporter asked to stop using the remaining credit')
+  assert.equal(typeof cancelled.cancelledAt, 'string')
+  assert.equal(v.issuedVoucherState(cancelled), 'cancelled')
+  assert.throws(() => v.redeemVoucher(org, voucher.id, 10), /cancelled/)
+  assert.throws(() => v.cancelVoucher(org, voucher.id, 'Again please'), /already cancelled/)
+  assert.equal(loadStore().contributions.length, contributions)
+  assert.equal(v.loadVoucherStore().offers.find((item) => item.id === offer.id)!.status, 'active')
+  const stored = v.loadVoucherStore()
+  const saved = stored.vouchers.find((item) => item.id === voucher.id)!
+  saved.validUntil = '2000-01-01T00:00:00.000Z'
+  v.saveVoucherStore(stored)
+  assert.equal(v.issuedVoucherState(v.loadVoucherStore().vouchers.find((item) => item.id === voucher.id)!), 'cancelled')
+
+  const fresh = v.purchaseStoreValue(org, offer.id, campaign.id)
+  v.redeemVoucher(org, fresh.id, fresh.balance)
+  assert.throws(() => v.cancelVoucher(org, fresh.id, 'Too late to cancel'), /fully used/)
+})

@@ -1,8 +1,10 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useGameContribution } from '../../hooks/useGameContribution.ts'
 import { newRoundId, readProgress, writeProgress } from '../../lib/gameLedger.ts'
 import type { CampaignView } from '../../lib/types.ts'
+import { useLowData } from '../../lib/lowData.ts'
 import { animationDelay } from '../../lib/motion.ts'
+import { CauseSketch } from '../../components/play/CauseSketch.tsx'
 import { GameFrame, GameTitle } from './GameFrame.tsx'
 import { actingParticipantId, sponsorOffer, unlockSponsorMilestone } from '../../lib/sponsors.ts'
 import { formatMinor } from '../../lib/transparency.ts'
@@ -62,9 +64,13 @@ export function MemoryGame({ view, preview = false }: { view: CampaignView; prev
     () => (preview ? null : readProgress(campaignId, 'memory', parseMemory)) ?? deal(pairsPerRound),
   )
   const progressRef = useRef(progress)
+  useEffect(() => {
+    writeProgress(campaignId, 'memory', progressRef.current)
+  }, [campaignId])
   const [open, setOpen] = useState<string[]>([])
   const [lock, setLock] = useState(false)
   const [sponsorNote, setSponsorNote] = useState('')
+  const lowData = useLowData()
   const sponsorMode = !preview && sessionStorage.getItem(`together.playMode.${campaignId}`) === 'sponsor'
   const offer = sponsorMode ? sponsorOffer(campaignId, actingParticipantId()) : null
   const totalPairs = progress.order.length / 2
@@ -136,6 +142,7 @@ export function MemoryGame({ view, preview = false }: { view: CampaignView; prev
       onNextRound={newRound}
       side={
         <aside className="hud-card">
+          <CauseSketch category={view.campaign.category} matched={pairs} total={totalPairs} />
           <p className="hud-label">Pairs found</p>
           <p className="hud-big">
             {pairs} <span>of {totalPairs}</span>
@@ -174,7 +181,9 @@ export function MemoryGame({ view, preview = false }: { view: CampaignView; prev
               >
                 <span className="mem-inner">
                   <span className="mem-back" />
-                  <span className="mem-face" style={{ backgroundImage: `url(${face.src})` }} />
+                  <span className={`mem-face${lowData ? ' word' : ''}`} style={lowData ? undefined : { backgroundImage: `url(${face.src})` }}>
+                    {lowData ? face.label : null}
+                  </span>
                 </span>
               </button>
             )

@@ -24,6 +24,7 @@ import {
   orgOffers,
   orgVouchers,
   pauseOffer,
+  cancelVoucher,
   redeemVoucher,
   settleMerchantBenefit,
   validateOffer,
@@ -507,6 +508,7 @@ function IssuedSection({ org, store, run }: { org: Organization; store: VoucherS
   const demo = useDemoStore()
   const issued = orgVouchers(store, org.id)
   const [amounts, setAmounts] = useState<Record<string, string>>({})
+  const [reasons, setReasons] = useState<Record<string, string>>({})
   return (
     <section className="panel ws-card" aria-labelledby="issued-title">
       <h2 id="issued-title">Issued vouchers</h2>
@@ -534,7 +536,7 @@ function IssuedSection({ org, store, run }: { org: Organization; store: VoucherS
                 </div>
                 <span className={`status-badge status-${voucher.status === 'active' && !expired ? 'active' : 'closed'}`}>
                   <i />
-                  {voucher.status === 'redeemed' ? 'Used' : expired ? 'Expired' : 'Active'}
+                  {voucher.status === 'cancelled' ? 'Cancelled' : voucher.status === 'redeemed' ? 'Used' : expired ? 'Expired' : 'Active'}
                 </span>
               </div>
               <div className="inline-actions">
@@ -564,7 +566,31 @@ function IssuedSection({ org, store, run }: { org: Organization; store: VoucherS
                     Mark merchant benefit settled
                   </button>
                 ) : null}
+                {voucher.status === 'active' ? (
+                  <>
+                    <input
+                      className="inline-amount"
+                      aria-label={`Cancellation reason for ${voucher.code}`}
+                      value={reasons[voucher.id] ?? ''}
+                      placeholder="Reason for cancellation"
+                      maxLength={240}
+                      onChange={(event) => setReasons({ ...reasons, [voucher.id]: event.target.value })}
+                    />
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-sm"
+                      onClick={() => run(() => cancelVoucher(org, voucher.id, reasons[voucher.id] ?? ''), 'Voucher cancelled. The balance was not restored and campaign totals were not changed.')}
+                    >
+                      Cancel voucher
+                    </button>
+                  </>
+                ) : null}
               </div>
+              {voucher.status === 'cancelled' ? (
+                <p className="small">
+                  Cancelled {voucher.cancelledAt ? formatDateTime(voucher.cancelledAt) : 'at an unrecorded time'}. Reason: {voucher.cancelReason || 'Not recorded'}. Issued terms and redemption history stay as they were. Redeemed value is not restored.
+                </p>
+              ) : null}
               {voucher.redemptions.length > 0 ? (
                 <ul className="small muted">
                   {voucher.redemptions.map((item) => (

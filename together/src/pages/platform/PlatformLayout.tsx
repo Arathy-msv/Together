@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { BrandMark } from '../../components/BrandMark.tsx'
 import { useDocumentTheme, useScrollOnNavigate } from '../../hooks/useDocumentTheme.ts'
 import { DEFAULT_BRANDING } from '../../lib/theme.ts'
+import { clearLowData } from '../../lib/lowData.ts'
 import { useStartWebsite } from '../../hooks/useStartWebsite.ts'
 import { DemoToolsMenu } from '../../components/identity/DemoToolsMenu.tsx'
 
@@ -12,6 +13,7 @@ export function PlatformLayout() {
   const [menuPath, setMenuPath] = useState<string | null>(null)
   const open = menuPath === pathname + hash
   useDocumentTheme(DEFAULT_BRANDING)
+  clearLowData()
   const startWebsite = useStartWebsite()
   useScrollOnNavigate(pathname, hash)
 

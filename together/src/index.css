@@ -648,6 +648,31 @@ legend { font-weight: 800; }
   gap: 8px;
   white-space: nowrap;
 }
+.cause-sketch { margin: 0 0 12px; display: grid; gap: 6px; min-width: 0; }
+.cause-sketch figcaption, .cause-sketch.text-only { margin: 0; font-size: 0.78rem; line-height: 1.35; color: #3d4c45; }
+.cause-stage { height: 72px; border-radius: 12px; background: rgba(255, 255, 255, 0.78); overflow: hidden; border: 1px solid rgba(20, 40, 32, 0.12); }
+.cause-symbol { position: relative; height: 100%; transition: clip-path 0.45s ease; }
+.cause-sketch.still .cause-symbol { transition: none; }
+.cause-symbol .shape { position: absolute; display: block; left: 50%; }
+.cat-education .shape.a, .cat-other .shape.a { width: 46px; height: 8px; margin-left: -23px; bottom: 16px; border-radius: 2px; background: #1a365d; }
+.cat-education .shape.b, .cat-other .shape.b { width: 38px; height: 8px; margin-left: -19px; bottom: 26px; border-radius: 2px; background: #c4a15a; }
+.cat-education .shape.c, .cat-other .shape.c { width: 30px; height: 8px; margin-left: -15px; bottom: 36px; border-radius: 2px; background: #123d36; }
+.cat-clothing .shape.a { width: 36px; height: 28px; margin-left: -18px; bottom: 14px; border-radius: 8px 8px 4px 4px; background: #6e2f24; }
+.cat-clothing .shape.b { width: 14px; height: 10px; margin-left: -28px; bottom: 32px; border-radius: 8px 0 0 8px; background: #6e2f24; }
+.cat-clothing .shape.c { width: 14px; height: 10px; margin-left: 14px; bottom: 32px; border-radius: 0 8px 8px 0; background: #6e2f24; }
+.cat-environment .shape.a { width: 8px; height: 22px; margin-left: -4px; bottom: 12px; background: #6b4a2a; }
+.cat-environment .shape.b { width: 28px; height: 28px; margin-left: -14px; bottom: 28px; border-radius: 50%; background: #1f6b43; }
+.cat-environment .shape.c { width: 16px; height: 16px; margin-left: -22px; bottom: 40px; border-radius: 50%; background: #3f9a67; }
+.cat-sports .shape.a { width: 32px; height: 32px; margin-left: -16px; bottom: 18px; border-radius: 50%; background: #163a66; }
+.cat-sports .shape.b { width: 32px; height: 4px; margin-left: -16px; bottom: 32px; background: #f7f4ec; }
+.cat-sports .shape.c { width: 4px; height: 32px; margin-left: -2px; bottom: 18px; background: #f7f4ec; }
+.cat-community .shape.a, .cat-community .shape.b, .cat-community .shape.c { width: 16px; height: 16px; bottom: 22px; border-radius: 50%; background: #0e4f45; }
+.cat-community .shape.a { margin-left: -24px; }
+.cat-community .shape.b { margin-left: -8px; background: #c4a15a; }
+.cat-community .shape.c { margin-left: 8px; }
+@media (prefers-reduced-motion: reduce) {
+  .cause-symbol { transition: none; }
+}
 .memory-grid {
   position: absolute;
   left: 50%;
@@ -686,6 +711,14 @@ legend { font-weight: 800; }
   transform: rotateY(180deg);
   background: #fffaf2 center/cover no-repeat;
   border: 2px solid rgba(255, 252, 247, 0.95);
+}
+.mem-face.word {
+  display: grid;
+  place-items: center;
+  color: #1b4a3c;
+  font-weight: 800;
+  font-size: 1rem;
+  text-transform: capitalize;
 }
 .jigsaw-plate {
   width: min(560px, 100%);

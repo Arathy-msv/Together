@@ -2,6 +2,7 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState, type Ref } fr
 import { campaignCoverSrc } from '../../data/covers.ts'
 import { canUseFeature } from '../../lib/features.ts'
 import { AssetRenderError, SOCIAL_SIZES, renderPoster, renderSocialImage, type SocialSizeId } from '../../lib/canvasAssets.ts'
+import { useLowData } from '../../lib/lowData.ts'
 import { loadImageElement, qrPngDataUrl, qrSvgString, renderQrToCanvas, QrGenerationError } from '../../lib/qr.ts'
 import { buildShareContent, dataUrlToBlob, downloadBlob, shareAssetFilename, type ShareContent, type ShareMode } from '../../lib/sharing.ts'
 import type { Campaign, Organization, Referral } from '../../lib/types.ts'
@@ -33,6 +34,8 @@ export function ShareKit({
   const [notice, setNotice] = useState<{ tone: 'success' | 'error'; text: string } | null>(null)
   const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  const lowData = useLowData()
+  const enabled = canUseFeature(org, 'shareKit')
   const content = useMemo(() => buildShareContent({ mode, org, campaign, url, referral }), [mode, org, campaign, url, referral])
   const coverSrc = referral?.coverImage || campaignCoverSrc(campaign)
   const personName = mode === 'referral' ? referral?.displayName : undefined
@@ -80,6 +83,11 @@ export function ShareKit({
   }, [org.logo])
 
   useEffect(() => {
+    if (!enabled || lowData) {
+      setCoverImage(null)
+      setCoverFailed(false)
+      return
+    }
     let cancelled = false
     setCoverFailed(false)
     loadImageElement(coverSrc)
@@ -93,9 +101,9 @@ export function ShareKit({
     return () => {
       cancelled = true
     }
-  }, [coverSrc])
+  }, [coverSrc, enabled, lowData])
 
-  if (!canUseFeature(org, 'shareKit')) return null
+  if (!enabled) return null
 
   return (
     <section className="panel share-kit-v2" aria-labelledby={headingId}>

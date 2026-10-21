@@ -96,6 +96,56 @@ test('a non-memory campaign cannot take a sponsor commitment or offer sponsor pl
   assert.equal(loadStore().sponsorCommitments.some((item) => item.campaignId === campaign.id), false)
 })
 
+test('sponsor unlocks stop when the campaign or the sponsorship is outside its dates', () => {
+  const store = loadStore()
+  const org = loadOrganizations().find((item) => item.id === 'org_together')!
+  saveOrganization({ ...org, features: { ...org.features, sponsorPlay: true } })
+  const base = store.campaigns.find((item) => item.id === 'cmp_library')!
+  const campaign = {
+    ...base,
+    id: 'cmp_memory_dates',
+    title: 'Memory Match date window',
+    gameType: 'memory' as const,
+    opensAt: new Date(Date.now() + 86_400_000).toISOString(),
+    closesAt: new Date(Date.now() + 86_400_000 * 30).toISOString(),
+  }
+  saveStore({ ...store, campaigns: [...store.campaigns, campaign] })
+  const start = new Date(Date.now() - 86_400_000).toISOString()
+  const end = new Date(Date.now() + 86_400_000 * 10).toISOString()
+  createSponsorCommitment({
+    organizationId: campaign.organizationId,
+    campaignId: campaign.id,
+    sponsorName: 'Fictional Sponsor',
+    pledgedMinor: 10_000,
+    perParticipantCapMinor: 5_000,
+    unlocks: [{ id: 'match-1', label: 'First pair', rewardMinor: 5_000 }],
+    startsAt: start,
+    endsAt: end,
+  })
+  assert.equal(unlockSponsorMilestone(campaign.id, 'user_mia'), null)
+  const opened = loadStore()
+  const index = opened.campaigns.findIndex((item) => item.id === campaign.id)
+  opened.campaigns[index] = {
+    ...opened.campaigns[index],
+    opensAt: new Date(Date.now() - 86_400_000 * 2).toISOString(),
+    closesAt: new Date(Date.now() - 86_400_000).toISOString(),
+  }
+  saveStore(opened)
+  assert.equal(unlockSponsorMilestone(campaign.id, 'user_mia'), null)
+  const current = loadStore()
+  current.campaigns[index] = {
+    ...current.campaigns[index],
+    closesAt: new Date(Date.now() + 86_400_000 * 30).toISOString(),
+  }
+  current.sponsorCommitments = current.sponsorCommitments.map((item) =>
+    item.campaignId === campaign.id ? { ...item, endsAt: new Date(Date.now() - 60_000).toISOString() } : item,
+  )
+  saveStore(current)
+  assert.equal(sponsorOffer(campaign.id, 'user_mia')?.dateOpen, false)
+  assert.equal(unlockSponsorMilestone(campaign.id, 'user_mia'), null)
+  assert.equal(loadStore().sponsorAllocations.some((item) => item.campaignId === campaign.id), false)
+})
+
 test('a closure report can be partial without inventing completed milestones', () => {
   const report = normalizeFinalReport({
     status: 'published',

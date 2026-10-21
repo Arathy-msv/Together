@@ -167,6 +167,13 @@ function assertOwner(referral: Referral): void {
   if (!ownsReferral(referral)) throw new PermissionError('Only the supporter who created this sharing page can edit it.')
 }
 
+/** Sharing pages this supporter owns in one organization. Does not create a page. */
+export function mySharingPages(organizationId: string): Referral[] {
+  return loadStore()
+    .referrals.filter((item) => item.organizationId === organizationId && ownsReferral(item))
+    .sort((a, b) => Date.parse(b.updatedAt) - Date.parse(a.updatedAt))
+}
+
 /** Whether the acting demo identity owns this sharing page. A demo check, not production access control. */
 export function isMyReferral(id: string): boolean {
   const referral = loadStore().referrals.find((item) => item.id === id)

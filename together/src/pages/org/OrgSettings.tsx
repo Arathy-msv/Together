@@ -3,13 +3,14 @@ import { Link, useNavigate } from 'react-router-dom'
 import { demoPlan } from '../../lib/plans.ts'
 import { Icon } from '../../components/illustrations.tsx'
 import { BrandPreview } from '../../components/org/BrandPreview.tsx'
+import { PaletteSwatches } from '../../components/org/PaletteSwatches.tsx'
 import { OrgLogoMark } from '../../components/org/OrgChrome.tsx'
 import { useOrg } from '../../components/org/OrgContext.tsx'
 import { useDemoStore } from '../../hooks/useDemoStore.ts'
 import { useImagePicker } from '../../hooks/useImagePicker.tsx'
 import { useOrganizations } from '../../hooks/useOrganizations.ts'
 import { toView } from '../../lib/campaigns.ts'
-import { CURRENCIES, currencySymbol, formatMoney, isCurrencyCode } from '../../lib/format.ts'
+import { CURRENCIES, currencySymbol, formatDateTime, formatMoney, isCurrencyCode, setDisplayTimeZone, TIME_ZONES } from '../../lib/format.ts'
 import { GAME_THUMBS, GAMES } from '../../lib/games.ts'
 import {
   COMING_SOON_GAMES,
@@ -84,6 +85,7 @@ function SettingsEditor({ stored, variant }: { stored: Organization; variant: Va
   const unpublished = hasUnpublishedChanges(stored)
   const errorCount = Object.keys(errors).length
   const checks = useMemo(() => contrastChecks(draft.branding), [draft.branding])
+  setDisplayTimeZone(draft.timezone)
   const usedGames = useMemo(
     () => new Set(store.campaigns.filter((campaign) => campaign.organizationId === saved.id && campaign.participation.game).map((campaign) => campaign.gameType)),
     [store, saved.id],
@@ -191,6 +193,7 @@ function SettingsEditor({ stored, variant }: { stored: Organization; variant: Va
         slug: published ? stored.slug : clean.slug.trim(),
         type: clean.type,
         defaults: clean.defaults,
+        timezone: clean.timezone,
         visibility: { ...stored.visibility, games: clean.visibility.games, direct: clean.visibility.direct, assistant: clean.visibility.assistant },
       },
       'Organization settings saved.',
@@ -355,7 +358,8 @@ function SettingsEditor({ stored, variant }: { stored: Organization; variant: Va
           {isWebsite ? (
           <>
 
-          <Section id="colours" title="Colours & typography" text="Text colours are picked automatically for readability.">
+          <Section id="colours" title="Colours & typography" text="Text colours are picked automatically for readability. The preview on this page updates before you save.">
+            <PaletteSwatches branding={draft.branding} onApply={(colors) => patchBranding(colors)} />
             <div className="colour-grid">
               <ColorField label="Primary" help="Buttons, links, header accents" value={draft.branding.primary} error={shownError('branding.primary')} onChange={(primary) => patchBranding({ primary })} />
               <ColorField label="Secondary" help="Soft panels and highlights" value={draft.branding.secondary} error={shownError('branding.secondary')} onChange={(secondary) => patchBranding({ secondary })} />
@@ -501,6 +505,13 @@ function SettingsEditor({ stored, variant }: { stored: Organization; variant: Va
                 options={CURRENCIES.map((currency) => ({ value: currency.code, label: currency.label }))}
                 help="Used for new campaigns only. Existing campaigns keep their own currency."
                 onChange={(currency) => isCurrencyCode(currency) && patchDefaults({ currency })}
+              />
+              <SelectField
+                label="Timezone for date-times"
+                value={draft.timezone ?? ''}
+                options={TIME_ZONES.map((zone) => ({ value: zone.id, label: zone.label }))}
+                help={`Date-times on this organization’s pages include the zone. A calendar day such as an expense date is not shifted. Example: ${formatDateTime('2026-10-21T04:30:00.000Z')}.`}
+                onChange={(timezone) => patch({ timezone: timezone || undefined })}
               />
               <TextField
                 label="Default duration (days)"

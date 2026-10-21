@@ -1,6 +1,6 @@
 import { emptyVoucherSettings, inferFeatures, normalizeFeatures, normalizeVoucherSettings, planEntitles, recommendedFeatures } from './features.ts'
 import { voucherUsage } from './voucherUsage.ts'
-import { isCurrencyCode } from './format.ts'
+import { isCurrencyCode, isTimeZone } from './format.ts'
 import { GAMES, isGameType } from './games.ts'
 import { DEFAULT_BRANDING, isFontChoice, isHexColor, normalizeHex } from './theme.ts'
 import type {
@@ -218,6 +218,7 @@ export function normalizeOrganization(value: unknown): Organization | null {
     } as Organization),
     featureHistory: normalizeFeatureHistory(raw.featureHistory),
     website: normalizeWebsite(raw.website, name, updatedAt),
+    timezone: isTimeZone(raw.timezone) ? raw.timezone : undefined,
     onboarding:
       raw.onboarding && typeof raw.onboarding === 'object' && Number.isInteger(raw.onboarding.step)
         ? {

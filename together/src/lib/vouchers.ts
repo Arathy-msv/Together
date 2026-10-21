@@ -102,7 +102,11 @@ export interface IssuedVoucher {
   campaignBenefit?: number
   benefitStatus?: 'pending' | 'settled'
   contributionId?: string
-  status: 'active' | 'redeemed'
+  status: 'active' | 'redeemed' | 'cancelled'
+  /** Why an Organization Admin cancelled this voucher. Issued terms stay as written. */
+  cancelReason?: string
+  /** When the voucher was cancelled. Distinct from expiry and from pausing an offer. */
+  cancelledAt?: string
   redemptions: VoucherRedemption[]
   issuedAt: string
 }
@@ -254,16 +258,18 @@ export function isExpired(item: { validUntil: string }, now = Date.now()): boole
   return Number.isNaN(end) || end < now
 }
 
-export type IssuedVoucherState = 'ready' | 'partial' | 'used' | 'expired'
+export type IssuedVoucherState = 'ready' | 'partial' | 'used' | 'expired' | 'cancelled'
 
 /**
  * Store-value vouchers with a remaining balance and at least one redemption are partially used.
  * Percentage and other one-use offers never pick up a monetary balance label.
+ * Cancellation is its own state, including when the expiry date has also passed.
  */
 export function issuedVoucherState(
   voucher: Pick<IssuedVoucher, 'status' | 'capability' | 'balance' | 'redemptions' | 'validUntil'>,
   now = Date.now(),
 ): IssuedVoucherState {
+  if (voucher.status === 'cancelled') return 'cancelled'
   if (voucher.status === 'redeemed') return 'used'
   const expired = isExpired(voucher, now)
   if (
@@ -525,6 +531,7 @@ export function redeemVoucher(org: Organization, voucherId: string, amount?: num
 }
 
 function applyRedemption(voucher: IssuedVoucher, amount: number | undefined, branchId: string | undefined): void {
+  if (voucher.status === 'cancelled') throw new Error('This voucher was cancelled. It cannot be redeemed.')
   if (voucher.status === 'redeemed') throw new Error('This voucher has already been fully used.')
   if (isExpired(voucher)) throw new Error('This voucher has expired under its terms.')
   const now = new Date().toISOString()
@@ -538,6 +545,27 @@ function applyRedemption(voucher: IssuedVoucher, amount: number | undefined, bra
     voucher.redemptions.push({ id: crypto.randomUUID(), at: now, note: 'Offer used at partner store (demo)', actorId: currentActorId(), branchId })
     voucher.status = 'redeemed'
   }
+}
+
+/**
+ * Cancels an issued voucher. Terms, balance, and redemption history stay as they were.
+ * Redeemed value is not restored and campaign totals are not adjusted.
+ * Distinct from expiry, pausing an offer, and turning the voucher feature off.
+ */
+export function cancelVoucher(org: Organization, voucherId: string, reason: string): IssuedVoucher {
+  assertManager(org)
+  const store = loadVoucherStore()
+  const voucher = ownVoucher(store, org, voucherId)
+  if (voucher.status === 'cancelled') throw new Error('This voucher is already cancelled.')
+  if (voucher.status === 'redeemed') throw new Error('A fully used voucher cannot be cancelled. Its redemption history stays as recorded.')
+  const clean = reason.trim().replace(/\s+/g, ' ')
+  if (clean.length < 3) throw new Error('Record a short reason for the cancellation (at least 3 characters).')
+  if (clean.length > 240) throw new Error('Keep the cancellation reason to 240 characters or fewer.')
+  voucher.status = 'cancelled'
+  voucher.cancelReason = clean
+  voucher.cancelledAt = new Date().toISOString()
+  saveVoucherStore(store)
+  return voucher
 }
 
 /** Marks a store-value campaign share as passed on by the merchant. Allowed after deactivation. */
@@ -723,10 +751,12 @@ export interface MerchantVoucherView {
   capability: VoucherCapability
   currency: CurrencyCode
   validUntil: string
-  status: 'active' | 'redeemed'
+  status: 'active' | 'redeemed' | 'cancelled'
   expired: boolean
   balance?: number
   rewardText?: string
+  cancelReason?: string
+  cancelledAt?: string
   redemptions: VoucherRedemption[]
 }
 
@@ -744,6 +774,8 @@ function merchantView(voucher: IssuedVoucher): MerchantVoucherView {
     expired: isExpired(voucher),
     balance: voucher.balance,
     rewardText: voucher.rewardText,
+    cancelReason: voucher.cancelReason,
+    cancelledAt: voucher.cancelledAt,
     redemptions: voucher.redemptions.map((item) => ({ ...item, actorId: undefined })),
   }
 }

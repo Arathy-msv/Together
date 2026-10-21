@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { LanguageToggle } from '../ai/Translation.tsx'
 import { uiLabel, type LanguageCode } from '../../lib/ai/translations.ts'
 import { campaignCoverSrc } from '../../data/covers.ts'
+import { useLowData } from '../../lib/lowData.ts'
 import { useDemoStore } from '../../hooks/useDemoStore.ts'
 import { formatMoney } from '../../lib/format.ts'
 import { orgInitials } from '../../lib/organizations.ts'
@@ -53,11 +54,18 @@ export function ReferralIntro({ referral, view, preview = false }: { referral: R
   const ml = referral.translations?.ml
   const headline = language === 'ml' ? ml?.headline : referral.headline
   const message = language === 'ml' ? ml?.message : referral.message
+  const lowData = useLowData()
   const cover = referral.coverImage || campaignCoverSrc(view.campaign)
   return (
     <section className="referral-hero" aria-label={`Shared by ${referral.displayName}`}>
       <div className="referral-media">
-        <SafeImage src={cover} alt="" />
+        {lowData ? (
+          <span className="campaign-cover low-data-cover" role="img" aria-label="Sharing photo hidden in low-data mode">
+            Photo hidden
+          </span>
+        ) : (
+          <SafeImage src={cover} alt="" />
+        )}
       </div>
       <div className="referral-copy">
         <div className="shared-by">

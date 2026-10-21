@@ -3,12 +3,13 @@ import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { SaveIndicator } from '../../components/drafts/DraftUI.tsx'
 import { FeaturePicker } from '../../components/org/FeaturePicker.tsx'
 import { BrandPreview } from '../../components/org/BrandPreview.tsx'
+import { PaletteSwatches } from '../../components/org/PaletteSwatches.tsx'
 import { OrgLogoMark } from '../../components/org/OrgChrome.tsx'
 import { Checkbox, Select, TextArea, TextInput } from '../../components/workspace/fields.tsx'
 import { useAutosave } from '../../hooks/useAutosave.ts'
 import { useImagePicker } from '../../hooks/useImagePicker.tsx'
 import { useOrganizations } from '../../hooks/useOrganizations.ts'
-import { CURRENCIES, formatMoney, isCurrencyCode } from '../../lib/format.ts'
+import { CURRENCIES, formatMoney, isCurrencyCode, setDisplayTimeZone, TIME_ZONES } from '../../lib/format.ts'
 import { GAMES } from '../../lib/games.ts'
 import { COMING_SOON_GAMES, IMAGE_GALLERY, ORG_TYPES, slugFollowsName, slugify, validateOrganization, validateSlug } from '../../lib/organizations.ts'
 import { setActiveOrgId } from '../../lib/orgStorage.ts'
@@ -103,6 +104,7 @@ function Wizard({ stored }: { stored: Organization }) {
     document.title = `Set up ${org.name || 'your organization'} — Together`
   }, [org.name])
 
+  setDisplayTimeZone(org.timezone)
   const patch = (next: Partial<Organization>) => setOrg((current) => ({ ...current, ...next }))
   const patchContent = (next: Partial<Organization['content']>) => setOrg((current) => ({ ...current, content: { ...current.content, ...next } }))
   const patchBranding = (next: Partial<Organization['branding']>) => setOrg((current) => ({ ...current, branding: { ...current.branding, ...next } }))
@@ -417,6 +419,7 @@ function LookAndContentStep(props: {
   return (
     <>
       <p className="muted">Choose a colour and a photo, then write a headline. Your preview updates as you type. You can change everything later.</p>
+      <PaletteSwatches branding={org.branding} onApply={(colors) => props.patchBranding(colors)} />
       <BrandingStep {...props} essentialOnly />
       <div className="sample-row">
         <button type="button" className="btn btn-outline btn-sm" onClick={useSample}>
@@ -543,6 +546,7 @@ function FundraisingStep({ org, errors, patch }: { org: Organization; errors: Re
   return (
     <>
       <Select label="Default currency" value={defaults.currency} options={CURRENCIES.map((item) => ({ value: item.code, label: item.label }))} help="Used for new campaigns. Each campaign keeps its own currency." onChange={(currency) => isCurrencyCode(currency) && setDefaults({ currency })} />
+      <Select label="Timezone for date-times" value={org.timezone ?? ''} options={TIME_ZONES.map((zone) => ({ value: zone.id, label: zone.label }))} help="Shown beside date-times. Calendar-only dates keep their day." onChange={(timezone) => patch({ timezone: timezone || undefined })} />
       <Checkbox label="Allow direct contributions" checked={org.visibility.direct} onChange={(direct) => setVisibility({ direct })} />
       {errors.direct ? <p className="error-text">{errors.direct}</p> : null}
       <Checkbox label="Offer games" checked={org.visibility.games} onChange={(games) => setVisibility({ games })} />

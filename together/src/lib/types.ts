@@ -97,6 +97,8 @@ export interface Organization {
   /** Feature on/off changes, newest last. Kept so deactivation is auditable. */
   featureHistory: FeatureChange[]
   website: OrganizationWebsite
+  /** IANA timezone for displayed date-times. Missing means the app default, Asia/Kolkata. */
+  timezone?: string
   /** `flow: 5` is the current setup (details → features → branding → review → confirm). */
   onboarding?: { step: number; updatedAt: string; flow?: number }
   createdAt: string

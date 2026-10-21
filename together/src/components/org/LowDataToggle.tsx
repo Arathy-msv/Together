@@ -1,21 +1,11 @@
 import { useEffect, useState } from 'react'
 import { canUseFeature } from '../../lib/features.ts'
-import { setLowDataActive } from '../../lib/lowData.ts'
+import { readStoredLowData, setLowDataActive, writeStoredLowData } from '../../lib/lowData.ts'
 import type { Organization } from '../../lib/types.ts'
-
-const KEY = 'together.lowData.v1'
-
-function readPreference(): boolean {
-  try {
-    return sessionStorage.getItem(KEY) === '1'
-  } catch {
-    return false
-  }
-}
 
 /** Optional low-data switch. Baseline accessibility and reduced-motion stay on regardless. */
 export function LowDataToggle({ org }: { org: Organization }) {
-  const [on, setOn] = useState(readPreference)
+  const [on, setOn] = useState(readStoredLowData)
 
   useEffect(() => {
     if (!canUseFeature(org, 'lowDataMode')) {
@@ -25,11 +15,7 @@ export function LowDataToggle({ org }: { org: Organization }) {
     }
     document.documentElement.classList.toggle('low-data', on)
     setLowDataActive(on)
-    try {
-      sessionStorage.setItem(KEY, on ? '1' : '0')
-    } catch {
-      // Preference is best-effort.
-    }
+    writeStoredLowData(on)
   }, [on, org])
 
   if (!canUseFeature(org, 'lowDataMode')) return null

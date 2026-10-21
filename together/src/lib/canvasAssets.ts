@@ -211,9 +211,14 @@ export async function renderPoster(canvas: HTMLCanvasElement, options: PosterOpt
   }
 
   const qrSize = 560
-  const qrBlockY = POSTER_HEIGHT - 620
+  const cardPad = 36
+  const footerBaseline = POSTER_HEIGHT - 120
+  const cardBottom = footerBaseline - 80
+  const cardTop = cardBottom - qrSize - cardPad * 2
   const qrX = margin
-  roundRect(ctx, qrX - 36, qrBlockY - 36, qrSize + 72, qrSize + 180, 24)
+  const qrBlockY = cardTop + cardPad
+  if (cursorY > cardTop - 48) cursorY = cardTop - 48
+  roundRect(ctx, qrX - cardPad, cardTop, qrSize + cardPad * 2, cardBottom - cardTop, 24)
   ctx.fillStyle = '#ffffff'
   ctx.fill()
   ctx.strokeStyle = '#d8ddd6'
@@ -223,14 +228,14 @@ export async function renderPoster(canvas: HTMLCanvasElement, options: PosterOpt
 
   ctx.font = `800 54px ${heading}`
   ctx.fillStyle = ink
-  ctx.fillText('Scan to support', qrX + qrSize + 70, qrBlockY + 90)
+  ctx.fillText('Scan to support', qrX + qrSize + 90, qrBlockY + 90)
   ctx.font = `400 38px ${body}`
   ctx.fillStyle = muted
-  drawWrapped(ctx, content.url, qrX + qrSize + 70, qrBlockY + 160, POSTER_WIDTH - margin - (qrX + qrSize + 70), 50, 3)
+  drawWrapped(ctx, content.url, qrX + qrSize + 90, qrBlockY + 160, POSTER_WIDTH - margin - (qrX + qrSize + 90), 50, 4)
 
   ctx.font = `400 34px ${body}`
   ctx.fillStyle = muted
-  ctx.fillText(`A fundraiser by ${org.name}`, margin, POSTER_HEIGHT - 70)
+  ctx.fillText(`A fundraiser by ${org.name}`, margin, footerBaseline)
 }
 
 /** Renders one of the three social-image sizes. */
@@ -257,62 +262,66 @@ export async function renderSocialImage(canvas: HTMLCanvasElement, options: Soci
     ctx.fillRect(0, 0, dims.width, dims.height)
   }
 
-  const overlayHeight = Math.round(dims.height * 0.5)
+  const overlayHeight = Math.round(dims.height * (size === 'square' ? 0.58 : 0.5))
   const gradient = ctx.createLinearGradient(0, dims.height - overlayHeight, 0, dims.height)
   gradient.addColorStop(0, 'rgba(10, 16, 13, 0)')
   gradient.addColorStop(1, 'rgba(8, 14, 11, 0.86)')
   ctx.fillStyle = gradient
   ctx.fillRect(0, dims.height - overlayHeight, dims.width, overlayHeight)
 
-  let cursorY = dims.height - overlayHeight + 90
-  const textWidth = dims.width - margin * 2 - (includeQr ? 240 : 0)
+  const qrSize = includeQr ? 188 : 0
+  const ctaY = dims.height - margin - 8
+  const bandTop = includeQr ? ctaY - 8 - qrSize : ctaY - 72
+  const textWidth = dims.width - margin * 2
+  let cursorY = Math.max(dims.height - overlayHeight + 36, bandTop - (size === 'square' ? 250 : 320))
 
   if (images.logo) {
     try {
       ctx.save()
       ctx.beginPath()
-      ctx.arc(margin + 44, cursorY - 36, 44, 0, Math.PI * 2)
+      ctx.arc(margin + 36, cursorY - 18, 36, 0, Math.PI * 2)
       ctx.clip()
-      drawImageContain(ctx, images.logo, margin, cursorY - 80, 88, 88)
+      drawImageContain(ctx, images.logo, margin, cursorY - 54, 72, 72)
       ctx.restore()
     } catch {
       // Logo compositing is decorative; skip on failure.
     }
   }
-  ctx.font = `700 30px ${body}`
+  ctx.font = `700 28px ${body}`
   ctx.fillStyle = '#ffffff'
-  ctx.fillText(org.name, margin + (images.logo ? 112 : 0), cursorY)
-  cursorY += 64
+  ctx.fillText(org.name, margin + (images.logo ? 88 : 0), cursorY)
+  cursorY += 52
 
-  ctx.font = `800 56px ${heading}`
+  ctx.font = `800 48px ${heading}`
   ctx.fillStyle = '#ffffff'
-  cursorY = drawWrapped(ctx, campaign.title, margin, cursorY, textWidth, 66, 2) + 16
+  cursorY = drawWrapped(ctx, campaign.title, margin, cursorY, textWidth, 58, 2) + 12
 
-  ctx.font = `400 30px ${body}`
-  ctx.fillStyle = 'rgba(255,255,255,0.88)'
-  cursorY = drawWrapped(ctx, content.purpose, margin, cursorY, textWidth, 40, size === 'story' ? 4 : 2) + 24
+  const purposeLines = size === 'square' ? 3 : 4
+  ctx.font = `400 28px ${body}`
+  ctx.fillStyle = 'rgba(255,255,255,0.9)'
+  const purposeBottom = bandTop - (content.attribution ? 48 : 16)
+  const room = Math.max(1, Math.floor((purposeBottom - cursorY) / 36))
+  cursorY = drawWrapped(ctx, content.purpose, margin, cursorY, textWidth, 36, Math.min(purposeLines, room)) + 12
 
-  if (content.attribution) {
-    ctx.font = `700 28px ${body}`
+  if (content.attribution && cursorY < bandTop - 8) {
+    ctx.font = `700 26px ${body}`
     ctx.fillStyle = 'rgba(255,255,255,0.92)'
-    cursorY = drawWrapped(ctx, content.posterHeading, margin, cursorY, textWidth, 36, 1) + 16
+    drawWrapped(ctx, content.posterHeading, margin, cursorY, textWidth, 34, 1)
   }
 
-  const ctaY = dims.height - margin - 16
-  ctx.font = `800 30px ${body}`
+  ctx.font = `800 28px ${body}`
   const ctaLabel = 'Support this campaign'
-  const ctaWidth = ctx.measureText(ctaLabel).width + 56
-  roundRect(ctx, margin, ctaY - 56, ctaWidth, 56, 999)
+  const ctaWidth = Math.min(ctx.measureText(ctaLabel).width + 56, includeQr ? dims.width - margin * 2 - qrSize - 36 : dims.width - margin * 2)
+  roundRect(ctx, margin, ctaY - 52, ctaWidth, 52, 999)
   ctx.fillStyle = org.branding.accent
   ctx.fill()
   ctx.fillStyle = '#1a1208'
-  ctx.fillText(ctaLabel, margin + 28, ctaY - 18)
+  ctx.fillText(ctaLabel, margin + 28, ctaY - 16)
 
   if (includeQr) {
-    const qrSize = 196
     const qrX = dims.width - margin - qrSize
-    const qrY = dims.height - overlayHeight + 70
-    roundRect(ctx, qrX - 16, qrY - 16, qrSize + 32, qrSize + 32, 18)
+    const qrY = ctaY - qrSize
+    roundRect(ctx, qrX - 14, qrY - 14, qrSize + 28, qrSize + 28, 18)
     ctx.fillStyle = '#ffffff'
     ctx.fill()
     ctx.drawImage(qr, qrX, qrY, qrSize, qrSize)

@@ -45,26 +45,68 @@ export function formatINR(value: number, code?: CurrencyCode): string {
   return formatMoney(value, code)
 }
 
-export function formatDate(iso: string): string {
-  const date = new Date(iso)
-  if (Number.isNaN(date.getTime())) return 'Date unavailable'
-  return new Intl.DateTimeFormat('en-GB', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  }).format(date)
+/** App default when an organization has not chosen a timezone. */
+export const APP_TIME_ZONE = 'Asia/Kolkata'
+
+const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/
+
+export const TIME_ZONES: { id: string; label: string }[] = [
+  { id: '', label: 'App default — Asia/Kolkata' },
+  { id: 'Asia/Kolkata', label: 'India — Asia/Kolkata' },
+  { id: 'Asia/Dubai', label: 'Gulf — Asia/Dubai' },
+  { id: 'Europe/London', label: 'United Kingdom — Europe/London' },
+  { id: 'America/New_York', label: 'US Eastern — America/New_York' },
+  { id: 'UTC', label: 'UTC' },
+]
+
+export function isTimeZone(value: unknown): value is string {
+  if (typeof value !== 'string' || !value.trim()) return false
+  try {
+    Intl.DateTimeFormat('en-GB', { timeZone: value }).format(0)
+    return true
+  } catch {
+    return false
+  }
 }
 
-export function formatDateTime(iso: string): string {
+/** Timezone for date-times when a caller does not pass one. Organization pages set this from the open organization. */
+let displayTimeZone = APP_TIME_ZONE
+
+export function setDisplayTimeZone(zone: string | undefined): void {
+  displayTimeZone = isTimeZone(zone) ? zone : APP_TIME_ZONE
+}
+
+export function currentDisplayTimeZone(): string {
+  return displayTimeZone
+}
+
+function formatInZone(iso: string, options: Intl.DateTimeFormatOptions, zone: string): string | null {
   const date = new Date(iso)
-  if (Number.isNaN(date.getTime())) return 'Date unavailable'
-  return new Intl.DateTimeFormat('en-GB', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(date)
+  if (Number.isNaN(date.getTime())) return null
+  return new Intl.DateTimeFormat('en-GB', { ...options, timeZone: zone }).format(date)
+}
+
+/**
+ * Calendar date. A `YYYY-MM-DD` value keeps that calendar day and is not shifted into a timezone.
+ * A full timestamp is shown as the calendar day in the display timezone.
+ */
+export function formatDate(iso: string): string {
+  const trimmed = iso.trim()
+  if (DATE_ONLY.test(trimmed)) {
+    return formatInZone(`${trimmed}T00:00:00.000Z`, { day: 'numeric', month: 'short', year: 'numeric' }, 'UTC') ?? 'Date unavailable'
+  }
+  return formatInZone(trimmed, { day: 'numeric', month: 'short', year: 'numeric' }, displayTimeZone) ?? 'Date unavailable'
+}
+
+/** Date and time, always labelled with the display timezone. */
+export function formatDateTime(iso: string): string {
+  const formatted = formatInZone(
+    iso,
+    { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' },
+    displayTimeZone,
+  )
+  if (!formatted) return 'Date unavailable'
+  return `${formatted} ${displayTimeZone}`
 }
 
 export function formatDateRange(opensAt: string, closesAt: string): string {

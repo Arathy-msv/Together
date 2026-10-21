@@ -12,6 +12,8 @@ import { can, SECTION_PERMISSION } from '../../lib/permissions.ts'
 import { useVoucherStore } from '../../hooks/useVoucherStore.ts'
 import { canUseFeature } from '../../lib/features.ts'
 import { orgVouchers } from '../../lib/vouchers.ts'
+import { setDisplayTimeZone } from '../../lib/format.ts'
+import { clearLowData } from '../../lib/lowData.ts'
 import { useDocumentTheme, useScrollOnNavigate } from '../../hooks/useDocumentTheme.ts'
 import { useOrganizations } from '../../hooks/useOrganizations.ts'
 import { orgTypeLabel } from '../../lib/organizations.ts'
@@ -35,6 +37,9 @@ export function WorkspaceLayout() {
   const user = useCurrentUser()
   useDocumentTheme(org?.branding ?? DEFAULT_BRANDING)
   useScrollOnNavigate(pathname, hash)
+  setDisplayTimeZone(org?.timezone)
+  clearLowData()
+  useEffect(() => () => setDisplayTimeZone(undefined), [])
 
   const member = stored && user ? membership(user.id, stored.id) : undefined
   useEffect(() => {

@@ -14,6 +14,7 @@ const STATE_LABEL: Record<IssuedVoucherState, string> = {
   partial: 'Partially used',
   used: 'Used',
   expired: 'Expired',
+  cancelled: 'Cancelled',
 }
 
 /** The one line a cashier needs: remaining balance, the reward, or the offer title. */
@@ -48,7 +49,7 @@ export function VoucherCard({
       </span>
       <div className="voucher-card-foot">
         <span className="small">
-          {state === 'expired' ? 'Expired' : 'Valid until'} {formatDate(voucher.validUntil)}
+          {state === 'cancelled' ? 'Cancelled' : state === 'expired' ? 'Expired' : 'Valid until'} {state === 'cancelled' && voucher.cancelledAt ? formatDateTime(voucher.cancelledAt) : formatDate(voucher.validUntil)}
         </span>
         <button type="button" className={state === 'ready' || state === 'partial' ? 'btn btn-primary' : 'btn btn-outline'} onClick={() => setShowing(true)}>
           Show voucher
@@ -132,7 +133,13 @@ function VoucherPresentation({ voucher, storeName, onClose }: { voucher: IssuedV
             )}
           </>
         ) : (
-          <p className="voucher-present-note">{state === 'used' ? 'This voucher has already been used. Do not accept it again.' : 'This voucher is past its expiry. Do not accept it.'}</p>
+          <p className="voucher-present-note">
+            {state === 'cancelled'
+              ? `Cancelled${voucher.cancelledAt ? ` ${formatDateTime(voucher.cancelledAt)}` : ''}. Reason: ${voucher.cancelReason || 'Not recorded'}. Do not accept it. Issued terms and any earlier redemptions are unchanged.`
+              : state === 'used'
+                ? 'This voucher has already been used. Do not accept it again.'
+                : 'This voucher is past its expiry. Do not accept it.'}
+          </p>
         )}
         <p className="voucher-present-code-label">Backup code</p>
         <p className="voucher-present-code" aria-label={`Backup code ${voucher.code.split('').join(' ')}`}>

@@ -84,6 +84,39 @@ function ensureContrast(color: string, background: string, target: number): stri
   return candidate
 }
 
+export interface BrandPalette {
+  id: string
+  name: string
+  colors: Pick<OrgBranding, 'primary' | 'secondary' | 'accent' | 'background'>
+}
+
+/**
+ * Suggested sets. Each one is meant to pass contrastChecks; settings still shows the live checks
+ * after a swatch is applied, and the colour pickers remain editable.
+ */
+export const BRAND_PALETTES: BrandPalette[] = [
+  {
+    id: 'harbour',
+    name: 'Harbour green',
+    colors: { primary: '#123d36', secondary: '#dce8df', accent: '#0e4f45', background: '#f7f4ec' },
+  },
+  {
+    id: 'school',
+    name: 'School blue',
+    colors: { primary: '#163a66', secondary: '#e3ebf6', accent: '#0e4c81', background: '#f6f8fb' },
+  },
+  {
+    id: 'clay',
+    name: 'Warm clay',
+    colors: { primary: '#6e2f24', secondary: '#f4e4d8', accent: '#7a3418', background: '#fbf6f1' },
+  },
+  {
+    id: 'library',
+    name: 'Night library',
+    colors: { primary: '#243044', secondary: '#e4e7ee', accent: '#1e3a5f', background: '#f3f5f8' },
+  },
+]
+
 export const DEFAULT_BRANDING: OrgBranding = {
   primary: '#123d36',
   secondary: '#dce8df',

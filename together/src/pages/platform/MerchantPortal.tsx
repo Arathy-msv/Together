@@ -105,13 +105,18 @@ export function MerchantPortalPage() {
               </div>
               <span className={`status-badge status-${found.status === 'active' && !found.expired ? 'active' : 'closed'}`}>
                 <i />
-                {found.status === 'redeemed' ? 'Used' : found.expired ? 'Expired' : 'Valid'}
+                {found.status === 'cancelled' ? 'Cancelled' : found.status === 'redeemed' ? 'Used' : found.expired ? 'Expired' : 'Valid'}
               </span>
             </div>
             <details>
               <summary>Terms</summary>
               <p className="small">{found.terms}</p>
             </details>
+            {found.status === 'cancelled' ? (
+              <p className="small">
+                Cancelled {found.cancelledAt ? formatDateTime(found.cancelledAt) : 'at an unrecorded time'}. Reason: {found.cancelReason || 'Not recorded'}. Do not redeem it. This is not an expiry.
+              </p>
+            ) : null}
             {found.status === 'active' && !found.expired ? (
               <div className="stack-form">
                 <label className="field">
