@@ -28,7 +28,8 @@ const CARD_LEAD = 0.6
 const CARD_TAIL = 1.2
 // Long, mostly silent stretches (typing, page loads) may play back faster, never more than this.
 // Narration audio is never sped up.
-const MAX_SPEEDUP = 1.6
+// 1 keeps every click and every typed character readable. Length is not capped.
+const MAX_SPEEDUP = 1
 const QUIET_TAIL = 2.2
 
 const ffmpeg = (args) => execFileSync('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-y', ...args], { stdio: ['ignore', 'inherit', 'inherit'] })

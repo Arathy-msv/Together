@@ -84,9 +84,8 @@ DRY=1 UNTIL=oa-publish node record.mjs    # stop after a scene
   the public-domain LJ Speech dataset. It does not imitate any specific person.
 * Each scene holds the live screen until its narration has finished (narration length + 1.2 s),
   so narration is never cut or sped up.
-* Where a scene is much longer than its narration (typing into forms), the screen part plays up
-  to 1.6× faster. The audio is never sped up. Affected scenes are listed in
-  `output/scene-timings.md`.
+* The screen is never sped up, so typed text and each click stay readable. A scene holds on the
+  live page until its narration has finished. The audio is never sped up.
 * No background music is used.
 
 ## Editing the narration

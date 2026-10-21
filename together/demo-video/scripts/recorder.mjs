@@ -234,7 +234,8 @@ export async function createRecorder({ profile, port = 9555, base, workDir, widt
       if (!capture) await call('Input.insertText', { text: value })
       else for (const char of value) {
         await call('Input.insertText', { text: char })
-        if (delay) await sleep(delay)
+        const pace = Math.max(delay, 48)
+        if (pace) await sleep(pace)
       }
       await sleep(200)
     },
@@ -313,6 +314,16 @@ export async function createRecorder({ profile, port = 9555, base, workDir, widt
       console.log(`▶ ${id}`)
     },
     note(text) { currentScene?.notes.push(text) },
+    /**
+     * Holds the live screen until this fraction of the scene's narration has elapsed,
+     * so a later sentence is not spoken over an earlier screen.
+     */
+    async mark(fraction) {
+      if (!currentScene || !capture) return
+      const need = (durations[currentScene.id] ?? 0) * fraction
+      const elapsed = Date.now() / 1000 - currentScene.start
+      if (need > elapsed) await sleep((need - elapsed) * 1000)
+    },
     /** Ends a scene, holding the live screen until the scene's narration has room to finish. */
     async end() {
       if (!currentScene) return
