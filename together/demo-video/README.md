@@ -114,16 +114,16 @@ run instead of recording a wrong result.
 | `og-submit`, `og-approve` | Approval does not publish; the campaign stays a draft until "Publish approved campaign" |
 | `op-game`, `sp-direct`, `sp-game` | A labelled choice between "Give an amount" and "Play Memory Match" |
 | `sp-game`, `sp-game-confirm` | Rules up front, nonblocking per-pair feedback, "New board" keeps the suggestion, review from the bar, final amount chosen by the supporter |
-| `sp-vouchers` | Voucher card, full-screen "Show voucher" view, then My activity (contributions, following, vouchers) |
+| `sp-vouchers` | Voucher card, full-screen "Show voucher" view with "Present this to store staff", merchant, branch, status, expiry, restrictions, QR and backup code, then My activity |
 | `sp-lowdata` | Low-data mode turns on and off |
 | `fn-public` | "Funding goal reached" panel with delivery reported separately; a milestone's linked expense opens the filtered expense list |
 
 ## Video freshness
 
-- Last verified application commit: `c7c2eed`
-- Recording date: 2026-10-21
-- Scenes affected by later changes: `og-assistant`, `og-form`, `og-approve`, `sp-trust`, `fn-public` (beneficiary labels, itemized budget, organizer line — commit `4f12089`)
-- Final video: stale (`output/together-demo.mp4`, 30:57) — re-record after the demo-review stages are finished (see `IMPROVEMENT-CHECKLIST.md`)
-- Presales cut: stale (`output/together-presales.mp4`, 10:43) — also needs trimming to 2–3 minutes
+- Last verified application commit for the files on disk: `c7c2eed` (assembly on 2026-10-21)
+- Detailed walkthrough: **stale**. `output/together-demo.mp4` is 30:57. It does not show itemized budgets, the single beneficiary field, “Supporting evidence attached”, closure outcomes, sponsor confirmation, the English-only public page, the launch checklist, or the store-ready voucher line “Present this to store staff”.
+- Presales cut: **stale**. `output/together-presales.mp4` is 10:43. `scripts/presales.mjs` now lists a 2–3 minute subset (`op-home`, `op-game`, `sp-direct`, `fn-public`, `card-end`, about 2:43 of the previous narration). That file was not reassembled.
+- Scenes whose on-screen result has changed since the recording: `og-assistant`, `og-form`, `og-approve`, `og-submit`, `sp-home`, `sp-trust`, `sp-direct`, `sp-game`, `sp-game-confirm`, `sp-vouchers`, `fn-report`, `fn-public`.
+- Blocker: no narrate, record, or assemble process was started for this pass. `scripts/scenes.mjs` still checks the previous screen copy, and the narration in `narration/script.md` still describes that copy. A new capture against those checks would fail or narrate a story the screens no longer match. Voice-over stays local Piper only; no paid voice service was called. These videos were **not** regenerated.
 
 Update this section whenever a user-facing change touches the walkthrough. If a scene or the final video could not be re-recorded, list the scene ids here and set the final video to stale, with the blocker.

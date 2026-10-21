@@ -31,6 +31,7 @@ import { PublicOffersPage, StoreValuePurchasePage, VoucherWalletPage } from './p
 import { WorkspaceLayout } from './pages/workspace/WorkspaceLayout.tsx'
 import { WorkspaceOverviewPage } from './pages/workspace/WorkspaceOverview.tsx'
 import { MembersPage } from './pages/workspace/MembersPage.tsx'
+import { SponsorsPage } from './pages/workspace/SponsorsPage.tsx'
 import { DemoIdentitiesPage } from './pages/platform/DemoIdentities.tsx'
 import { MerchantPortalPage } from './pages/platform/MerchantPortal.tsx'
 import { PlatformAdminPage } from './pages/platform/PlatformAdmin.tsx'
@@ -109,6 +110,7 @@ function AppRoutes() {
           <Route path="features" element={<WebsiteFeaturesPage />} />
           <Route path="offers" element={<PartnerOffersPage />} />
           <Route path="members" element={<MembersPage />} />
+          <Route path="sponsors" element={<SponsorsPage />} />
           <Route path="*" element={<OrgNotFound kind="page" />} />
         </Route>
 

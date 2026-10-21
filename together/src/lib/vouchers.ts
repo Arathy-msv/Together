@@ -1,3 +1,4 @@
+import { trackJourney } from './analytics.ts'
 import { canUseVoucherCapability, capabilityName, VOUCHER_CAPABILITIES } from './features.ts'
 import { formatMoney, isCurrencyCode } from './format.ts'
 import { loadStore, notifyChange, saveStore, StorageFullError } from './storage.ts'
@@ -582,6 +583,7 @@ export function claimContributionReward(org: Organization, offerId: string, cont
   if (contribution.amount < (offer.minContribution ?? 0)) throw new Error('This contribution is below the reward threshold.')
   const voucher = issue(store, offer, campaign, holderId, { contributionId })
   saveVoucherStore(store)
+  trackJourney('voucher_claimed', { campaignId: campaign.id })
   return voucher
 }
 
@@ -600,6 +602,7 @@ export function purchaseStoreValue(org: Organization, offerId: string, campaignI
     benefitStatus: 'pending',
   })
   saveVoucherStore(store)
+  trackJourney('voucher_claimed', { campaignId: campaign.id })
   return voucher
 }
 
@@ -613,6 +616,7 @@ export function claimOnlineOffer(org: Organization, offerId: string, campaignId:
   const { campaign, offer } = liveCampaignOffer(org, store, demo, offerId, campaignId, 'onlineOffers')
   const voucher = issue(store, offer, campaign, holderId, { discountCode: offer.discountCode, shopUrl: offer.shopUrl })
   saveVoucherStore(store)
+  trackJourney('voucher_claimed', { campaignId: campaign.id })
   return voucher
 }
 
@@ -738,6 +742,7 @@ export function merchantRedeem(code: string, branchId: string, amount?: number):
   assertCan('merchant.redeem', { merchantId: voucher.merchantId, branchId }, 'This voucher can’t be redeemed at your assigned store or branch.')
   applyRedemption(voucher, amount, branchId)
   saveVoucherStore(store)
+  trackJourney('voucher_redeemed', { campaignId: voucher.campaignId })
   return merchantView(voucher)
 }
 

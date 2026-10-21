@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { AiButton } from '../../components/ai/AiUI.tsx'
 import { UpdateWriter, type WrittenUpdate } from '../../components/ai/UpdateWriter.tsx'
-import { TranslationEditor } from '../../components/ai/Translation.tsx'
 import { useOrg } from '../../components/org/OrgContext.tsx'
 import { Checkbox, MediaEditor, Select, TextArea, TextInput, VideoEditor } from '../../components/workspace/fields.tsx'
 import { formatDate } from '../../lib/format.ts'
@@ -52,7 +51,6 @@ export function UpdatesEditor({ campaign, store }: WorkspaceProps) {
   const [notice, setNotice] = useState('')
   const [params, setParams] = useSearchParams()
   const [writing, setWriting] = useState(params.get('assist') === '1')
-  const [translating, setTranslating] = useState<string | null>(null)
   const { workspace } = useOrg()
   const root = `${workspace}/campaigns/${campaign.id}`
 
@@ -166,9 +164,6 @@ export function UpdatesEditor({ campaign, store }: WorkspaceProps) {
                 <button type="button" className="btn btn-outline btn-sm" onClick={() => setDraft(toDraft(update))}>
                   Edit
                 </button>
-                <button type="button" className="btn btn-outline btn-sm" aria-expanded={translating === update.id} onClick={() => setTranslating(translating === update.id ? null : update.id)}>
-                  Translate
-                </button>
                 <button
                   type="button"
                   className="btn btn-outline btn-sm"
@@ -179,22 +174,6 @@ export function UpdatesEditor({ campaign, store }: WorkspaceProps) {
                   Delete
                 </button>
               </div>
-              {translating === update.id ? (
-                <div className="ws-translation">
-                  <TranslationEditor
-                    fields={[
-                      { key: 'title', label: 'Title', original: update.title },
-                      { key: 'body', label: 'Story', original: update.body },
-                    ]}
-                    saved={update.translations?.ml ?? {}}
-                    onApply={(key, text) => {
-                      const ml = { ...(update.translations?.ml ?? {}), [key]: text }
-                      if (!text) delete ml[key as 'title' | 'body']
-                      saveUpdate({ ...update, translations: Object.keys(ml).length ? { ml } : undefined, updatedAt: nowIso() })
-                    }}
-                  />
-                </div>
-              ) : null}
             </li>
           ))}
         </ul>

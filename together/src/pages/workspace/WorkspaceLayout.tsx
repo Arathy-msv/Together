@@ -120,6 +120,7 @@ export function WorkspaceLayout() {
             </NavLink>
             {offersVisible ? <NavLink to={`${root}/offers`}>Partner offers</NavLink> : null}
             {allowed('members') ? <NavLink to={`${root}/members`}>Members</NavLink> : null}
+            {allowed('sponsors') && canUseFeature(org, 'sponsorPlay') ? <NavLink to={`${root}/sponsors`}>Sponsors</NavLink> : null}
             {allowed('settings') ? (
               <NavLink to={`${root}/settings`} className={({ isActive }) => (isActive || pathname.startsWith(`${root}/plan`) ? 'active' : '')}>
                 Settings
@@ -212,6 +213,7 @@ const SECTION_LABEL: Record<string, string> = {
   campaigns: 'Campaigns',
   offers: 'Partner offers',
   members: 'Members',
+  sponsors: 'Sponsors',
   settings: 'Settings',
   plan: 'Your demo plan',
   features: 'Website features',

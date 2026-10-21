@@ -14,6 +14,8 @@ import type {
   Milestone,
   MilestoneStatus,
   Referral,
+  SponsorAllocation,
+  SponsorCommitment,
   SupportingDocument,
   Translations,
   UpdateType,
@@ -130,11 +132,16 @@ export function normalizeFinalReport(value: unknown): FinalReport | undefined {
         .map((field) => ({ label: str(field.label, 80), value: str(field.value, 200) }))
     : []
   const ids = (list: unknown) => (Array.isArray(list) ? list.filter((id): id is string => typeof id === 'string') : [])
+  const closure = (['delivered', 'partial', 'cancelled', 'activities_remaining'] as const).find((item) => item === raw.closure)
   return {
     status: raw.status === 'published' ? 'published' : 'draft',
+    closure,
     outcomes: str(raw.outcomes, 3000),
     outcomeFields: fields.slice(0, 8),
     remainingPlan: str(raw.remainingPlan, 1500),
+    unmetExplanation: str(raw.unmetExplanation, 1500) || undefined,
+    changedPlan: str(raw.changedPlan, 1500) || undefined,
+    outstandingObligations: str(raw.outstandingObligations, 1500) || undefined,
     evidenceDocumentIds: ids(raw.evidenceDocumentIds),
     evidenceUpdateIds: ids(raw.evidenceUpdateIds),
     updatedAt: isoOr(raw.updatedAt, new Date(0).toISOString()),
@@ -298,6 +305,10 @@ export function normalizeDocument(value: unknown, campaigns: Map<string, Campaig
     title: str(raw.title, 140) || 'Supporting document',
     docType: str(raw.docType, 80) || 'Document',
     description: str(raw.description, 600),
+    caption: str(raw.caption, 200) || undefined,
+    expenseId: str(raw.expenseId, 80) || undefined,
+    milestoneId: str(raw.milestoneId, 80) || undefined,
+    updateId: str(raw.updateId, 80) || undefined,
     // Private verification placeholders never keep a file, even if one was stored by mistake.
     fileSrc: visibility === 'public' && isMediaSource(raw.fileSrc) ? (raw.fileSrc as string) : undefined,
     sample: raw.sample === true,
@@ -319,3 +330,59 @@ export function normalizeContributionReferral(contribution: Contribution, referr
   void _dropped
   return rest
 }
+
+export function normalizeSponsorCommitment(value: unknown, campaignIds: Set<string>): SponsorCommitment | null {
+  if (!value || typeof value !== 'object') return null
+  const raw = value as Record<string, unknown>
+  if (typeof raw.id !== 'string' || typeof raw.campaignId !== 'string' || !campaignIds.has(raw.campaignId)) return null
+  const unlocks = Array.isArray(raw.unlocks)
+    ? raw.unlocks
+        .filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === 'object')
+        .map((item, index) => ({
+          id: typeof item.id === 'string' ? item.id : `unlock-${index}`,
+          label: typeof item.label === 'string' ? item.label.slice(0, 80) : `Milestone ${index + 1}`,
+          rewardMinor: typeof item.rewardMinor === 'number' && item.rewardMinor > 0 ? Math.round(item.rewardMinor) : 0,
+        }))
+        .filter((item) => item.rewardMinor > 0)
+        .slice(0, 12)
+    : []
+  if (unlocks.length === 0) return null
+  const pledged = typeof raw.pledgedMinor === 'number' ? Math.round(raw.pledgedMinor) : 0
+  const cap = typeof raw.perParticipantCapMinor === 'number' ? Math.round(raw.perParticipantCapMinor) : 0
+  if (pledged <= 0 || cap <= 0) return null
+  return {
+    id: raw.id,
+    organizationId: typeof raw.organizationId === 'string' ? raw.organizationId : '',
+    campaignId: raw.campaignId,
+    sponsorName: typeof raw.sponsorName === 'string' && raw.sponsorName.trim() ? raw.sponsorName.slice(0, 80) : 'Sponsor',
+    pledgedMinor: pledged,
+    perParticipantCapMinor: cap,
+    unlocks,
+    startsAt: typeof raw.startsAt === 'string' ? raw.startsAt : new Date(0).toISOString(),
+    endsAt: typeof raw.endsAt === 'string' ? raw.endsAt : new Date(0).toISOString(),
+    createdAt: typeof raw.createdAt === 'string' ? raw.createdAt : new Date(0).toISOString(),
+  }
+}
+
+export function normalizeSponsorAllocation(value: unknown, commitments: Map<string, SponsorCommitment>): SponsorAllocation | null {
+  if (!value || typeof value !== 'object') return null
+  const raw = value as Record<string, unknown>
+  if (typeof raw.id !== 'string' || typeof raw.commitmentId !== 'string' || typeof raw.participantId !== 'string' || typeof raw.unlockId !== 'string') return null
+  const commitment = commitments.get(raw.commitmentId)
+  if (!commitment || !commitment.unlocks.some((item) => item.id === raw.unlockId)) return null
+  const amount = typeof raw.amountMinor === 'number' ? Math.round(raw.amountMinor) : 0
+  if (amount <= 0) return null
+  return {
+    id: raw.id,
+    commitmentId: commitment.id,
+    campaignId: commitment.campaignId,
+    organizationId: commitment.organizationId,
+    participantId: raw.participantId,
+    unlockId: raw.unlockId,
+    amountMinor: amount,
+    status: raw.status === 'confirmed' ? 'confirmed' : 'pending',
+    createdAt: typeof raw.createdAt === 'string' ? raw.createdAt : new Date(0).toISOString(),
+    confirmedAt: raw.status === 'confirmed' && typeof raw.confirmedAt === 'string' ? raw.confirmedAt : undefined,
+  }
+}
+

@@ -171,6 +171,7 @@ export const SECTION_PERMISSION: Record<string, Permission> = {
   features: 'org.manageFeatures',
   offers: 'org.managePartnerOffers',
   members: 'org.manageMembers',
+  sponsors: 'org.manageSponsors',
 }
 
 /** Unfinished setups the acting identity may continue: only its own organizations, as Organization Admin. */

@@ -10,6 +10,8 @@ import {
   normalizeExpense,
   normalizeMilestone,
   normalizeReferral,
+  normalizeSponsorAllocation,
+  normalizeSponsorCommitment,
   normalizeUpdate,
 } from './records.ts'
 import type { Campaign, CampaignUpdate, Contribution, DemoStore, Referral } from './types.ts'
@@ -157,9 +159,11 @@ export function loadStore(): DemoStore {
       campaignUpdates: list(record.campaignUpdates),
       expenses: list(record.expenses),
       supportingDocuments: list(record.supportingDocuments),
+      sponsorCommitments: list(record.sponsorCommitments),
+      sponsorAllocations: list(record.sponsorAllocations),
     }
     const merged = withDefaultCampaigns(draft)
-    const changed = merged.changed || retired || version !== 5
+    const changed = merged.changed || retired || version !== 6
     draft = merged.store
     if (version < 3) draft = withSeededTransparency(draft)
     if (version < 4) draft = withSeededTranslations(draft)
@@ -188,6 +192,8 @@ interface RawStore {
   campaignUpdates: unknown[]
   expenses: unknown[]
   supportingDocuments: unknown[]
+  sponsorCommitments: unknown[]
+  sponsorAllocations: unknown[]
 }
 
 /** Validates every record against the campaigns that actually exist. Orphans are dropped individually. */
@@ -212,7 +218,7 @@ function withRelationships(raw: RawStore): DemoStore {
   const expenseMap = new Map(expenses.map((item) => [item.id, item]))
   const referralMap = new Map(uniqueReferrals.map((item) => [item.id, item]))
   return {
-    version: 5,
+    version: 6,
     campaigns,
     contributions: raw.contributions.map((contribution) => normalizeContributionReferral(contribution, referralMap)),
     referrals: uniqueReferrals,
@@ -220,6 +226,24 @@ function withRelationships(raw: RawStore): DemoStore {
     campaignUpdates: unique(raw.campaignUpdates.map((item) => normalizeUpdate(item, ids, milestoneIds, expenseMap))),
     expenses,
     supportingDocuments: unique(raw.supportingDocuments.map((item) => normalizeDocument(item, byId))),
+    ...sponsorRecords(raw, ids),
+  }
+}
+
+function sponsorRecords(raw: RawStore, campaignIds: Set<string>) {
+  const unique = <T extends { id: string }>(items: Array<T | null>): T[] => {
+    const seen = new Set<string>()
+    return items.filter((item): item is T => {
+      if (!item || seen.has(item.id)) return false
+      seen.add(item.id)
+      return true
+    })
+  }
+  const sponsorCommitments = unique((raw.sponsorCommitments ?? []).map((item) => normalizeSponsorCommitment(item, campaignIds)))
+  const byCommitment = new Map(sponsorCommitments.map((item) => [item.id, item]))
+  return {
+    sponsorCommitments,
+    sponsorAllocations: unique((raw.sponsorAllocations ?? []).map((item) => normalizeSponsorAllocation(item, byCommitment))),
   }
 }
 
@@ -250,6 +274,8 @@ function withSeededTransparency(store: RawStore): RawStore {
     campaignUpdates: add(store.campaignUpdates, seed.campaignUpdates),
     expenses: add(store.expenses, seed.expenses),
     supportingDocuments: add(store.supportingDocuments, seed.supportingDocuments),
+    sponsorCommitments: store.sponsorCommitments ?? [],
+    sponsorAllocations: store.sponsorAllocations ?? [],
   }
 }
 
@@ -300,6 +326,8 @@ function withDefaultCampaigns(store: RawStore): { store: RawStore; changed: bool
       campaignUpdates: [...store.campaignUpdates, ...sampleRecords(seeded.campaignUpdates)],
       expenses: [...store.expenses, ...sampleRecords(seeded.expenses)],
       supportingDocuments: [...store.supportingDocuments, ...sampleRecords(seeded.supportingDocuments)],
+      sponsorCommitments: store.sponsorCommitments ?? [],
+      sponsorAllocations: store.sponsorAllocations ?? [],
     },
   }
 }

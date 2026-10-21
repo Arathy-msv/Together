@@ -26,6 +26,10 @@ const FAQ = [
     a: 'Yes. A private group asks for a demo access code and each player’s name. Names stay on the leadership board. When someone contributes through the link you shared, you earn points.',
   },
   {
+    q: 'Can a class or team give together?',
+    a: 'Not in this prototype. There is no class list, team roster, or shared pupil account. Each demo supporter acts as one person on this device. Group participation is a future gap.',
+  },
+  {
     q: 'Are vouchers available?',
     a: 'Only if this organization has turned on Give & Get Local and a campaign shows a partner offer. Offers come from fictional partner stores in this demo, and any vouchers you receive stay in My vouchers on this device.',
     soon: true,

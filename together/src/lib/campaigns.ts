@@ -24,9 +24,11 @@ export function raisedOf(campaignId: string, contributions: Contribution[]): num
     .reduce((sum, contribution) => sum + contribution.amount, 0)
 }
 
+/** People who confirmed their own gift. Sponsor confirmations are not counted as supporters. */
+
 export function supporterCount(campaignId: string, contributions: Contribution[]): number {
   return contributions.filter(
-    (contribution) => contribution.campaignId === campaignId && contribution.status === 'success',
+    (contribution) => contribution.campaignId === campaignId && contribution.status === 'success' && contribution.source !== 'sponsor',
   ).length
 }
 

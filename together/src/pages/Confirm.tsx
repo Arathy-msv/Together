@@ -29,6 +29,7 @@ import { checkoutReferral, snapshotReferral } from '../lib/attribution.ts'
 import { ReferralCredit } from '../components/referral/ReferralCredit.tsx'
 import type { CampaignView } from '../lib/types.ts'
 import { NotFoundPage } from './NotFound.tsx'
+import { trackJourney } from '../lib/analytics.ts'
 
 export function ConfirmPage() {
   const { id = '' } = useParams()
@@ -66,7 +67,8 @@ function GameConfirm({ view, sessionId }: { view: CampaignView; sessionId: strin
 
   useEffect(() => {
     document.title = 'Review your game contribution — Together'
-  }, [])
+    trackJourney('review_opened', { campaignId: campaign.id, mode: 'game' })
+  }, [campaign.id])
 
   const saved = store.contributions.find((item) => item.id === sessionId && item.campaignId === campaign.id)
   if (!session) {
@@ -277,7 +279,8 @@ function DirectConfirm({ view }: { view: CampaignView }) {
 
   useEffect(() => {
     document.title = 'Confirm your demo contribution — Together'
-  }, [])
+    trackJourney('review_opened', { campaignId: id, mode: 'direct' })
+  }, [id])
 
   const { campaign } = view
   const base = useOrgBase()

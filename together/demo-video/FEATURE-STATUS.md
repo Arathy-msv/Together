@@ -24,7 +24,11 @@ with the app's own modules, acting as the person who would do it, so permission 
 | --- | --- |
 | Payments, subscriptions, voucher redemption | Simulated. No money is collected, no subscription is purchased, no store system is charged. |
 | "AI" assistant | Simulated with fixed rules; not connected to any AI service. Some suggestions contain [bracketed] placeholders that must be replaced. |
-| Sponsor-funded play | Only an on/off flag and a notice. There is **no sponsor rule, budget, pledge or pending allocation**, and nothing is tracked as received. Only an Organization Admin can switch it on for a campaign; the demo campaign leaves it off. |
+| Sponsor-funded play | An Organization Admin can record one fictional commitment (pledge, per-person cap, dated window, finite Memory Match rewards). A supporter can choose sponsor-funded play on Memory Match. An eligible match creates a pending allocation. Confirming it adds one simulated contribution and does not add the amount to a personal checkout. Pledged, pending and confirmed stay separate. Personal gifts stay personal. This is not a real sponsor payment. |
+| Team or class participation | Not built. There is no class list, roster, or shared pupil account. Documented as a future gap. |
+| Languages | Public pages and organizer controls are English. Saved translation text remains in browser storage and is not deleted. |
+| Closure reports | An organizer can publish delivered, partial, cancelled, or activities remaining. Publishing does not complete milestones or close fundraising. |
+| Demo analytics | Browser-local counts for a fixed set of journey events. Pause, clear and JSON export. Abandoned reviews are a count gap, not a failed payment. |
 | QR codes | Campaign and referral QR codes are generated in the browser and decode to the real link. The merchant portal still has no camera scanning — voucher codes are typed by hand. |
 | Sharing kit | QR PNG/SVG, A4 poster PNG, WhatsApp and email drafts, and square/portrait/story social images. All are created locally. "Print / Save as PDF" opens the browser print dialog; the recording does not download a PDF. Downloaded images are not clickable. With the kit turned off, only "Share campaign link" remains. Data stays in this browser. |
 | Verification | No organization, document or receipt is independently verified. Expenses are labelled organizer-reported. |

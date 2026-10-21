@@ -667,6 +667,20 @@ html.org-theme :focus-visible { outline-color: var(--org-focus); }
 .budget-summary dt { font-size: 0.78rem; color: var(--p-muted); }
 .budget-summary dd { margin: 0; font-weight: 800; font-variant-numeric: tabular-nums; }
 .budget-summary .is-over dd { color: #8a5a00; }
+.more-ways > summary { font-weight: 800; cursor: pointer; }
+.more-ways > summary:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+.more-ways-body { display: grid; gap: 12px; margin-top: 12px; }
+.category-motif { display: inline-flex; align-items: center; gap: 8px; margin: 0 0 6px; font-size: 0.85rem; font-weight: 700; letter-spacing: 0.01em; }
+.category-mark { width: 0.9rem; height: 0.9rem; border-radius: 3px; background: var(--category-mark, #8a6a3b); }
+.category-motif[data-category='education'] { --category-mark: #2f5d8a; }
+.category-motif[data-category='clothing'] { --category-mark: #8a4b3b; }
+.category-motif[data-category='environment'] { --category-mark: #2f7a45; }
+.category-motif[data-category='sports'] { --category-mark: #3b5f8a; }
+.category-motif[data-category='community'] { --category-mark: #7a5a2f; }
+.category-motif[data-category='other'] { --category-mark: #5c564e; }
+@media (prefers-reduced-motion: reduce) {
+  .category-motif, .category-mark { transition: none; animation: none; }
+}
 .budget-editor { display: grid; gap: 8px; }
 .budget-items { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .budget-item { border: 1px solid var(--p-line); border-radius: 12px; padding: 10px 12px; background: var(--p-surface); display: grid; gap: 8px; }
@@ -1304,10 +1318,14 @@ span.low-data-cover.campaign-cover { display: grid; place-items: center; }
 .voucher-present::backdrop { background: #000000; }
 .voucher-present-inner { min-height: 100%; display: grid; justify-items: center; align-content: center; gap: 12px; padding: 24px; text-align: center; }
 .voucher-present-inner h2 { margin: 0; font-size: clamp(1.6rem, 6vw, 2.6rem); color: #000; }
-.voucher-present-store { margin: 0; font-weight: 700; font-size: 1.1rem; }
+.voucher-present-kicker { margin: 0; font-size: 0.95rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; }
+.voucher-present-store { margin: 0; font-weight: 700; font-size: 1.25rem; }
+.voucher-present-branch { margin: 0; font-size: 1rem; }
+.voucher-present-code-label { margin: 8px 0 0; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+.voucher-present-terms { max-width: 42ch; margin: 0; font-size: 1rem; }
 .voucher-present-state { margin: 0; font-weight: 800; padding: 4px 14px; border-radius: 999px; border: 2px solid #000; }
 .voucher-present-state.used, .voucher-present-state.expired { background: #000; color: #fff; }
-.voucher-present-qr { width: 240px; height: 240px; image-rendering: pixelated; }
+.voucher-present-qr { width: min(280px, 70vw); height: auto; aspect-ratio: 1; image-rendering: pixelated; }
 .voucher-present-qr.placeholder { background: #f1f1f1; }
 .voucher-present-code { margin: 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: clamp(1.8rem, 8vw, 3rem); font-weight: 800; letter-spacing: 0.12em; overflow-wrap: anywhere; }
 .voucher-present-sub { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 1.3rem; }

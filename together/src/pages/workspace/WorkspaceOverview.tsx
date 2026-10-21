@@ -14,6 +14,7 @@ import { formatINR } from '../../lib/format.ts'
 import { hasUnpublishedChanges, isPubliclyAvailable, setupTasks, websiteStatusLabel } from '../../lib/website.ts'
 import { workspacePrompts } from '../../lib/transparency.ts'
 import type { Campaign, DemoStore } from '../../lib/types.ts'
+import { DemoAnalyticsCard } from '../../components/workspace/DemoAnalyticsCard.tsx'
 
 /** /workspace/:organizationId/overview */
 export function WorkspaceOverviewPage() {
@@ -46,6 +47,7 @@ export function WorkspaceOverviewPage() {
     <div className="container page-pad workspace-overview">
       <div className="overview-grid">
         <div className="overview-main">
+          {isAdmin ? <DemoAnalyticsCard /> : null}
           {showChecklist ? (
             <section className="panel ws-card" aria-labelledby="checklist-title">
               <div className="section-head-row">

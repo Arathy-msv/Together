@@ -21,7 +21,7 @@ import {
 } from '../../lib/transparency.ts'
 import { LanguageToggle } from '../ai/Translation.tsx'
 import { uiLabel, type LanguageCode } from '../../lib/ai/translations.ts'
-import type { Campaign, CampaignTextKey, CampaignUpdate, DemoStore, Expense, ExpenseCategory, MediaItem, MediaVideo, Milestone, Organization } from '../../lib/types.ts'
+import { CLOSURE_LABEL, type Campaign, type CampaignTextKey, type CampaignUpdate, type DemoStore, type Expense, type ExpenseCategory, type MediaItem, type MediaVideo, type Milestone, type Organization, type SupportingDocument } from '../../lib/types.ts'
 import { EXPENSE_CATEGORIES } from '../../lib/records.ts'
 
 /* Public, read-only campaign sections. Wording keeps organizer claims, attached evidence and
@@ -414,7 +414,7 @@ export function FinalReportCard({ campaign, store }: { campaign: Campaign; store
   return (
     <section className="final-report" aria-labelledby="final-report-title">
       <span className="eyebrow-label">Organizer’s final report · {report.publishedAt ? formatDate(report.publishedAt) : ''}</span>
-      <h3 id="final-report-title">Final report</h3>
+      <h3 id="final-report-title">{report.closure ? CLOSURE_LABEL[report.closure] : 'Final report'}</h3>
       <dl className="report-figures">
         <div>
           <dt>Simulated contributions</dt>
@@ -438,7 +438,22 @@ export function FinalReportCard({ campaign, store }: { campaign: Campaign; store
       {report.outcomes ? <p>{report.outcomes}</p> : null}
       {report.remainingPlan ? (
         <p>
-          <strong>Plan for remaining funds:</strong> {report.remainingPlan}
+          <strong>Plan for remaining funds:</strong> {report.remainingPlan} This is the organizer’s statement, not a processed refund.
+        </p>
+      ) : null}
+      {report.unmetExplanation ? (
+        <p>
+          <strong>What was not completed:</strong> {report.unmetExplanation}
+        </p>
+      ) : null}
+      {report.changedPlan ? (
+        <p>
+          <strong>What changed:</strong> {report.changedPlan}
+        </p>
+      ) : null}
+      {report.outstandingObligations ? (
+        <p>
+          <strong>Still outstanding:</strong> {report.outstandingObligations}
         </p>
       ) : null}
       {unfinished.length ? <p className="muted small">Unfinished milestones: {unfinished.map((item) => item.title).join(', ')}.</p> : null}
@@ -610,7 +625,7 @@ export function FundUseTab({ campaign, store, initialMilestone }: { campaign: Ca
                     </span>
                     <span className="expense-side">
                       <strong>{formatMinor(expense.amountMinor, campaign.currency)}</strong>
-                      {expense.publicReceipt ? <StatusPill tone="progress">Supporting document attached</StatusPill> : <StatusPill tone="neutral">No supporting evidence uploaded</StatusPill>}
+                      {expense.publicReceipt ? <StatusPill tone="progress">Supporting evidence attached</StatusPill> : <StatusPill tone="neutral">No supporting evidence uploaded</StatusPill>}
                     </span>
                   </summary>
                   <div className="expense-detail">
@@ -652,6 +667,18 @@ export function FundUseTab({ campaign, store, initialMilestone }: { campaign: Ca
   )
 }
 
+function DocumentLinks({ doc, store }: { doc: SupportingDocument; store: DemoStore }) {
+  const expense = doc.expenseId ? store.expenses.find((item) => item.id === doc.expenseId && item.status === 'published' && item.campaignId === doc.campaignId) : undefined
+  const milestone = doc.milestoneId ? store.milestones.find((item) => item.id === doc.milestoneId && item.campaignId === doc.campaignId) : undefined
+  const update = doc.updateId ? store.campaignUpdates.find((item) => item.id === doc.updateId && item.status === 'published' && item.campaignId === doc.campaignId) : undefined
+  if (!expense && !milestone && !update) return null
+  return (
+    <p className="muted small">
+      {[expense ? `Expense: ${expense.description}` : null, milestone ? `Milestone: ${milestone.title}` : null, update ? `Update: ${update.title}` : null].filter(Boolean).join(' · ')}
+    </p>
+  )
+}
+
 export function TrustTab({ campaign, store, org }: { campaign: Campaign; store: DemoStore; org: Organization }) {
   const documents = publicDocuments(store, campaign.id)
   const lastUpdate = latestUpdateDate(store, campaign.id)
@@ -670,7 +697,7 @@ export function TrustTab({ campaign, store, org }: { campaign: Campaign; store: 
     {
       label: 'Supporting documents',
       value: documents.length ? `${documents.length} public document${documents.length === 1 ? '' : 's'}` : 'None yet',
-      state: documents.length ? <StatusPill tone="progress">Supporting document attached</StatusPill> : null,
+      state: documents.length ? <StatusPill tone="progress">Supporting evidence attached</StatusPill> : null,
     },
     {
       label: 'Last public update',
@@ -717,8 +744,11 @@ export function TrustTab({ campaign, store, org }: { campaign: Campaign; store: 
                     {doc.docType}
                     {doc.sample ? ' · Fictional sample' : ''} · Added {formatDate(doc.createdAt)}
                   </span>
+                  {doc.caption ? <p className="small">{doc.caption}</p> : null}
                   {doc.description ? <p className="small">{doc.description}</p> : null}
-                  <StatusPill tone="progress">Supporting document attached</StatusPill>
+                  <DocumentLinks doc={doc} store={store} />
+                  <StatusPill tone="progress">Supporting evidence attached</StatusPill>
+                  <p className="muted small">Attached by the organizer. An attachment is not independent verification.</p>
                   {doc.fileSrc ? (
                     <a className="link-button small" href={doc.fileSrc} target="_blank" rel="noopener noreferrer">
                       Open document<span className="sr-only"> (opens in a new tab)</span>

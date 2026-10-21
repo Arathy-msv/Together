@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Navigate, useParams, useSearchParams } from 'react-router-dom'
 import { useCampaignView } from '../../hooks/useDemoStore.ts'
 import { campaignDetailsPath, campaignPlayPath } from '../../lib/campaigns.ts'
@@ -8,6 +8,7 @@ import { getPending, hasSeenGameIntro, isUnlocked, markGameIntroSeen } from '../
 import { GameIntro } from '../../components/GameIntro.tsx'
 import { currentPlayer, rememberReferral } from '../../lib/players.ts'
 import { NotFoundPage } from '../NotFound.tsx'
+import { trackJourney } from '../../lib/analytics.ts'
 import { GardenGame } from './GardenGame.tsx'
 import { JacketGame } from './JacketGame.tsx'
 import { MemoryGame } from './MemoryGame.tsx'
@@ -19,6 +20,7 @@ export function PlayPage() {
   const view = useCampaignView(id)
   const base = useOrgBase()
   const [introDone, setIntroDone] = useState(() => hasSeenGameIntro(id) || getPending(id)?.method === 'game')
+  const started = useRef(false)
 
   useEffect(() => {
     const ref = params.get('ref')
@@ -30,6 +32,12 @@ export function PlayPage() {
     const active = isGameType(game) ? game : view.campaign.gameType
     document.title = `${gameMeta(active).name} — Together`
   }, [view, game])
+
+  useEffect(() => {
+    if (!introDone || started.current) return
+    started.current = true
+    trackJourney('game_started', { campaignId: id, mode: 'game' })
+  }, [introDone, id])
 
   if (!view) return <NotFoundPage />
   if (!view.campaign.participation.game) {

@@ -9,7 +9,7 @@ import { nowIso } from '../../lib/inputs.ts'
 import { templateFor } from '../../lib/templates.ts'
 import { campaignMilestones, formatMinor, fundSummary, publicDocuments, publishedUpdates, saveCampaignFields } from '../../lib/transparency.ts'
 import { FUNDRAISING_LABEL, fundraisingState } from '../../lib/lifecycle.ts'
-import type { FinalReport } from '../../lib/types.ts'
+import { CLOSURE_LABEL, type ClosureOutcome, type FinalReport } from '../../lib/types.ts'
 import type { WorkspaceProps } from './CampaignWorkspace.tsx'
 
 export function FinalReportEditor({ campaign, view, store }: WorkspaceProps) {
@@ -19,6 +19,7 @@ export function FinalReportEditor({ campaign, view, store }: WorkspaceProps) {
     () =>
       existing ?? {
         status: 'draft',
+        closure: undefined,
         outcomes: '',
         outcomeFields: template.impactFields.map((label) => ({ label, value: '' })),
         remainingPlan: '',
@@ -49,8 +50,24 @@ export function FinalReportEditor({ campaign, view, store }: WorkspaceProps) {
       setError('Describe the outcomes in at least a sentence before publishing.')
       return
     }
+    if (status === 'published' && !report.closure) {
+      setError('Choose how this campaign ended before publishing.')
+      return
+    }
     if (status === 'published' && summary.balanceMinor !== 0 && !report.remainingPlan.trim()) {
-      setError('Explain the plan for the remaining (or additional) funds before publishing.')
+      setError('Explain the plan for the remaining (or additional) funds before publishing. A refund plan is a statement, not a processed refund.')
+      return
+    }
+    if (status === 'published' && report.closure && report.closure !== 'delivered' && !report.unmetExplanation?.trim()) {
+      setError('Explain what was not completed before publishing.')
+      return
+    }
+    if (status === 'published' && report.closure && report.closure !== 'delivered' && !report.changedPlan?.trim()) {
+      setError('Explain what changed from the original plan before publishing.')
+      return
+    }
+    if (status === 'published' && (report.closure === 'partial' || report.closure === 'activities_remaining') && !report.outstandingObligations?.trim()) {
+      setError('Describe any outstanding obligations, or write “None”, before publishing.')
       return
     }
     setError('')
@@ -73,7 +90,7 @@ export function FinalReportEditor({ campaign, view, store }: WorkspaceProps) {
       <section className="panel ws-card wide">
         <h2>Final report</h2>
         <p className="muted small">
-          Summarize what the campaign achieved once the work is done. Closing fundraising and publishing this report are separate steps. Fundraising is currently <strong>{FUNDRAISING_LABEL[fundraisingState(view)]}</strong>; the report is{' '}
+          A closure report can be honest when work is unfinished. Publishing it does not mark milestones complete, and it does not close fundraising. Fundraising is currently <strong>{FUNDRAISING_LABEL[fundraisingState(view)]}</strong>; the report is{' '}
           <strong>{report.status === 'published' ? 'published' : 'a draft'}</strong>.
         </p>
         {notice ? (
@@ -120,6 +137,18 @@ export function FinalReportEditor({ campaign, view, store }: WorkspaceProps) {
             <span className="muted small">Builds a structured draft from your published records. Amounts are calculated by the app.</span>
           </div>
         )}
+        <label className="field">
+          <span className="field-label">How did the campaign end?</span>
+          <select value={report.closure ?? ''} onChange={(event) => setReport({ ...report, closure: (event.target.value || undefined) as ClosureOutcome | undefined })}>
+            <option value="">Choose an outcome</option>
+            {(Object.keys(CLOSURE_LABEL) as ClosureOutcome[]).map((key) => (
+              <option key={key} value={key}>
+                {CLOSURE_LABEL[key]}
+              </option>
+            ))}
+          </select>
+          <p className="help">You can publish while milestones are still open. This report does not change their status.</p>
+        </label>
         <TextArea
           label="Outcomes reported by the organizer"
           rows={5}
@@ -146,9 +175,16 @@ export function FinalReportEditor({ campaign, view, store }: WorkspaceProps) {
           label="Remaining funds and the plan for them"
           maxLength={1500}
           value={report.remainingPlan}
-          help="Required when the demo balance is not zero."
+          help="Required when the demo balance is not zero. Saying you will refund is a statement only — this prototype does not process refunds."
           onChange={(remainingPlan) => setReport({ ...report, remainingPlan })}
         />
+        {report.closure && report.closure !== 'delivered' ? (
+          <>
+            <TextArea label="What was not completed" value={report.unmetExplanation ?? ''} maxLength={1500} onChange={(unmetExplanation) => setReport({ ...report, unmetExplanation })} />
+            <TextArea label="What changed from the plan" value={report.changedPlan ?? ''} maxLength={1500} onChange={(changedPlan) => setReport({ ...report, changedPlan })} />
+            <TextArea label="Outstanding obligations" value={report.outstandingObligations ?? ''} maxLength={1500} help="Include supplier commitments or a refund you intend to make. Write “None” if there are none." onChange={(outstandingObligations) => setReport({ ...report, outstandingObligations })} />
+          </>
+        ) : null}
         {docs.length || updates.length ? (
           <fieldset className="set-fieldset">
             <legend className="field-label">Evidence links</legend>

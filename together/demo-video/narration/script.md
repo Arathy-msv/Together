@@ -1,5 +1,7 @@
 # Together — narrated demo script
 
+The spoken lines below match the last assembly (30:57). They are stale against the current screens: evidence wording, closure reports, sponsor confirmation, English-only pages, the launch checklist, and the grouped “More ways to take part” panel. Do not re-time them until the next narrate → record → assemble. The presales list in `scripts/presales.mjs` is the 2–3 minute subset; the file `output/together-presales.mp4` is still the older 10:43 cut.
+
 <!--
 Editable narration. Format:
   "# chapter <id> | <title>"  starts a chapter (its title card uses the line after it).

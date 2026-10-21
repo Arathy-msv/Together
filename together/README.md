@@ -104,7 +104,8 @@ Campaign pages open with the title, a one-sentence purpose (**Read the full stor
 - **Fundraising progress and delivery progress are separate.** Reaching the goal never marks delivery complete. Milestones show Planned, In progress, Reported complete (organizer-reported) or Past expected date.
 - **Updates** show published updates only, newest first, with images (alt text required), optional short local video (never autoplays), related milestones and expenses. “Follow updates on this device” is a local bookmark; no emails are sent. The contribution receipt lists updates published since the contribution.
 - **How funds are used** is a demo calculation in integer minor units: confirmed simulated contributions − published organizer-reported expenses. Planned budgets are shown separately, and draft expenses, game suggestions and failed attempts are never counted. A negative balance is shown exactly, with the organizer’s explanation. An expense linked from several updates is counted once.
-- **Who is running this campaign** shows organizer-provided details with light labels: “Organizer-reported expenses”, “Supporting document attached”, “Not independently verified” and “Demo verification example” (seeded on one campaign only). Uploading evidence never creates a verified badge, and organizers cannot grant one. Private verification placeholders use fictional samples, store no files and are never shown publicly; real identity review would need a future secure service.
+- **Who is running this campaign** shows organizer-provided details with light labels: “Organizer-reported expenses”, “Supporting evidence attached” or “No supporting evidence uploaded”, and “Not independently verified”. An attachment is never called independently verified. Private originals stay off the public page. A demo verification example is seeded on one campaign only. Real identity review would need a future secure service.
+- **Closure reports** can say delivered, partial, cancelled, or activities remaining. Unmet outcomes need an explanation. Publishing a report does not mark milestones complete and does not close fundraising. Remaining funds are an organizer statement, not a processed refund.
 
 ### Organizer workspace
 
@@ -133,7 +134,7 @@ All features go through one small typed interface, `AssistantService` in `src/li
 | Referral message | Sharing page editor | Up to three options built from your own reason and connection plus the campaign title and organizer. Offers Apply, Shorten and Reset. |
 | Ask about this campaign | Supporter campaign pages | Answers a fixed set of questions from a public snapshot of one campaign. Anything unpublished gets “This information has not been published yet.”; other questions get a demo-limitation message. |
 | Receipt assistance | Workspace → Expenses | Three fictional sample receipts map to fixed values (no OCR). Values need review and only become an expense when you save or publish. Other currencies are not converted. |
-| Translation preview | Story, updates, sharing pages | Malayalam prepared by hand for the seeded sample content. For anything else, live translation is “not connected” and a manual field is offered. Translations are stored separately and shown publicly only after review. |
+| Translation preview | Stored only | Public pages are English. Saved translation text is kept in this browser and is not shown. There is no language selector. |
 | Suggest a setup | Campaign form, assistant | Category-based template, available game, milestones, expense categories and cover, each accepted individually. |
 
 ## Storage
@@ -141,7 +142,8 @@ All features go through one small typed interface, `AssistantService` in `src/li
 | Key | Contents |
 | --- | --- |
 | `together.organizations.v1` | Organizations, version 2: details, slug, demo plan, onboarding progress, published website settings, website draft, status and timestamps |
-| `together.demo.v1` | Format version 4 (adds optional reviewed `translations` on campaigns, updates and sharing pages): campaigns, contributions (optional `referralId`), referrals, milestones, campaignUpdates, expenses, supportingDocuments |
+| `together.demo.v1` | Format version 6. Version 5 keeps one beneficiary value and itemized budget fields. Version 6 adds `sponsorCommitments` and `sponsorAllocations` (empty when older data had none). Campaigns, contributions, referrals, milestones, updates, expenses and documents are kept. |
+| `together.demo.analytics.v1` | Optional demo journey counts on this device: views, mode choices, game starts, reviews, confirmed gifts, sharing pages, update views, voucher claims and redemptions. No free text, voucher codes, or supporter details. Separate from campaign data, so clearing analytics does not reset a campaign. |
 | `together.campaignDrafts.v1` | Form and assistant drafts, each with a stable ID and organization |
 | `together.followed.v1` | Campaigns followed on this device |
 | `together.myReferrals.v1` | Sharing pages created on this device (demo editing only) |
@@ -160,6 +162,8 @@ Each stored organization is repaired or skipped on its own, so one broken record
 - Open Winter Care Kits to see a scheduled campaign that cannot accept contributions yet.
 
 Private campaigns (“Invited group only”) use a demo access code shown to the organizer. That code is not secure access control.
+
+Team or class participation is not built. There is no roster, shared class account, or pupil management. A future version would need that as its own model; this prototype treats every supporter as one person on this device.
 
 Uploaded covers and logos are resized in the browser and stored in `localStorage` with the campaign. Browsers allow only a few megabytes there, so very large or many uploads can fill it; the app shows a message if that happens.
 

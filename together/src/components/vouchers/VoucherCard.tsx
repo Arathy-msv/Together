@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { capabilityName } from '../../lib/features.ts'
 import { formatDate, formatDateTime, formatMoney } from '../../lib/format.ts'
 import { qrPngDataUrl } from '../../lib/qr.ts'
-import { isExpired, type IssuedVoucher } from '../../lib/vouchers.ts'
+import { isExpired, loadVoucherStore, type IssuedVoucher } from '../../lib/vouchers.ts'
 
 type VoucherState = 'ready' | 'used' | 'expired'
 
@@ -95,6 +95,8 @@ function VoucherPresentation({ voucher, storeName, onClose }: { voucher: IssuedV
   const [qr, setQr] = useState<string | null>(null)
   const [qrFailed, setQrFailed] = useState(false)
   const state = voucherState(voucher)
+  const merchant = loadVoucherStore().merchants.find((item) => item.id === voucher.merchantId)
+  const branches = merchant?.branches.map((branch) => branch.name).filter(Boolean) ?? []
 
   useEffect(() => {
     const dialog = ref.current
@@ -111,17 +113,22 @@ function VoucherPresentation({ voucher, storeName, onClose }: { voucher: IssuedV
   return (
     <dialog ref={ref} className="voucher-present" aria-labelledby={`present-${voucher.id}`} onClose={onClose} onCancel={onClose}>
       <div className="voucher-present-inner">
+        <p className="voucher-present-kicker">Present this to store staff</p>
         <p className="voucher-present-store">{storeName}</p>
+        {branches.length > 0 ? <p className="voucher-present-branch">{branches.length === 1 ? branches[0] : `Branches: ${branches.join(', ')}`}</p> : null}
         <h2 id={`present-${voucher.id}`}>{headline(voucher)}</h2>
         <p className={`voucher-present-state ${state}`}>{STATE_LABEL[state]}</p>
         {state === 'ready' ? (
           qr ? (
-            <img className="voucher-present-qr" src={qr} alt={`QR code for voucher ${voucher.code}`} width={240} height={240} />
+            <img className="voucher-present-qr" src={qr} alt={`QR code for voucher ${voucher.code}`} width={280} height={280} />
           ) : qrFailed ? null : (
             <div className="voucher-present-qr placeholder" aria-hidden="true" />
           )
-        ) : null}
-        <p className="voucher-present-code" aria-label={`Voucher code ${voucher.code.split('').join(' ')}`}>
+        ) : (
+          <p className="voucher-present-note">{state === 'used' ? 'This voucher has already been used. Do not accept it again.' : 'This voucher is past its expiry. Do not accept it.'}</p>
+        )}
+        <p className="voucher-present-code-label">Backup code</p>
+        <p className="voucher-present-code" aria-label={`Backup code ${voucher.code.split('').join(' ')}`}>
           {voucher.code}
         </p>
         {voucher.discountCode ? (
@@ -130,6 +137,7 @@ function VoucherPresentation({ voucher, storeName, onClose }: { voucher: IssuedV
           </p>
         ) : null}
         <p>{state === 'expired' ? 'Expired on' : 'Valid until'} {formatDate(voucher.validUntil)}</p>
+        <p className="voucher-present-terms"><strong>Restrictions. </strong>{voucher.terms}</p>
         <p className="voucher-present-note">Simulated voucher. The store checks this code in its demo portal; no real value is exchanged.</p>
         <button type="button" className="btn btn-primary btn-lg" onClick={() => ref.current?.close()} autoFocus>
           Done

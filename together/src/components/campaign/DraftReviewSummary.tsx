@@ -1,4 +1,3 @@
-import { CampaignCover } from '../CampaignImage.tsx'
 import { budgetSummary, draftsToBudget } from '../../lib/budget.ts'
 import { formatMinor } from '../../lib/transparency.ts'
 import { formatDateTime, formatINR } from '../../lib/format.ts'
@@ -70,13 +69,7 @@ export function DraftReviewSummary({ form, items, onEdit }: { form: CampaignForm
   ]
   return (
     <div className="draft-review">
-      <article className="panel review-card">
-        <CampaignCover campaign={form} />
-        <div className="review-body">
-          <h2>{form.title.trim() || 'Untitled campaign'}</h2>
-          {form.game && form.gameType === 'puzzle' && form.puzzleImageData ? <img className="puzzle-review-art" src={form.puzzleImageData} alt="Community Puzzle artwork" /> : null}
-        </div>
-      </article>
+      <p className="muted small">The public card preview is beside this summary. Open it when you want to see the cover again.</p>
       {groups.map((group) => {
         const missing = items.filter((item) => item.step === group.id && !item.done)
         return (

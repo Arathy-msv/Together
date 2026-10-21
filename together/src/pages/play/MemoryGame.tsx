@@ -4,6 +4,8 @@ import { newRoundId, readProgress, writeProgress } from '../../lib/gameLedger.ts
 import type { CampaignView } from '../../lib/types.ts'
 import { animationDelay } from '../../lib/motion.ts'
 import { GameFrame, GameTitle } from './GameFrame.tsx'
+import { actingParticipantId, sponsorOffer, unlockSponsorMilestone } from '../../lib/sponsors.ts'
+import { formatMinor } from '../../lib/transparency.ts'
 
 const FACES = [
   { id: 'fox', src: '/games/card-fox.jpg', label: 'fox' },
@@ -62,6 +64,9 @@ export function MemoryGame({ view, preview = false }: { view: CampaignView; prev
   const progressRef = useRef(progress)
   const [open, setOpen] = useState<string[]>([])
   const [lock, setLock] = useState(false)
+  const [sponsorNote, setSponsorNote] = useState('')
+  const sponsorMode = !preview && sessionStorage.getItem(`together.playMode.${campaignId}`) === 'sponsor'
+  const offer = sponsorMode ? sponsorOffer(campaignId, actingParticipantId()) : null
   const totalPairs = progress.order.length / 2
   const pairs = progress.matched.length
   const roundDone = pairs === totalPairs
@@ -99,13 +104,19 @@ export function MemoryGame({ view, preview = false }: { view: CampaignView; prev
         save({ ...latest, matched, moves })
         setOpen([])
         setLock(false)
-        contribution.record({
-          actionId: `${latest.roundId}:pair-${face.id}`,
-          roundId: latest.roundId,
-          label: `Matched the ${face.label} pair`,
-          heading: `You matched the ${face.label} pair!`,
-          roundComplete: matched.length === latest.order.length / 2,
-        })
+        const sponsor = sessionStorage.getItem(`together.playMode.${view.campaign.id}`) === 'sponsor'
+        if (sponsor) {
+          const allocation = unlockSponsorMilestone(view.campaign.id, actingParticipantId())
+          setSponsorNote(allocation ? `${formatMinor(allocation.amountMinor, view.campaign.currency)} sponsor reward is pending. It is not added to your personal amount.` : 'No further sponsor reward for this match. You can keep playing.')
+        } else {
+          contribution.record({
+            actionId: `${latest.roundId}:pair-${face.id}`,
+            roundId: latest.roundId,
+            label: `Matched the ${face.label} pair`,
+            heading: `You matched the ${face.label} pair!`,
+            roundComplete: matched.length === latest.order.length / 2,
+          })
+        }
       }, animationDelay(650))
       return
     }
@@ -131,6 +142,9 @@ export function MemoryGame({ view, preview = false }: { view: CampaignView; prev
           </p>
           <p className="hud-label">Moves</p>
           <p className="hud-big">{progress.moves}</p>
+          {sponsorMode && offer?.next ? <p className="small">Next sponsor reward: {formatMinor(offer.next.amountMinor, view.campaign.currency)}. The budget left is {formatMinor(offer.remainingMinor, view.campaign.currency)}.</p> : null}
+          {sponsorMode && offer && !offer.next ? <p className="small">Sponsor rewards for you are used up. Play does not add to your personal amount.</p> : null}
+          {sponsorNote ? <p className="small" role="status">{sponsorNote}</p> : null}
           {roundDone ? (
             <button type="button" className="replay primary" onClick={newRound}>
               Play another round

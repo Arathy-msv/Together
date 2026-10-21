@@ -21,7 +21,18 @@ const VERIFICATION_SAMPLES = ['Charity registration certificate (sample)', 'Orga
 export function TrustEditor({ campaign, store }: WorkspaceProps) {
   const publicDocs = store.supportingDocuments.filter((doc) => doc.campaignId === campaign.id && doc.visibility === 'public')
   const privateDocs = store.supportingDocuments.filter((doc) => doc.campaignId === campaign.id && doc.visibility === 'private')
-  const [draft, setDraft] = useState({ title: '', docType: PUBLIC_TYPES[0], description: '', fileSrc: undefined as string | undefined, sample: false, noPersonalData: false })
+  const [draft, setDraft] = useState({
+    title: '',
+    docType: PUBLIC_TYPES[0],
+    description: '',
+    caption: '',
+    expenseId: '',
+    milestoneId: '',
+    updateId: '',
+    fileSrc: undefined as string | undefined,
+    sample: false,
+    noPersonalData: false,
+  })
   const [adding, setAdding] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [notice, setNotice] = useState('')
@@ -40,13 +51,17 @@ export function TrustEditor({ campaign, store }: WorkspaceProps) {
         title: draft.title.trim(),
         docType: draft.docType,
         description: draft.description.trim(),
+        caption: draft.caption.trim() || undefined,
+        expenseId: draft.expenseId || undefined,
+        milestoneId: draft.milestoneId || undefined,
+        updateId: draft.updateId || undefined,
         fileSrc: draft.fileSrc,
         sample: draft.sample,
         createdAt: nowIso(),
       })
       setAdding(false)
-      setDraft({ title: '', docType: PUBLIC_TYPES[0], description: '', fileSrc: undefined, sample: false, noPersonalData: false })
-      setNotice('Document added to public evidence. It is shown as “Supporting document attached”, not as verified.')
+      setDraft({ title: '', docType: PUBLIC_TYPES[0], description: '', caption: '', expenseId: '', milestoneId: '', updateId: '', fileSrc: undefined, sample: false, noPersonalData: false })
+      setNotice('Document added to public evidence. It is shown as “Supporting evidence attached”, not as verified.')
     } catch (problem) {
       setErrors({ form: problem instanceof StorageFullError ? 'Browser storage is full. Try a smaller image.' : 'The document could not be saved.' })
     }
@@ -82,7 +97,7 @@ export function TrustEditor({ campaign, store }: WorkspaceProps) {
             + Add document
           </button>
         </div>
-        <p className="muted small">Shown on the public “How funds are used” tab as “Supporting document attached”. Uploading a document never creates a verified badge.</p>
+        <p className="muted small">Shown publicly as “Supporting evidence attached”. An attachment is never labelled independently verified. Private originals stay off the public page.</p>
         {publicDocs.length === 0 ? <p className="awaiting">No supporting evidence uploaded.</p> : null}
         <ul className="ws-list">
           {publicDocs.map((doc) => (
@@ -110,7 +125,11 @@ export function TrustEditor({ campaign, store }: WorkspaceProps) {
           <div className="ws-subform">
             <TextInput label="Title" value={draft.title} maxLength={140} error={errors.title} onChange={(title) => setDraft({ ...draft, title })} />
             <Select label="Document type" value={draft.docType} options={PUBLIC_TYPES.map((value) => ({ value, label: value }))} onChange={(docType) => setDraft({ ...draft, docType })} />
+            <TextInput label="Caption" optional value={draft.caption} maxLength={200} onChange={(caption) => setDraft({ ...draft, caption })} />
             <TextArea label="Description" optional value={draft.description} maxLength={600} onChange={(description) => setDraft({ ...draft, description })} />
+            <Select label="Related expense" value={draft.expenseId} options={[{ value: '', label: 'None' }, ...store.expenses.filter((item) => item.campaignId === campaign.id).map((item) => ({ value: item.id, label: item.description }))]} onChange={(expenseId) => setDraft({ ...draft, expenseId })} />
+            <Select label="Related milestone" value={draft.milestoneId} options={[{ value: '', label: 'None' }, ...store.milestones.filter((item) => item.campaignId === campaign.id).map((item) => ({ value: item.id, label: item.title }))]} onChange={(milestoneId) => setDraft({ ...draft, milestoneId })} />
+            <Select label="Related update" value={draft.updateId} options={[{ value: '', label: 'None' }, ...store.campaignUpdates.filter((item) => item.campaignId === campaign.id).map((item) => ({ value: item.id, label: item.title }))]} onChange={(updateId) => setDraft({ ...draft, updateId })} />
             <SingleImage label="Document image" optional={false} value={draft.sample ? undefined : draft.fileSrc} onChange={(fileSrc) => setDraft({ ...draft, fileSrc, sample: false })} />
             <fieldset className="set-fieldset">
               <legend className="field-label">Or use a fictional sample</legend>

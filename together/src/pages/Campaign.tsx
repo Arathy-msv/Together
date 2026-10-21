@@ -1,5 +1,9 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { organizerLine } from '../lib/budget.ts'
+import { actingParticipantId, sponsorOffer } from '../lib/sponsors.ts'
+import { trackJourney } from '../lib/analytics.ts'
+import { CategoryMotif } from '../components/campaign/CategoryMotif.tsx'
+import { formatMinor } from '../lib/transparency.ts'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { AmountPicker } from '../components/AmountPicker.tsx'
 import { CampaignCover, OrgLogo } from '../components/CampaignImage.tsx'
@@ -68,7 +72,8 @@ function CampaignDetails({ view, referral }: { view: CampaignView; referral?: Re
 
   useEffect(() => {
     document.title = referral ? `${referral.displayName} is supporting ${campaign.title}` : `${campaign.title} — ${campaign.organizerName}`
-  }, [campaign.title, campaign.organizerName, referral])
+    trackJourney('campaign_viewed', { campaignId: id })
+  }, [campaign.title, campaign.organizerName, referral, id])
 
   useEffect(() => {
     setShareContext(id, referral?.id ?? null)
@@ -78,6 +83,15 @@ function CampaignDetails({ view, referral }: { view: CampaignView; referral?: Re
     const ref = params.get('ref')
     if (ref) rememberReferral(id, ref)
   }, [id, params])
+
+  useEffect(() => {
+    if (section === 'updates') trackJourney('update_viewed', { campaignId: id })
+  }, [section, id])
+
+  function chooseMode(next: 'direct' | 'game') {
+    setTab(next)
+    trackJourney('giving_mode_selected', { campaignId: id, mode: next })
+  }
 
   const needsCode = campaign.access === 'closed' && !campaign.isDraft && !unlocked
   const playPath = campaignPlayPath(campaign.id, campaign.gameType, base)
@@ -122,6 +136,7 @@ function CampaignDetails({ view, referral }: { view: CampaignView; referral?: Re
         <div className="campaign-main">
           {referral ? null : <CampaignCover campaign={campaign} className="campaign-hero" />}
           <div className="campaign-title">
+            <CategoryMotif category={campaign.category} />
             <h1>{campaign.title}</h1>
             <span className="status-row">
               <FundraisingBadge view={view} />
@@ -151,7 +166,7 @@ function CampaignDetails({ view, referral }: { view: CampaignView; referral?: Re
           ) : null}
           {campaignUsesSponsor(org, campaign) ? (
             <p className="sponsor-banner notice success compact">
-              <strong>Sponsor-funded play is on.</strong> The organization has confirmed a sponsor for play. Sponsor amounts are not tracked or received in this prototype — what you confirm is your own simulated contribution.
+              <strong>Sponsor-funded play is available.</strong> A sponsor reward is separate from your own gift. It stays pending until an Organization Admin confirms the simulated funds.
             </p>
           ) : null}
           <div className="mobile-support" aria-label="Campaign progress">
@@ -282,7 +297,7 @@ function CampaignDetails({ view, referral }: { view: CampaignView; referral?: Re
                 key={campaign.id}
                 view={view}
                 tab={campaign.participation.direct ? tab : 'game'}
-                onTab={setTab}
+                onTab={chooseMode}
                 onContinue={(amount) => {
                   const pending = getPending(campaign.id)
                   const giver = currentPlayer(campaign.id)
@@ -305,7 +320,10 @@ function CampaignDetails({ view, referral }: { view: CampaignView; referral?: Re
           </div>
           )}
           {closedFunded ? null : <DeliverySnapshot campaign={campaign} store={store} onOpen={() => openSection('updates')} />}
-          <div className="panel aside-card share-card">
+          <details className="panel aside-card more-ways">
+            <summary>More ways to take part</summary>
+            <div className="more-ways-body">
+          <div className="share-card">
             <h2 className="aside-title">Help spread the word</h2>
             <ShareLinkButton url={campaignUrl} />
             {canHaveSharingPages(view) ? (
@@ -323,13 +341,48 @@ function CampaignDetails({ view, referral }: { view: CampaignView; referral?: Re
             ) : null}
           </div>
           <CampaignPartnerOffers campaign={campaign} />
-          <div className="panel aside-card">{followButton}</div>
+          <div>{followButton}</div>
+            </div>
+          </details>
         </aside>
       </div>
       <div id="campaign-share-kit">
         <ShareKit org={org} campaign={campaign} url={campaignUrl} mode="campaign" defaultOpen={false} title="Share this campaign" />
       </div>
     </div>
+  )
+}
+
+function SponsorPlayChoice({ campaignId, currency }: { campaignId: string; currency: Campaign['currency'] }) {
+  const [mode, setMode] = useState(() => sessionStorage.getItem(`together.playMode.${campaignId}`) === 'sponsor')
+  const offer = sponsorOffer(campaignId, actingParticipantId())
+  function choose(sponsor: boolean) {
+    sessionStorage.setItem(`together.playMode.${campaignId}`, sponsor ? 'sponsor' : 'personal')
+    setMode(sponsor)
+    trackJourney('giving_mode_selected', { campaignId, mode: sponsor ? 'sponsor' : 'direct' })
+  }
+  if (!offer) return <p className="muted small">An Organization Admin has not added a sponsor commitment for this campaign yet.</p>
+  return (
+    <fieldset className="give-choice">
+      <legend className="sr-only">Who funds this play</legend>
+      <label className={!mode ? 'give-option selected' : 'give-option'}>
+        <input type="radio" name={`fund-${campaignId}`} checked={!mode} onChange={() => choose(false)} />
+        <span>
+          <strong>My own contribution</strong>
+          <em>Play builds a suggestion you review and confirm.</em>
+        </span>
+      </label>
+      <label className={mode ? 'give-option selected' : 'give-option'}>
+        <input type="radio" name={`fund-${campaignId}`} checked={mode} onChange={() => choose(true)} />
+        <span>
+          <strong>Sponsor-funded play</strong>
+          <em>
+            {offer.next ? `Next reward ${formatMinor(offer.next.amountMinor, currency)}. ` : 'No reward left for you. '}
+            {offer.exhausted ? 'The sponsor budget or your cap is used up.' : `${formatMinor(offer.remainingMinor, currency)} of the sponsor budget is still available.`} Nothing is added to your checkout.
+          </em>
+        </span>
+      </label>
+    </fieldset>
   )
 }
 
@@ -545,7 +598,7 @@ function GivePanel({
             Start playing
           </Link>
           {sponsorPlay ? (
-            <p className="muted small">Sponsor allocations aren’t tracked in this prototype. Play, then review and confirm your own simulated contribution. No real payment is taken.</p>
+            <SponsorPlayChoice campaignId={campaign.id} currency={campaign.currency} />
           ) : null}
           {campaign.participation.direct ? (
             <button type="button" className="link-button center-block" onClick={() => onTab('direct')}>

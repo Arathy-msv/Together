@@ -4,6 +4,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { OrgLogo } from '../components/CampaignImage.tsx'
 import { ResumeDrafts, SaveIndicator, SetupIndicator } from '../components/drafts/DraftUI.tsx'
 import { DraftReviewSummary } from '../components/campaign/DraftReviewSummary.tsx'
+import { LaunchChecklist } from '../components/campaign/LaunchChecklist.tsx'
 import { GamePreviewModal, GameThumb } from '../components/GamePreview.tsx'
 import { useOrg } from '../components/org/OrgContext.tsx'
 import { Icon } from '../components/illustrations.tsx'
@@ -182,6 +183,7 @@ function CreateCampaignEditor({ start }: { start: EditorStart }) {
   const allowedGames = selectableGames(org)
   const [form, setForm] = useState<CampaignForm>(start.form)
   const [step, setStep] = useState(start.step)
+  const [previewChecked, setPreviewChecked] = useState(false)
   const [errors, setErrors] = useState<FormErrors>({})
   const [notice, setNotice] = useState<{ tone: 'success' | 'error'; text: string } | null>(null)
   const snapshot = useMemo(() => ({ form, step }), [form, step])
@@ -301,6 +303,11 @@ function CreateCampaignEditor({ start }: { start: EditorStart }) {
           {step === LAST_STEP ? (
             <>
               <DraftReviewSummary form={form} items={checklist} onEdit={goToStep} />
+              <LaunchChecklist form={form} org={org} previewChecked={previewChecked} />
+              <label className="check-row">
+                <input type="checkbox" checked={previewChecked} onChange={(event) => setPreviewChecked(event.target.checked)} />
+                I looked at the public preview. This does not test a payment.
+              </label>
             </>
           ) : null}
           {step === LAST_STEP ? (
@@ -839,7 +846,7 @@ function SettingsStep({
             </button>
             <span>
               <strong>Sponsor-funded play for this campaign</strong>
-              <em>Shows supporters that a sponsor supports play. Sponsor rules, budgets and allocations are not tracked in this prototype.</em>
+              <em>Shows sponsor-funded play. An Organization Admin adds the pledge, caps and rewards under Sponsors. Sponsor rewards are not part of a supporter’s own checkout.</em>
             </span>
           </label>
         ) : null}

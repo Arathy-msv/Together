@@ -16,6 +16,7 @@ import { followedAt, setFollowing } from '../lib/follows.ts'
 import { updatesSince } from '../lib/transparency.ts'
 import { jacketColorFromDetail, jacketImage } from '../lib/warmth.ts'
 import { NotFoundPage } from './NotFound.tsx'
+import { trackJourney } from '../lib/analytics.ts'
 
 export function SuccessPage() {
   const { id = '', contributionId = '' } = useParams()
@@ -26,6 +27,11 @@ export function SuccessPage() {
   const backPath = useCampaignBackPath(id)
   const [following, setFollowingState] = useState(() => Boolean(followedAt(id)))
   const supporterId = useSupporterId()
+  useEffect(() => {
+    const gift = store.contributions.find((item) => item.id === contributionId && item.campaignId === id)
+    if (!gift || gift.source === 'sponsor') return
+    trackJourney('contribution_confirmed', { campaignId: id, mode: gift.method === 'game' ? 'game' : 'direct' })
+  }, [store.contributions, contributionId, id])
   const found = store.contributions.find((item) => item.id === contributionId && item.campaignId === id)
   // Receipts are private: only the supporter who made the contribution may open it. Earlier demo data has no owner.
   const contribution = found && (!found.supporterId || found.supporterId === supporterId) ? found : undefined
@@ -77,6 +83,11 @@ export function SuccessPage() {
         <Icon name="check" size={40} />
       </div>
       <h1 className="center">Thank you for supporting {view.campaign.title}.</h1>
+      {view.campaign.nextUpdateAt ? (
+        <p className="center">You supported this campaign. The organizer expects to post the next update on {formatDate(view.campaign.nextUpdateAt)}.</p>
+      ) : (
+        <p className="center">You supported this campaign. The organizer has not set a date for the next update.</p>
+      )}
       <p className="center">
         <span className="success-pill">Contribution successful</span>
       </p>
@@ -136,12 +147,12 @@ export function SuccessPage() {
           </ul>
         )}
         <div className="inline-actions">
-          <Link to={`${backPath}${backPath.includes('?') ? '&' : '?'}tab=updates`} className="btn btn-outline btn-sm">
+          <Link to={`${backPath}${backPath.includes('?') ? '&' : '?'}tab=updates`} className="link-button">
             See campaign updates
           </Link>
           <button
             type="button"
-            className="btn btn-outline btn-sm"
+            className="link-button"
             aria-pressed={following}
             onClick={() => {
               if (setFollowing(view.campaign.id, !following)) setFollowingState(!following)

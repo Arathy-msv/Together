@@ -143,9 +143,9 @@ test('a v4 store migrates to v5 and copies beneficiaries only from the beneficia
   }
   local.setItem(STORAGE_KEY, JSON.stringify(v4))
   const store = loadStore()
-  assert.equal(store.version, 5)
+  assert.equal(store.version, 6)
   const campaign = store.campaigns.find((item) => item.id === 'cmp_old')!
   assert.equal(campaign.story?.whoItHelps, 'Year 3 pupils')
   assert.deepEqual(campaign.budget, [{ id: 'b1', label: 'Paint', amountMinor: 50_000 }])
-  assert.equal(JSON.parse(local.getItem(STORAGE_KEY)!).version, 5)
+  assert.equal(JSON.parse(local.getItem(STORAGE_KEY)!).version, 6)
 })

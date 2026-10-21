@@ -4,7 +4,6 @@ import { ShareKit } from '../components/sharing/ShareKit.tsx'
 import { useOrg } from '../components/org/OrgContext.tsx'
 import { AiButton } from '../components/ai/AiUI.tsx'
 import { ReferralWriter } from '../components/ai/ReferralWriter.tsx'
-import { TranslationEditor } from '../components/ai/Translation.tsx'
 import { ReferralIntro, ReferrerAvatar } from '../components/referral/ReferralIntro.tsx'
 import { campaignCoverSrc } from '../data/covers.ts'
 import { useCampaignView, useDemoStore } from '../hooks/useDemoStore.ts'
@@ -18,7 +17,6 @@ import {
   isMyReferral,
   referralPath,
   referralTotals,
-  saveReferralTranslations,
   shareWorkspacePath,
   updateReferral,
   validateReferral,
@@ -26,6 +24,7 @@ import {
   type ReferralInput,
 } from '../lib/referrals.ts'
 import { StorageFullError } from '../lib/storage.ts'
+import { trackJourney } from '../lib/analytics.ts'
 import type { Referral } from '../lib/types.ts'
 import { OrgNotFound } from './org/OrgNotFound.tsx'
 
@@ -132,6 +131,7 @@ function ShareEditor({ existing, mine }: { existing?: Referral; mine: Referral[]
         setNotice({ tone: 'success', text: 'Your sharing page is updated.' })
       } else {
         const created = createReferral(campaign.id, input)
+        trackJourney('sharing_page_created', { campaignId: campaign.id })
         navigate(shareWorkspacePath(base, campaign.id, created.code), { replace: true, state: { created: true } })
       }
     } catch (problem) {
@@ -332,26 +332,6 @@ function ShareEditor({ existing, mine }: { existing?: Referral; mine: Referral[]
           <ReferralIntro referral={previewReferral} view={view} preview />
         </aside>
       </div>
-
-      {existing ? (
-        <section className="panel drafts-panel">
-          <TranslationEditor
-            fields={[
-              { key: 'headline', label: 'Headline', original: existing.headline },
-              { key: 'message', label: 'Why I support this campaign', original: existing.message },
-            ]}
-            saved={existing.translations?.ml ?? {}}
-            onApply={(key, text) => {
-              const ml = { ...(existing.translations?.ml ?? {}), [key]: text }
-              try {
-                saveReferralTranslations(existing.id, ml)
-              } catch {
-                setNotice({ tone: 'error', text: 'The translation could not be saved in this browser.' })
-              }
-            }}
-          />
-        </section>
-      ) : null}
 
       {mine.length > 0 ? (
         <section className="panel drafts-panel">

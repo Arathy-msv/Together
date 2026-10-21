@@ -292,11 +292,29 @@ export interface ImpactExample {
   costBasis: string
 }
 
+/** How the organizer reports the campaign ended. Publishing a report never changes milestone statuses. */
+export type ClosureOutcome = 'delivered' | 'partial' | 'cancelled' | 'activities_remaining'
+
+export const CLOSURE_LABEL: Record<ClosureOutcome, string> = {
+  delivered: 'Delivered as planned',
+  partial: 'Campaign closed — partial delivery reported',
+  cancelled: 'Cancelled',
+  activities_remaining: 'Closed with activities remaining',
+}
+
 export interface FinalReport {
   status: 'draft' | 'published'
+  /** Set when the organizer publishes a closure. Older reports may omit it. */
+  closure?: ClosureOutcome
   outcomes: string
   outcomeFields: { label: string; value: string }[]
   remainingPlan: string
+  /** Why planned outcomes were not fully met. */
+  unmetExplanation?: string
+  /** What changed from the original plan. */
+  changedPlan?: string
+  /** Obligations still open, such as a supplier or a refund the organizer intends to make. A refund plan is a statement, not a processed refund. */
+  outstandingObligations?: string
   evidenceDocumentIds: string[]
   evidenceUpdateIds: string[]
   updatedAt: string
@@ -400,6 +418,11 @@ export interface SupportingDocument {
   title: string
   docType: string
   description: string
+  /** Short public caption. */
+  caption?: string
+  expenseId?: string
+  milestoneId?: string
+  updateId?: string
   /** Public path or compressed image data URL. Private verification placeholders never store files. */
   fileSrc?: string
   /** Fictional sample shipped with the prototype. */
@@ -427,10 +450,49 @@ export interface Contribution {
   referralId?: string
   /** Local supporter profile that owns this receipt. Missing on earlier demo data. */
   supporterId?: string
+  /** Sponsor confirmations count in the campaign total and are not a supporter’s personal gift. */
+  source?: 'personal' | 'sponsor'
+}
+
+/** A fictional sponsor budget for play. Amounts are integer minor units. */
+export interface SponsorUnlock {
+  id: string
+  label: string
+  rewardMinor: number
+}
+
+export interface SponsorCommitment {
+  id: string
+  organizationId: string
+  campaignId: string
+  sponsorName: string
+  pledgedMinor: number
+  perParticipantCapMinor: number
+  /** Finite list. Each supporter can unlock each item once. */
+  unlocks: SponsorUnlock[]
+  startsAt: string
+  endsAt: string
+  createdAt: string
+}
+
+export type SponsorAllocationStatus = 'pending' | 'confirmed'
+
+export interface SponsorAllocation {
+  id: string
+  commitmentId: string
+  campaignId: string
+  organizationId: string
+  /** Local demo identity. Replay by the same person cannot unlock the same item again. */
+  participantId: string
+  unlockId: string
+  amountMinor: number
+  status: SponsorAllocationStatus
+  createdAt: string
+  confirmedAt?: string
 }
 
 export interface DemoStore {
-  version: 5
+  version: 6
   campaigns: Campaign[]
   contributions: Contribution[]
   referrals: Referral[]
@@ -438,6 +500,8 @@ export interface DemoStore {
   campaignUpdates: CampaignUpdate[]
   expenses: Expense[]
   supportingDocuments: SupportingDocument[]
+  sponsorCommitments: SponsorCommitment[]
+  sponsorAllocations: SponsorAllocation[]
 }
 
 export interface CampaignForm {

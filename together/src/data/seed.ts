@@ -182,7 +182,7 @@ export function createSeed(): DemoStore {
 
   const stories = seedStoryFields()
   return {
-    version: 5,
+    version: 6,
     campaigns: campaigns.map((campaign) => translateSampleCampaign({ ...campaign, ...stories[campaign.id] })),
     contributions,
     referrals: seedReferrals().map(translateSampleReferral),
@@ -190,6 +190,8 @@ export function createSeed(): DemoStore {
     campaignUpdates: seedUpdates().map(translateSampleUpdate),
     expenses: seedExpenses(),
     supportingDocuments: seedDocuments(),
+    sponsorCommitments: [],
+    sponsorAllocations: [],
   }
 }
 
