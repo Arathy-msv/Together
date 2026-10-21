@@ -19,8 +19,8 @@ Code that was only read is not marked Complete.
 | Status | Count |
 | --- | ---: |
 | Requirements checked | 82 |
-| Complete | 27 |
-| Partial | 46 |
+| Complete | 26 |
+| Partial | 47 |
 | Missing | 7 |
 | Blocked | 0 |
 | Not applicable | 2 |
