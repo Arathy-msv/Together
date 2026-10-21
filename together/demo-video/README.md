@@ -122,8 +122,8 @@ run instead of recording a wrong result.
 
 - Last verified application commit: `c7c2eed`
 - Recording date: 2026-10-21
-- Scenes affected by later changes: none
-- Final video: current (`output/together-demo.mp4`, 30:57, detailed walkthrough, with chapter clips and `together-demo.en.srt`)
-- Presales cut: current (`output/together-presales.mp4`, 10:43, with `together-presales.en.srt`)
+- Scenes affected by later changes: `og-assistant`, `og-form`, `og-approve`, `sp-trust`, `fn-public` (beneficiary labels, itemized budget, organizer line — commit `4f12089`)
+- Final video: stale (`output/together-demo.mp4`, 30:57) — re-record after the demo-review stages are finished (see `IMPROVEMENT-CHECKLIST.md`)
+- Presales cut: stale (`output/together-presales.mp4`, 10:43) — also needs trimming to 2–3 minutes
 
 Update this section whenever a user-facing change touches the walkthrough. If a scene or the final video could not be re-recorded, list the scene ids here and set the final video to stale, with the blocker.
