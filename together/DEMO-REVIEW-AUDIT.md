@@ -19,13 +19,13 @@ Code that was only read is not marked Complete.
 | Status | Count |
 | --- | ---: |
 | Requirements checked | 82 |
-| Complete | 40 |
-| Partial | 40 |
+| Complete | 41 |
+| Partial | 39 |
 | Missing | 0 |
 | Blocked | 0 |
 | Not applicable | 2 |
 
-Counts are recounted from the requirement rows below. The four rows previously listed as Missing — 43 palette swatches, 52 in-game illustration, 61 sharing pages in My activity, and 69 timezone labels — are now Complete because an isolated browser exercised them. They were not moved into Partial. Rows 24, 25, 26, 47, 55, 59, and 65 also moved from Partial to Complete on new evidence. Demo videos are still stale.
+Counts are recounted from the requirement rows below. The four rows previously listed as Missing — 43 palette swatches, 52 in-game illustration, 61 sharing pages in My activity, and 69 timezone labels — are now Complete because an isolated browser exercised them. They were not moved into Partial. Rows 24, 25, 26, 47, 55, 57, 59, and 65 also moved from Partial to Complete on new evidence. Demo videos are still stale.
 
 Checks run this pass: `npm test` (187 passed, 0 failed) and `npm run build` (succeeded; the bundle-size note is a Vite warning, not a test failure). Isolated browser on port 9363 with a throwaway profile.
 
@@ -89,7 +89,7 @@ Checks run this pass: `npm test` (187 passed, 0 failed) and `npm run build` (suc
 | 54 | Store-ready voucher: merchant, branch, headline, status, expiry, restrictions, QR, backup code, “Present this to store staff” | Partial | `VoucherCard.tsx` dialog includes those fields. | Dialog not opened; the fresh profile had no issued voucher. | Claim a reward and open Show voucher. |
 | 55 | Statuses include partially used and cancelled | Complete | Store-value code GGL-0F1E-8B38 recorded a ₹200 redemption and left ₹300. A larger deduction was refused and the balance stayed ₹300. Percentage code GGL-B392-3F58 had no amount field and no balance. Cancelling the store voucher with the reason “Supporter asked to stop using the remaining credit” kept the terms, the ₹200 history, and the ₹300 balance. A later merchant redemption threw “This voucher was cancelled. It cannot be redeemed.” The merchant screen said this is not an expiry and hid the redeem control. | Isolated Chrome, merchant Mo Ali, plus `tests/vouchers.test.ts`. | None for these two offers. |
 | 56 | Turning the feature off stops new vouchers and keeps issued ones | Complete | `tests/vouchers.test.ts`: “deactivation stops issuance but keeps vouchers, redemption and benefit settlement”. | Test passed. | None. |
-| 57 | Honest closure: four outcomes, required explanations, no automatic milestone completion, partial-delivery label, refund is a statement | Partial | `CLOSURE_LABEL.partial` is “Campaign closed — partial delivery reported”. `FinalReportEditor.tsx` requires explanations. `tests/sponsors.test.ts` only normalizes a partial report. | Normalize test passed. Publish was not clicked, and milestones were not re-read after a report. | Publish a partial report and confirm milestones and fundraising stay unchanged. |
+| 57 | Honest closure: four outcomes, required explanations, no automatic milestone completion, partial-delivery label, refund is a statement | Complete | The outcome list is Delivered as planned, Campaign closed — partial delivery reported, Cancelled, and Closed with activities remaining. Each missing explanation was refused before a report was stored. The published partial report left milestone statuses, fundraising, the goal, and the contribution total unchanged. The public heading is “Campaign closed — partial delivery reported”, and the refund sentence says it is the organizer’s statement, not a processed refund. | Isolated Chrome, throwaway profile, port 9364, signed in as Hana Ito. Winter Blankets report tab. Empty publish: “Tick “I have reviewed this report” before publishing.” Then, in order, the outcomes, closure, remaining-funds, unmet, changed-plan, and outstanding-obligation errors. `finalReport` stayed absent until the complete partial publish. Before and after: `ms_hb_identify` reported_complete, `ms_hb_purchase` in_progress, `ms_hb_distribute` planned, `ms_hb_report` planned. Fundraising stayed “Accepting contributions”. Delivery stayed “Delivery in progress”. Goal ₹75,000, raised ₹28,500, 9 contributions. Public page `?tab=updates` showed the same heading, the same unfinished milestones, and the same two badges. | None for this path. |
 | 58 | Thank-you page: amount, receipt, next update only if dated, local follow, reward, at most three prominent actions | Partial | `Success.tsx` shows the receipt card, a dated or undated next-update sentence, a local-follow note, and up to three `btn-lg` links. | Source read. No gift was confirmed in the browser. | Confirm a gift and count the actions. |
 | 59 | Optional personalized sharing action on the thank-you page | Complete | A new simulated contribution on a campaign with no sharing page offered “Create my sharing page” and “Nothing is created until you save it”. The referral count stayed 0. A later contribution on a campaign that already had this supporter’s page linked that page and did not add a referral. | Isolated Chrome. | Demo coverage still shows the older thank-you page. |
 | 60 | My activity groups contributions, vouchers, and followed updates, and respects the feature flag | Partial | `/o/:slug/my-activity` in `App.tsx`. `SupporterHistory.tsx` hides the contribution list when history is off and still renders vouchers. | Code inspection. Page not opened. | Open My activity as two identities. |
@@ -131,7 +131,7 @@ The first poster render clipped “A fundraiser by Together” under the QR card
 
 None of the 82 rows is Missing after this pass. The four rows that were Missing are Complete: 43, 52, 61, and 69. See the summary for the Partial rows that also became Complete.
 
-What is still unfinished is Partial, not Missing. The largest product gaps still open are closure publishing, a private-document public check, a receipt open check, garden/puzzle/jacket media under low-data mode, and the stale videos.
+What is still unfinished is Partial, not Missing. Closure publishing is now Complete. The largest product gaps still open are a private-document public check, a receipt open check, garden/puzzle/jacket media under low-data mode, and the stale videos.
 
 ## 3. UI and accessibility issues
 
@@ -178,14 +178,30 @@ Statuses below are updated only where a new test or an isolated browser check ra
 | 61 | Sharing pages in My activity | Yes, isolated Chrome | No | Current supporter’s page only. Opening the list does not create a page. |
 | 65 | Poster and social assets | Yes, isolated render | No | Dimensions and QR payloads in `/tmp/stage2-assets`. Poster footer no longer collides with the QR card. |
 | 69 | Timezone labels | Yes, isolated Chrome | No | Europe/London on a timestamp. Date-only “21 Oct 2026” did not shift. |
+| 57 | Partial closure publish | Yes, isolated Chrome | No | Hana Ito published a partial report on Winter Blankets. Required explanations were refused first. Milestones, fundraising, goal, and contributions stayed the same. Public updates showed “Campaign closed — partial delivery reported” and the refund statement. |
+
+## Repair checklist
+
+Checked against the code on `main` at `c0946b0`, not only against the status column. Requirement 57 was then verified in an isolated browser. Videos were not regenerated.
+
+| # | Task | Implemented | Verified | Still missing |
+| --- | --- | --- | --- | --- |
+| 57 | Publish a partial closure report | Yes. `FinalReportEditor` requires the four outcomes and the explanations, and says publishing does not complete milestones or close fundraising. | Yes. Isolated Chrome, port 9364, Hana Ito, Winter Blankets. | None. Milestones and fundraising were unchanged after publish. |
+| 18 | Private document stays off the public page | Yes. `normalizeDocument` drops `fileSrc` unless visibility is public. The trust editor can save a private placeholder. | No. A private file was not requested on the public page. | The browser check. |
+| 22 | Open a receipt, including a missing file | Yes. Published expenses render `SafeImage` for `publicReceipt`, and a failed image shows “Image unavailable”. Seed path: `/docs/sample-receipt-redacted.svg`. | No. The image was not opened. | The browser check. |
+| 3–6, 8, 11–13, 15–17, 19, 21, 27, 28, 33, 34, 37, 39, 44, 45, 48, 50, 54, 58, 60, 62, 66, 71, 74, 77, 78 | Remaining Partial rows | Yes. The fields, screens, or handlers named in those rows exist. | No, except where a narrower row above is already Complete. | Browser or test evidence for the path the row still names. |
+| 75 | Low-data media | Yes for the campaign cover, sharing-kit photo, referral intro, and Memory Match faces. | Those four paths were checked in an isolated browser. | Garden, puzzle, and jacket still request their artwork when opened. |
+| 79–81 | Walkthrough and presales videos | Scene scripts exist. The files on disk are the older assemblies. | No. | Do not record until explicitly requested. |
+
+Rows already Complete in the table above are skipped: 2, 7, 9, 10, 14, 20, 23–26, 29–32, 35, 36, 38, 40, 41, 43, 46, 47, 49, 51–53, 55–57, 59, 61, 63–65, 67–70, 72, 73, 76. Rows 1 and 82 are not product work. Row 42’s picker, hex fields, live preview, and contrast result were exercised with the School blue swatch; the requirement row was not updated and is not a new task.
 
 ## Repair order
 
-Stages 1, 2, 4, and 5 have isolated-browser or test evidence in the rows above. Stage 3 and the video stage are not done.
+Stages 1, 2, 4, and 5 have isolated-browser or test evidence in the rows above. Stage 3 is only partly done: the closure publish is verified, and the private-document and receipt checks are not. The video stage is not done.
 
 1. Player-facing gaps: giving-limit agreement, thank-you share action, Ask grouped with other secondary tools, voucher partial-use label, 390px at 200% zoom. Browser-verified.
 2. Sponsor UI walkthrough. Memory Match only. Browser-verified, including one confirm, the per-person cap, and an exhausted budget.
-3. Closure publish check, private-document check, and receipt open check. Not done.
+3. Closure publish check is verified (requirement 57). The private-document check and the receipt open check are not done.
 4. Brand swatches, timezone, and My activity sharing pages. Browser-verified.
 5. Poster and social files rendered, measured, and decoded. The poster footer overlap found in the first render was fixed and rechecked.
 6. Update scene checks and narration, then re-record only if no encode is already running. Both videos stay stale. No encode was started in this pass.
