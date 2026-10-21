@@ -19,13 +19,13 @@ Code that was only read is not marked Complete.
 | Status | Count |
 | --- | ---: |
 | Requirements checked | 82 |
-| Complete | 41 |
-| Partial | 39 |
+| Complete | 42 |
+| Partial | 38 |
 | Missing | 0 |
 | Blocked | 0 |
 | Not applicable | 2 |
 
-Counts are recounted from the requirement rows below. The four rows previously listed as Missing — 43 palette swatches, 52 in-game illustration, 61 sharing pages in My activity, and 69 timezone labels — are now Complete because an isolated browser exercised them. They were not moved into Partial. Rows 24, 25, 26, 47, 55, 57, 59, and 65 also moved from Partial to Complete on new evidence. Demo videos are still stale.
+Counts are recounted from the requirement rows below. The four rows previously listed as Missing — 43 palette swatches, 52 in-game illustration, 61 sharing pages in My activity, and 69 timezone labels — are now Complete because an isolated browser exercised them. They were not moved into Partial. Rows 18, 24, 25, 26, 47, 55, 57, 59, and 65 also moved from Partial to Complete on new evidence. Demo videos are still stale.
 
 Checks run this pass: `npm test` (187 passed, 0 failed) and `npm run build` (succeeded; the bundle-size note is a Vite warning, not a test failure). Isolated browser on port 9363 with a throwaway profile.
 
@@ -50,7 +50,7 @@ Checks run this pass: `npm test` (187 passed, 0 failed) and `npm run build` (suc
 | 15 | Approximate budgets require an explanation | Partial | `budgetApproximate` and `budgetNote` in `StoryEditor.tsx` and `LaunchChecklist.tsx`. | Code inspection. Editor not opened. | Save an estimate without a note and confirm it is refused. |
 | 16 | No invented per-person impact | Partial | Impact examples still have a `costBasis` field in `src/lib/types.ts`. | Not submitted in the UI. | Try to save an impact line with no basis. |
 | 17 | Fictional receipt upload | Partial | Sample receipts live in `src/lib/ai/receipts.ts`. Workspace receipt UI exists. | Not opened. | Upload a sample receipt and save it. |
-| 18 | Private originals stay off the public page | Partial | `normalizeDocument` in `src/lib/records.ts` drops `fileSrc` unless visibility is public. | Code inspection. No private file was requested in the browser. | Add a private document and confirm the public page omits it. |
+| 18 | Private originals stay off the public page | Complete | `normalizeDocument` drops `fileSrc` unless visibility is public. `publicDocuments` returns only public records. The fund page lists the two public samples and omits private titles. A private file planted in storage was stripped on load and was not requested. | Isolated Chrome, throwaway profile, port 9365, Hana Ito. Documents tab: submitted “Organizer identity check (sample placeholder)”. The workspace said “Demo submission recorded” and “no file stored”. Both private records then had `fileSrc` set to `/docs/private-original-req18.svg` in storage. Public fund page: “2 public documents”, quotation and partner letter visible, no “Charity registration” or “Organizer identity check” text, and the page HTML did not contain the private file. Loaded private records had `fileSrc` null. Resource and network requests were only `/docs/sample-quote.svg` and `/docs/sample-partner-letter.svg`. | None for this path. |
 | 19 | Caption and links to expense, milestone, and update | Partial | `TrustEditor.tsx` and document fields on `SupportingDocument`. Seed `doc_hb_quote` is linked in `transparencySeed.ts`. | Code and seed inspection. Link was not clicked. | Open the linked evidence from the public expense. |
 | 20 | One published expense with evidence and one without | Complete | Seed `exp_hb_blankets1` has `publicReceipt`; `exp_hb_van` does not. Browser fund tab contained both “Supporting evidence attached” and “No supporting evidence uploaded”. | Isolated browser, `?tab=fund`. | None for this seed. |
 | 21 | Those two evidence phrases, and not “independently verified” | Partial | Both required phrases were on the fund tab. The absence of “independently verified” was not searched. | Browser text search for the two phrases. | Search the public page for verification claims. |
@@ -131,7 +131,7 @@ The first poster render clipped “A fundraiser by Together” under the QR card
 
 None of the 82 rows is Missing after this pass. The four rows that were Missing are Complete: 43, 52, 61, and 69. See the summary for the Partial rows that also became Complete.
 
-What is still unfinished is Partial, not Missing. Closure publishing is now Complete. The largest product gaps still open are a private-document public check, a receipt open check, garden/puzzle/jacket media under low-data mode, and the stale videos.
+What is still unfinished is Partial, not Missing. Closure publishing and the private-document public check are now Complete. The largest product gaps still open are a receipt open check, garden/puzzle/jacket media under low-data mode, and the stale videos.
 
 ## 3. UI and accessibility issues
 
@@ -179,29 +179,30 @@ Statuses below are updated only where a new test or an isolated browser check ra
 | 65 | Poster and social assets | Yes, isolated render | No | Dimensions and QR payloads in `/tmp/stage2-assets`. Poster footer no longer collides with the QR card. |
 | 69 | Timezone labels | Yes, isolated Chrome | No | Europe/London on a timestamp. Date-only “21 Oct 2026” did not shift. |
 | 57 | Partial closure publish | Yes, isolated Chrome | No | Hana Ito published a partial report on Winter Blankets. Required explanations were refused first. Milestones, fundraising, goal, and contributions stayed the same. Public updates showed “Campaign closed — partial delivery reported” and the refund statement. |
+| 18 | Private document stays off the public page | Yes, isolated Chrome | No | A new private placeholder was saved. A planted private file was stripped on load. The public fund page showed only the two public documents and did not request the private file. |
 
 ## Repair checklist
 
-Checked against the code on `main` at `c0946b0`, not only against the status column. Requirement 57 was then verified in an isolated browser. Videos were not regenerated.
+Checked against the code on `main` at `c0946b0`, not only against the status column. Requirements 57 and 18 were then verified in isolated browsers. Videos were not regenerated.
 
 | # | Task | Implemented | Verified | Still missing |
 | --- | --- | --- | --- | --- |
 | 57 | Publish a partial closure report | Yes. `FinalReportEditor` requires the four outcomes and the explanations, and says publishing does not complete milestones or close fundraising. | Yes. Isolated Chrome, port 9364, Hana Ito, Winter Blankets. | None. Milestones and fundraising were unchanged after publish. |
-| 18 | Private document stays off the public page | Yes. `normalizeDocument` drops `fileSrc` unless visibility is public. The trust editor can save a private placeholder. | No. A private file was not requested on the public page. | The browser check. |
+| 18 | Private document stays off the public page | Yes. `normalizeDocument` drops `fileSrc` unless visibility is public. The trust editor can save a private placeholder. | Yes. Isolated Chrome, port 9365, Hana Ito, Winter Blankets fund page. | None. The private titles were absent and the planted file was not requested. |
 | 22 | Open a receipt, including a missing file | Yes. Published expenses render `SafeImage` for `publicReceipt`, and a failed image shows “Image unavailable”. Seed path: `/docs/sample-receipt-redacted.svg`. | No. The image was not opened. | The browser check. |
 | 3–6, 8, 11–13, 15–17, 19, 21, 27, 28, 33, 34, 37, 39, 44, 45, 48, 50, 54, 58, 60, 62, 66, 71, 74, 77, 78 | Remaining Partial rows | Yes. The fields, screens, or handlers named in those rows exist. | No, except where a narrower row above is already Complete. | Browser or test evidence for the path the row still names. |
 | 75 | Low-data media | Yes for the campaign cover, sharing-kit photo, referral intro, and Memory Match faces. | Those four paths were checked in an isolated browser. | Garden, puzzle, and jacket still request their artwork when opened. |
 | 79–81 | Walkthrough and presales videos | Scene scripts exist. The files on disk are the older assemblies. | No. | Do not record until explicitly requested. |
 
-Rows already Complete in the table above are skipped: 2, 7, 9, 10, 14, 20, 23–26, 29–32, 35, 36, 38, 40, 41, 43, 46, 47, 49, 51–53, 55–57, 59, 61, 63–65, 67–70, 72, 73, 76. Rows 1 and 82 are not product work. Row 42’s picker, hex fields, live preview, and contrast result were exercised with the School blue swatch; the requirement row was not updated and is not a new task.
+Rows already Complete in the table above are skipped: 2, 7, 9, 10, 14, 18, 20, 23–26, 29–32, 35, 36, 38, 40, 41, 43, 46, 47, 49, 51–53, 55–57, 59, 61, 63–65, 67–70, 72, 73, 76. Rows 1 and 82 are not product work. Row 42’s picker, hex fields, live preview, and contrast result were exercised with the School blue swatch; the requirement row was not updated and is not a new task.
 
 ## Repair order
 
-Stages 1, 2, 4, and 5 have isolated-browser or test evidence in the rows above. Stage 3 is only partly done: the closure publish is verified, and the private-document and receipt checks are not. The video stage is not done.
+Stages 1, 2, 4, and 5 have isolated-browser or test evidence in the rows above. Stage 3 is only partly done: the closure publish and the private-document check are verified, and the receipt check is not. The video stage is not done.
 
 1. Player-facing gaps: giving-limit agreement, thank-you share action, Ask grouped with other secondary tools, voucher partial-use label, 390px at 200% zoom. Browser-verified.
 2. Sponsor UI walkthrough. Memory Match only. Browser-verified, including one confirm, the per-person cap, and an exhausted budget.
-3. Closure publish check is verified (requirement 57). The private-document check and the receipt open check are not done.
+3. Closure publish (requirement 57) and the private-document check (requirement 18) are verified. The receipt open check is not done.
 4. Brand swatches, timezone, and My activity sharing pages. Browser-verified.
 5. Poster and social files rendered, measured, and decoded. The poster footer overlap found in the first render was fixed and rechecked.
 6. Update scene checks and narration, then re-record only if no encode is already running. Both videos stay stale. No encode was started in this pass.
