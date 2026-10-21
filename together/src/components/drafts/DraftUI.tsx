@@ -70,39 +70,7 @@ export function SetupIndicator({
           )
         })}
       </ol>
-      <p className="muted small setup-summary">
-        {done} of {items.length} required details. Optional story details never count against you.
-      </p>
     </nav>
-  )
-}
-
-export function RequiredProgress({ items, onJump }: { items: RequiredItem[]; onJump?: (item: RequiredItem) => void }) {
-  const done = items.filter((item) => item.done).length
-  const missing = items.filter((item) => !item.done)
-  return (
-    <div className="required-progress">
-      <div className="required-progress-head">
-        <strong>
-          {done} of {items.length} required details
-        </strong>
-        <span className="muted small">Optional story details never count against you.</span>
-      </div>
-      <span className="required-bar" aria-hidden="true">
-        <i style={{ width: `${items.length ? Math.round((done / items.length) * 100) : 0}%` }} />
-      </span>
-      {onJump && missing.length > 0 ? (
-        <ul className="missing-list" aria-label="Missing required details">
-          {missing.map((item) => (
-            <li key={item.id}>
-              <button type="button" className="link-button" onClick={() => onJump(item)}>
-                {item.label}
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : null}
-    </div>
   )
 }
 
@@ -132,8 +100,8 @@ export function ResumeDrafts({
               <div>
                 <strong>{draftTitle(draft)}</strong>
                 <span className="muted small">
-                  {draft.kind === 'assistant' ? 'Campaign assistant' : 'Campaign form'} · Last edited {formatDateTime(draft.updatedAt)} · {done} of {total}{' '}
-                  required details
+                  {draft.kind === 'assistant' ? 'Campaign assistant' : 'Campaign form'} · Last edited {formatDateTime(draft.updatedAt)} ·{' '}
+                  {total - done === 0 ? 'Ready for review' : `${total - done} required ${total - done === 1 ? 'detail' : 'details'} still needed`}
                 </span>
               </div>
               <div className="inline-actions">

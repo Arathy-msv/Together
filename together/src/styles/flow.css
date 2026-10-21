@@ -246,7 +246,6 @@ a.flow-link {
 .setup-indicator li.current .setup-mark { background: var(--p-ink); color: #fff; }
 .setup-indicator .setup-text { display: grid; min-width: 0; }
 .setup-indicator .setup-text em { font-style: normal; font-size: 0.82rem; color: var(--p-ink-2); }
-.setup-indicator .setup-summary { margin: 8px 0 0; }
 .draft-review { display: grid; gap: 14px; }
 .draft-review-group h3 { margin: 0; }
 @media (max-width: 720px) {
