@@ -13,6 +13,7 @@ import {
   formatPaise,
   gameConfig,
   hasAction,
+  raiseGivingLimit,
   recordAction,
   returnToPending,
   selectedPaise,
@@ -193,6 +194,19 @@ export function useGameContribution({
     if (session) notify(`New board. Your ${formatPaise(selectedPaise(session))} suggestion is kept.`)
   }
 
+  /** One explicit step. Playing on after the limit does not call this. */
+  function raiseLimit() {
+    const session = ledgerRef.current.session
+    if (!session?.capPaise || !session.capReached) return
+    const previous = session.capPaise
+    const next = raiseGivingLimit(ledgerRef.current)
+    if (next === ledgerRef.current || !next.session?.capPaise) return
+    commit(next)
+    notify(
+      `Giving limit raised from ${formatPaise(previous)} to ${formatPaise(next.session.capPaise)}. The suggestion stays at ${formatPaise(session.suggestedPaise)} until you play again.`,
+    )
+  }
+
   function requestNewSession() {
     if (!ledgerRef.current.session) return
     rememberFocus()
@@ -225,6 +239,7 @@ export function useGameContribution({
     openReview,
     closeDialog,
     saveChoice,
+    raiseLimit,
     cancel,
     donate,
     requestRestart,

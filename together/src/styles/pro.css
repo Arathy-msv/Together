@@ -114,12 +114,12 @@ html { scroll-padding-top: 84px; }
 .pro .progress span { display: block; height: 100%; border-radius: inherit; background: var(--p-green-2); }
 .pro .progress.gold span { background: var(--p-gold); }
 .pro .progress.muted span { background: #c8cfca; }
-.money-row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin: 8px 0; font-size: 0.92rem; color: var(--p-ink-2); }
+.money-row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin: 8px 0; font-size: 0.92rem; color: var(--p-ink-2); flex-wrap: wrap; min-width: 0; }
 .money-row strong { color: var(--p-ink); }
 .money-row.big { font-size: 1.05rem; }
 .money-row.big strong { font-size: 1.5rem; }
 
-.pro .status-badge { display: inline-flex; align-items: center; gap: 6px; border-radius: 8px; padding: 4px 10px; font-size: 0.8rem; font-weight: 600; border: 0; background: var(--p-green-soft); color: var(--p-green-2); }
+.pro .status-badge { display: inline-flex; align-items: center; gap: 6px; border-radius: 8px; padding: 4px 10px; font-size: 0.8rem; font-weight: 600; border: 0; background: var(--p-green-soft); color: var(--p-green-2); max-width: 100%; white-space: normal; text-align: start; }
 .pro .status-badge i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 .pro .status-scheduled { background: var(--p-gold-soft); color: #9a6a10; }
 .pro .status-completed { background: #e3ecf6; color: #2d5a87; }
@@ -175,7 +175,7 @@ html { scroll-padding-top: 84px; }
 .pro .search-field { display: flex; align-items: center; gap: 8px; background: #fff; border: 1px solid var(--p-line); border-radius: 10px; padding: 0 12px; min-width: min(100%, 320px); color: var(--p-muted); }
 .pro .search-field input { border: 0; outline: none; padding: 10px 0; }
 .pro .search-field:focus-within { border-color: var(--p-green); box-shadow: 0 0 0 3px rgba(23, 73, 59, 0.14); }
-.pro .chip { border: 1px solid var(--p-line); background: #fff; border-radius: 8px; padding: 8px 12px; font-weight: 600; font-size: 0.88rem; color: var(--p-ink-2); }
+.pro .chip { border: 1px solid var(--p-line); background: #fff; border-radius: 8px; padding: 8px 12px; font-weight: 600; font-size: 0.88rem; color: var(--p-ink-2); max-width: 100%; white-space: normal; text-align: start; }
 .pro .chip.selected { background: var(--p-green); border-color: var(--p-green); color: #fff; }
 .tile-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
 .campaign-tile { background: #fff; border: 1px solid var(--p-line); border-radius: var(--p-radius); overflow: hidden; text-decoration: none; display: flex; flex-direction: column; transition: box-shadow 0.15s ease; }
@@ -490,13 +490,13 @@ html { scroll-padding-top: 84px; }
 .crumbs { display: flex; gap: 8px; color: var(--p-muted); font-size: 0.9rem; margin-bottom: 16px; }
 .crumbs a { text-decoration: none; }
 .crumbs span:last-child { color: var(--p-ink); font-weight: 600; }
-.campaign-grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(320px, 0.9fr); gap: 24px; align-items: start; }
+.campaign-grid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(320px, 0.9fr); gap: 24px; align-items: start; min-width: 0; }
 .campaign-hero { width: 100%; aspect-ratio: 16 / 6; max-height: 300px; object-fit: cover; border-radius: 16px; display: block; }
 .campaign-title { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-top: 18px; }
 .campaign-title h1 { font-size: clamp(1.8rem, 3vw, 2.4rem); font-weight: 800; }
 .campaign-meta { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 10px 0 14px; flex-wrap: wrap; }
 .campaign-story { color: var(--p-ink-2); font-size: 1rem; max-width: 46rem; }
-.pro .support-panel { padding: 22px; position: sticky; top: 88px; }
+.pro .support-panel { padding: 22px; position: sticky; top: 88px; min-width: 0; max-width: 100%; }
 .support-panel h2 { font-size: 1.5rem; font-weight: 800; margin-bottom: 8px; }
 .underline-tabs { display: flex; gap: 24px; border-bottom: 1px solid var(--p-line); margin-bottom: 16px; }
 .underline-tabs button { border: 0; background: none; padding: 10px 2px; font-weight: 600; color: var(--p-muted); cursor: pointer; }
@@ -537,7 +537,7 @@ html { scroll-padding-top: 84px; }
 .success h1 { font-size: clamp(1.7rem, 3.4vw, 2.3rem); font-weight: 800; margin-bottom: 12px; }
 .success-pill { display: inline-block; font-size: 0.9rem; padding: 6px 14px; }
 .pro .receipt-card { padding: 18px; margin: 24px 0; }
-.receipt-top { display: flex; gap: 20px; align-items: center; }
+.receipt-top { display: flex; gap: 20px; align-items: center; min-width: 0; }
 .receipt-top .campaign-cover { width: 190px; height: 120px; object-fit: cover; border-radius: 10px; flex: none; }
 .receipt-top h2 { font-size: 1.4rem; margin: 4px 0 12px; }
 .receipt-facts { display: flex; gap: 28px; }
@@ -548,7 +548,7 @@ html { scroll-padding-top: 84px; }
 
 
 @media (max-width: 980px) {
-  .home-hero, .create-grid, .campaign-grid, .review-grid, .confirm-summary-card { grid-template-columns: 1fr; }
+  .home-hero, .create-grid, .campaign-grid, .review-grid, .confirm-summary-card { grid-template-columns: minmax(0, 1fr); }
   .feature-campaigns, .tile-grid, .stat-cards, .option-grid { grid-template-columns: 1fr 1fr; }
   .value-row, .game-chooser { grid-template-columns: 1fr; }
   .value-row article { padding: 12px 0; }
@@ -610,7 +610,7 @@ html { scroll-padding-top: 84px; }
 .give-option { display: flex; gap: 10px; align-items: flex-start; padding: 12px; border: 1px solid var(--p-line); border-radius: 12px; cursor: pointer; background: var(--p-surface); min-height: 44px; }
 .give-option.selected { border-color: var(--p-ink); box-shadow: 0 0 0 1px var(--p-ink); }
 .give-option input { margin-top: 4px; accent-color: var(--p-ink); }
-.give-option span { display: grid; gap: 2px; }
+.give-option span { display: grid; gap: 2px; min-width: 0; overflow-wrap: anywhere; }
 .give-option em { font-style: normal; font-size: 0.86rem; color: var(--p-ink-2); }
 .game-rules, .game-intro-amounts { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
 .funded-panel h2 { margin-top: 0; }

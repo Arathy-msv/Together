@@ -177,6 +177,8 @@
 }
 .gc-text-btn { justify-self: center; color: #a33c27; }
 .gc-actions { display: grid; gap: 8px; }
+.gc-limit { display: grid; gap: 8px; min-width: 0; }
+.gc-limit .gc-btn { max-width: 100%; white-space: normal; }
 .gc-btn {
   border-radius: 12px;
   padding: 13px 16px;

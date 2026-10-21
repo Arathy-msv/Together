@@ -173,7 +173,7 @@ function Overview({ campaign, view, store }: WorkspaceProps) {
             {campaign.isDraft ? '' : ` — ${view.percent}% of the goal raised.`}
           </li>
           <li>
-            <strong>Delivery:</strong> {DELIVERY_LABEL[deliveryState(campaignMilestones(store, campaign.id))]}
+            <strong>{DELIVERY_LABEL[deliveryState(campaignMilestones(store, campaign.id))]}</strong>
             {delivery.total === 0
               ? ' — no activities planned yet.'
               : ` — ${delivery.complete} of ${delivery.total} activities marked complete by you. Supporters see this as organizer-reported.`}

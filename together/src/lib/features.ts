@@ -371,9 +371,14 @@ export function disableImpact(org: Organization, key: FeatureKey, store: DemoSto
   return { blocked, summary }
 }
 
-/** Campaign uses sponsorship only when the organization can use the feature and the campaign opted in. */
-export function campaignUsesSponsor(org: Organization, campaign: Pick<Campaign, 'sponsorEnabled'>): boolean {
-  return canUseFeature(org, 'sponsorPlay') && Boolean(campaign.sponsorEnabled)
+/** Sponsor rewards unlock only in Memory Match. Other games stay personal contributions. */
+export function sponsorPlaySupported(campaign: Pick<Campaign, 'gameType'>): boolean {
+  return campaign.gameType === 'memory'
+}
+
+/** Campaign uses sponsorship only when the organization allows it, the campaign opted in, and the game can unlock rewards. */
+export function campaignUsesSponsor(org: Organization, campaign: Pick<Campaign, 'sponsorEnabled' | 'gameType'>): boolean {
+  return canUseFeature(org, 'sponsorPlay') && Boolean(campaign.sponsorEnabled) && sponsorPlaySupported(campaign)
 }
 
 export function campaignNeedsApproval(org: Organization): boolean {

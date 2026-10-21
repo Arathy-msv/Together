@@ -376,7 +376,7 @@ export function VoucherList({ vouchers }: { vouchers: IssuedVoucher[] }) {
   const demo = useDemoStore()
   const store = useVoucherStore()
   if (vouchers.length === 0) return <p className="awaiting">No vouchers for this supporter profile yet.</p>
-  const order = { ready: 0, used: 1, expired: 2 }
+  const order = { ready: 0, partial: 1, used: 2, expired: 3 }
   const sorted = [...vouchers].sort((a, b) => order[voucherState(a)] - order[voucherState(b)])
   return (
     <ul className="voucher-grid">

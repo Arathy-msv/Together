@@ -1139,6 +1139,11 @@ a.gt-back:hover { color: var(--gt-ink); text-decoration: underline; text-underli
   .gt-milestone-copy span { font-size: 14px; }
 }
 
+@media (max-width: 420px) {
+  .gt-review { min-width: 0; max-width: 100%; }
+  .gt-success-actions { min-width: 0; padding-left: 0; }
+  .gt-points { white-space: normal; }
+}
 @media (max-width: 380px) {
   .gt-back { font-size: 13px; }
   .gt-header-rule { display: none; }

@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { deliveryState, fundraisingState, isFunded, publicationState, revisionState } from '../src/lib/lifecycle.ts'
+import { DELIVERY_LABEL, deliveryState, fundraisingState, isFunded, publicationState, revisionState } from '../src/lib/lifecycle.ts'
 import type { Campaign, CampaignStatus } from '../src/lib/types.ts'
 
 const base = { goalAmount: 1000, isDraft: false } as Campaign
@@ -15,6 +15,12 @@ test('fundraising labels come from the stored status and the goal, never from de
   assert.equal(fundraisingState(view('approved')), 'not_public')
   assert.equal(isFunded(view('completed', 1200)), true)
   assert.equal(isFunded(view('closed', 300)), false)
+})
+
+test('delivery labels name delivery in the visible text', () => {
+  assert.equal(DELIVERY_LABEL.not_started, 'Delivery not started')
+  assert.equal(DELIVERY_LABEL.in_progress, 'Delivery in progress')
+  assert.equal(DELIVERY_LABEL.reported_complete, 'Organizer-reported complete')
 })
 
 test('delivery is complete only when the organizer reports every activity complete', () => {

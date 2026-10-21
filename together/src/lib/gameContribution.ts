@@ -287,6 +287,26 @@ export function isCustom(session: PendingSession | null): boolean {
  * Saves a supporter-chosen total that stays fixed while the suggestion grows.
  * Passing null returns to automatic mode, where the chosen total follows the suggestion.
  */
+/**
+ * Raises this play session’s giving limit by one action amount after the supporter agrees.
+ * The organizer’s campaign setting is left unchanged, and a second press does nothing until
+ * play reaches the new limit.
+ */
+export function raiseGivingLimit(ledger: GameLedger, now: Date = new Date()): GameLedger {
+  const session = ledger.session
+  if (!session || session.capPaise == null || !session.capReached) return ledger
+  const capPaise = session.capPaise + session.ratePaise
+  return {
+    ...ledger,
+    session: {
+      ...session,
+      capPaise,
+      capReached: session.suggestedPaise >= capPaise,
+      updatedAt: now.toISOString(),
+    },
+  }
+}
+
 export function setCustomAmount(ledger: GameLedger, paise: number | null, now: Date = new Date()): GameLedger {
   const session = ledger.session
   if (!session) return ledger

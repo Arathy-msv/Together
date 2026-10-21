@@ -828,12 +828,15 @@ function SettingsStep({
           />
         </div>
         {errors.form ? <p className="error-text">{errors.form}</p> : null}
-        {canUseFeature(org, 'sponsorPlay') && form.game && !canCurrent('org.manageSponsors', { organization: org }) ? (
+        {canUseFeature(org, 'sponsorPlay') && form.game && form.gameType === 'memory' && !canCurrent('org.manageSponsors', { organization: org }) ? (
           <p className="muted small">
             Sponsor-funded play {form.sponsorEnabled ? 'is confirmed for this campaign' : 'is off for this campaign'}. An Organization Admin confirms sponsors.
           </p>
         ) : null}
-        {canUseFeature(org, 'sponsorPlay') && form.game && canCurrent('org.manageSponsors', { organization: org }) ? (
+        {canUseFeature(org, 'sponsorPlay') && form.game && form.gameType !== 'memory' ? (
+          <p className="muted small">Sponsor-funded play is only available for Memory Match. This game stays a personal contribution.</p>
+        ) : null}
+        {canUseFeature(org, 'sponsorPlay') && form.game && form.gameType === 'memory' && canCurrent('org.manageSponsors', { organization: org }) ? (
           <label className="toggle-row">
             <button
               type="button"
@@ -911,7 +914,7 @@ function GameGallery({
                 onChange(
                   form.gameType === game.id && form.game
                     ? { game: true }
-                    : { game: true, gameType: game.id, ...gameSettingsFields(game.id) },
+                    : { game: true, gameType: game.id, sponsorEnabled: game.id === 'memory' ? form.sponsorEnabled : false, ...gameSettingsFields(game.id) },
                 )
               }
             >

@@ -254,6 +254,30 @@ export function isExpired(item: { validUntil: string }, now = Date.now()): boole
   return Number.isNaN(end) || end < now
 }
 
+export type IssuedVoucherState = 'ready' | 'partial' | 'used' | 'expired'
+
+/**
+ * Store-value vouchers with a remaining balance and at least one redemption are partially used.
+ * Percentage and other one-use offers never pick up a monetary balance label.
+ */
+export function issuedVoucherState(
+  voucher: Pick<IssuedVoucher, 'status' | 'capability' | 'balance' | 'redemptions' | 'validUntil'>,
+  now = Date.now(),
+): IssuedVoucherState {
+  if (voucher.status === 'redeemed') return 'used'
+  const expired = isExpired(voucher, now)
+  if (
+    !expired &&
+    voucher.capability === 'storeValueVouchers' &&
+    typeof voucher.balance === 'number' &&
+    voucher.balance > 0 &&
+    voucher.redemptions.length > 0
+  ) {
+    return 'partial'
+  }
+  return expired ? 'expired' : 'ready'
+}
+
 /** Live means a supporter could use this offer right now. */
 export function offerIsLive(org: Organization, offer: PartnerOffer, store: VoucherStore, now = Date.now()): boolean {
   return (

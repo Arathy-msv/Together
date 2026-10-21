@@ -289,7 +289,12 @@ export function sanitizeFormForOrg(form: CampaignForm, org: Organization): Campa
   return {
     ...form,
     // Sponsor confirmations are managed by Organization Admins; organizers keep what an admin set.
-    sponsorEnabled: canUseFeature(org, 'sponsorPlay') ? (canCurrent('org.manageSponsors', { organization: org }) ? form.sponsorEnabled : sponsorSetByAdmin(form)) : false,
+    sponsorEnabled:
+      canUseFeature(org, 'sponsorPlay') && form.gameType === 'memory'
+        ? canCurrent('org.manageSponsors', { organization: org })
+          ? form.sponsorEnabled
+          : sponsorSetByAdmin(form)
+        : false,
     nextUpdateAt: canUseFeature(org, 'updateCommitments') ? form.nextUpdateAt : '',
     partnerOfferIds: eligiblePartnerOffers(form, org),
   }

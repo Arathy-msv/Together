@@ -19,7 +19,7 @@ class MemoryStorage {
 const local = new MemoryStorage()
 Object.assign(globalThis, { localStorage: local, sessionStorage: new MemoryStorage() })
 
-const { loadStore } = await import('../src/lib/storage.ts')
+const { loadStore, saveStore } = await import('../src/lib/storage.ts')
 const { switchIdentity, DEMO_USERS } = await import('../src/lib/identity.ts')
 const { loadOrganizations, saveOrganization } = await import('../src/lib/orgStorage.ts')
 const { confirmSponsorAllocation, createSponsorCommitment, sponsorOffer, unlockSponsorMilestone } = await import('../src/lib/sponsors.ts')
@@ -35,7 +35,16 @@ test('a sponsor reward stays pending, confirms once, and is not a personal suppo
   const store = loadStore()
   const org = loadOrganizations().find((item) => item.id === 'org_together')!
   saveOrganization({ ...org, features: { ...org.features, sponsorPlay: true } })
-  const campaign = store.campaigns.find((item) => item.participation.game && item.organizationId === org.id)!
+  const base = store.campaigns.find((item) => item.id === 'cmp_library')!
+  const campaign = {
+    ...base,
+    id: 'cmp_memory_open',
+    title: 'Memory Match sponsor test',
+    gameType: 'memory' as const,
+    opensAt: new Date(Date.now() - 86_400_000).toISOString(),
+    closesAt: new Date(Date.now() + 86_400_000 * 30).toISOString(),
+  }
+  saveStore({ ...store, campaigns: [...store.campaigns, campaign] })
   const start = new Date(Date.now() - 86_400_000).toISOString()
   const end = new Date(Date.now() + 86_400_000).toISOString()
   createSponsorCommitment({
@@ -60,6 +69,31 @@ test('a sponsor reward stays pending, confirms once, and is not a personal suppo
   assert.equal(after.contributions.filter((item) => item.id === `spn_gift_${first!.id}`).length, 1)
   assert.equal(supporterCount(campaign.id, after.contributions), supporterCount(campaign.id, after.contributions.filter((item) => item.source !== 'sponsor')))
   assert.equal(sponsorOffer(campaign.id, 'user_mia')?.next, null)
+})
+
+test('a non-memory campaign cannot take a sponsor commitment or offer sponsor play', () => {
+  const store = loadStore()
+  const org = loadOrganizations().find((item) => item.id === 'org_together')!
+  saveOrganization({ ...org, features: { ...org.features, sponsorPlay: true } })
+  const campaign = store.campaigns.find((item) => item.gameType === 'garden' && item.organizationId === org.id)!
+  const start = new Date(Date.now() - 86_400_000).toISOString()
+  const end = new Date(Date.now() + 86_400_000).toISOString()
+  assert.throws(
+    () =>
+      createSponsorCommitment({
+        organizationId: campaign.organizationId,
+        campaignId: campaign.id,
+        sponsorName: 'Fictional Sponsor',
+        pledgedMinor: 10_000,
+        perParticipantCapMinor: 5_000,
+        unlocks: [{ id: 'match-1', label: 'First pair', rewardMinor: 5_000 }],
+        startsAt: start,
+        endsAt: end,
+      }),
+    /Memory Match/,
+  )
+  assert.equal(sponsorOffer(campaign.id, 'user_mia'), null)
+  assert.equal(loadStore().sponsorCommitments.some((item) => item.campaignId === campaign.id), false)
 })
 
 test('a closure report can be partial without inventing completed milestones', () => {

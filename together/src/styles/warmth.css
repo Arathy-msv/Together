@@ -184,6 +184,13 @@
   min-height: 0;
   overflow: hidden;
 }
+@media (max-width: 420px) {
+  .wm-shell { padding: 12px; }
+  .wm-strip { flex-wrap: wrap; }
+  .wm-campaign { grid-template-columns: minmax(0, 1fr); }
+  .wm-cart { min-width: 0; width: 100%; }
+  .wm-header { flex-wrap: wrap; min-width: 0; }
+}
 @media (min-width: 861px) {
   .wm-shell:not(:has(.wm-goal)) {
     height: 100vh;

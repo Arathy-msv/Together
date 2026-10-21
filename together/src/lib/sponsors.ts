@@ -37,7 +37,7 @@ export function sponsorBalance(commitment: SponsorCommitment, now = Date.now()) 
 export function sponsorOffer(campaignId: string, participantId: string, now = Date.now()): SponsorOffer | null {
   const store = loadStore()
   const campaign = store.campaigns.find((item) => item.id === campaignId)
-  if (!campaign?.sponsorEnabled) return null
+  if (!campaign?.sponsorEnabled || campaign.gameType !== 'memory') return null
   const org = findOrganization(campaign.organizationId)
   if (!org || !canUseFeature(org, 'sponsorPlay')) return null
   const commitment = store.sponsorCommitments.find((item) => item.campaignId === campaignId && item.organizationId === org.id)
@@ -70,6 +70,9 @@ export function createSponsorCommitment(input: Omit<SponsorCommitment, 'id' | 'c
   const store = loadStore()
   const campaign = store.campaigns.find((item) => item.id === input.campaignId && item.organizationId === org.id)
   if (!campaign) throw new Error('Choose a campaign in this organization.')
+  if (campaign.gameType !== 'memory') {
+    throw new Error('Sponsor-funded play is only available for Memory Match. Other games stay personal contributions.')
+  }
   if (store.sponsorCommitments.some((item) => item.campaignId === campaign.id)) throw new Error('This campaign already has a sponsor commitment.')
   if (input.pledgedMinor <= 0 || input.perParticipantCapMinor <= 0) throw new Error('Enter a pledge and a per-person cap greater than zero.')
   if (input.unlocks.length === 0) throw new Error('Add at least one eligible game milestone.')

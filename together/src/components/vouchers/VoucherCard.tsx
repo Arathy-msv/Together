@@ -3,16 +3,18 @@ import { Link } from 'react-router-dom'
 import { capabilityName } from '../../lib/features.ts'
 import { formatDate, formatDateTime, formatMoney } from '../../lib/format.ts'
 import { qrPngDataUrl } from '../../lib/qr.ts'
-import { isExpired, loadVoucherStore, type IssuedVoucher } from '../../lib/vouchers.ts'
+import { issuedVoucherState, loadVoucherStore, type IssuedVoucher, type IssuedVoucherState } from '../../lib/vouchers.ts'
 
-type VoucherState = 'ready' | 'used' | 'expired'
-
-export function voucherState(voucher: IssuedVoucher, now = Date.now()): VoucherState {
-  if (voucher.status === 'redeemed') return 'used'
-  return isExpired(voucher, now) ? 'expired' : 'ready'
+export function voucherState(voucher: IssuedVoucher, now = Date.now()): IssuedVoucherState {
+  return issuedVoucherState(voucher, now)
 }
 
-const STATE_LABEL: Record<VoucherState, string> = { ready: 'Ready to use', used: 'Used', expired: 'Expired' }
+const STATE_LABEL: Record<IssuedVoucherState, string> = {
+  ready: 'Ready to use',
+  partial: 'Partially used',
+  used: 'Used',
+  expired: 'Expired',
+}
 
 /** The one line a cashier needs: remaining balance, the reward, or the offer title. */
 function headline(voucher: IssuedVoucher): string {
@@ -35,7 +37,7 @@ export function VoucherCard({
     <li className={`voucher-card ${state}`}>
       <div className="voucher-card-top">
         <span className="voucher-store">{storeName}</span>
-        <span className={`status-badge status-${state === 'ready' ? 'active' : 'closed'}`}>
+        <span className={`status-badge status-${state === 'ready' || state === 'partial' ? 'active' : 'closed'}`}>
           <i aria-hidden="true" />
           {STATE_LABEL[state]}
         </span>
@@ -48,7 +50,7 @@ export function VoucherCard({
         <span className="small">
           {state === 'expired' ? 'Expired' : 'Valid until'} {formatDate(voucher.validUntil)}
         </span>
-        <button type="button" className={state === 'ready' ? 'btn btn-primary' : 'btn btn-outline'} onClick={() => setShowing(true)}>
+        <button type="button" className={state === 'ready' || state === 'partial' ? 'btn btn-primary' : 'btn btn-outline'} onClick={() => setShowing(true)}>
           Show voucher
         </button>
       </div>
@@ -118,12 +120,17 @@ function VoucherPresentation({ voucher, storeName, onClose }: { voucher: IssuedV
         {branches.length > 0 ? <p className="voucher-present-branch">{branches.length === 1 ? branches[0] : `Branches: ${branches.join(', ')}`}</p> : null}
         <h2 id={`present-${voucher.id}`}>{headline(voucher)}</h2>
         <p className={`voucher-present-state ${state}`}>{STATE_LABEL[state]}</p>
-        {state === 'ready' ? (
-          qr ? (
-            <img className="voucher-present-qr" src={qr} alt={`QR code for voucher ${voucher.code}`} width={280} height={280} />
-          ) : qrFailed ? null : (
-            <div className="voucher-present-qr placeholder" aria-hidden="true" />
-          )
+        {state === 'ready' || state === 'partial' ? (
+          <>
+            {state === 'partial' ? (
+              <p className="voucher-present-note">Partially used. The remaining store balance can still be redeemed. This is not a percentage discount.</p>
+            ) : null}
+            {qr ? (
+              <img className="voucher-present-qr" src={qr} alt={`QR code for voucher ${voucher.code}`} width={280} height={280} />
+            ) : qrFailed ? null : (
+              <div className="voucher-present-qr placeholder" aria-hidden="true" />
+            )}
+          </>
         ) : (
           <p className="voucher-present-note">{state === 'used' ? 'This voucher has already been used. Do not accept it again.' : 'This voucher is past its expiry. Do not accept it.'}</p>
         )}

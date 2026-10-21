@@ -47,6 +47,7 @@ h1, h2, h3, p { margin: 0; }
 img, svg { display: block; max-width: 100%; }
 
 .app-shell { min-height: 100vh; display: flex; flex-direction: column; }
+.app-shell > * { min-width: 0; }
 main { flex: 1; }
 .page { width: min(1120px, calc(100% - 32px)); margin: 0 auto; padding: 28px 0 72px; }
 .page.narrow { width: min(720px, calc(100% - 32px)); }

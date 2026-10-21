@@ -17,6 +17,8 @@ import { updatesSince } from '../lib/transparency.ts'
 import { jacketColorFromDetail, jacketImage } from '../lib/warmth.ts'
 import { NotFoundPage } from './NotFound.tsx'
 import { trackJourney } from '../lib/analytics.ts'
+import { canHaveSharingPages, isMyReferral, referralPath, shareWorkspacePath } from '../lib/referrals.ts'
+import type { Referral } from '../lib/types.ts'
 
 export function SuccessPage() {
   const { id = '', contributionId = '' } = useParams()
@@ -132,6 +134,7 @@ export function SuccessPage() {
         <ProgressBar value={exactPercent} tone="gold" />
         <p className="muted small">{view.supporters === 1 ? '1 simulated contribution' : `${view.supporters} simulated contributions`}</p>
       </section>
+      <ThankYouShare campaignId={view.campaign.id} base={base} canCreate={canHaveSharingPages(view)} referrals={store.referrals} organizationId={org.id} />
       <ContributionRewards campaign={view.campaign} contribution={contribution} />
       <section className="panel since-card" aria-labelledby="since-title">
         <h2 id="since-title">Updates since your contribution</h2>
@@ -181,5 +184,47 @@ export function SuccessPage() {
       </div>
       <p className="muted small center">Saved in this browser as local demo data. No real money was collected. Your completed game progress is kept, and only new actions start a new suggestion.</p>
     </div>
+  )
+}
+
+function ThankYouShare({
+  campaignId,
+  base,
+  canCreate,
+  referrals,
+  organizationId,
+}: {
+  campaignId: string
+  base: string
+  canCreate: boolean
+  referrals: Referral[]
+  organizationId: string
+}) {
+  const mine = referrals.filter((item) => item.campaignId === campaignId && item.organizationId === organizationId && isMyReferral(item.id))
+  return (
+    <section className="panel since-card" aria-labelledby="thanks-share-title">
+      <h2 id="thanks-share-title">Share what you supported</h2>
+      {mine.length > 0 ? (
+        <>
+          <p className="muted small">You already have a sharing page for this campaign. Opening it does not create another one.</p>
+          <ul className="plain-list">
+            {mine.map((item) => (
+              <li key={item.id}>
+                <Link to={referralPath(base, campaignId, item.code)}>{item.displayName}’s sharing page</Link>
+              </li>
+            ))}
+          </ul>
+        </>
+      ) : canCreate ? (
+        <>
+          <p className="muted small">You can create one sharing page with your own message. Nothing is created until you save it.</p>
+          <Link to={shareWorkspacePath(base, campaignId)} className="link-button">
+            Create my sharing page
+          </Link>
+        </>
+      ) : (
+        <p className="muted small">Sharing pages are not open for this campaign.</p>
+      )}
+    </section>
   )
 }

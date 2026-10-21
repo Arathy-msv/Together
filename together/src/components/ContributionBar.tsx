@@ -44,9 +44,17 @@ export function ContributionBar({ contribution }: { contribution: GameContributi
       <p className="gc-bar-note">
         {session
           ? session.capReached && session.capPaise != null
-            ? `Giving limit of ${formatPaise(session.capPaise)} reached. Keep playing for fun — the suggestion won’t go higher.`
+            ? `Giving limit of ${formatPaise(session.capPaise)} reached. Keep playing — the suggestion stays here until you agree to raise it to ${formatPaise(session.capPaise + session.ratePaise)}.`
             : `${settings.allowCustom ? 'Your final contribution is your choice.' : 'Your contribution is the amount the game suggests.'} No payment is taken while you play.`
           : `${gameAmountRules(contribution.game, settings).join(' ')} No payment is taken while you play.`}
+        {session?.capReached && session.capPaise != null ? (
+          <>
+            {' '}
+            <button type="button" className="gc-link" onClick={() => contribution.raiseLimit()} disabled={contribution.paused}>
+              Raise the limit from {formatPaise(session.capPaise)} to {formatPaise(session.capPaise + session.ratePaise)}
+            </button>
+          </>
+        ) : null}
         {session && !contribution.preview ? (
           <>
             {' '}

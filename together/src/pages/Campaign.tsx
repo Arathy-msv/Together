@@ -243,7 +243,6 @@ function CampaignDetails({ view, referral }: { view: CampaignView; referral?: Re
               </>
             ) : null}
           </div>
-          <CampaignQuestions campaign={campaign} store={store} onOpenTab={openSection} />
         </div>
 
         <aside className="support-column">
@@ -342,6 +341,7 @@ function CampaignDetails({ view, referral }: { view: CampaignView; referral?: Re
           </div>
           <CampaignPartnerOffers campaign={campaign} />
           <div>{followButton}</div>
+          <CampaignQuestions campaign={campaign} store={store} onOpenTab={openSection} />
             </div>
           </details>
         </aside>

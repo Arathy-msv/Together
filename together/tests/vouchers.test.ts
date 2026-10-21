@@ -264,3 +264,37 @@ test('organizations saved before the module keep capabilities they already used'
   assert.equal(migrated.voucherSettings.onlineOffers, true)
   assert.equal(migrated.voucherSettings.storeValueVouchers, false)
 })
+
+test('a store-value voucher with a remaining balance is partially used, and a discount coupon is not', () => {
+  const future = '2099-01-01'
+  assert.equal(
+    v.issuedVoucherState({
+      status: 'active',
+      capability: 'storeValueVouchers',
+      balance: 40,
+      redemptions: [{ id: 'r1', at: '2026-01-01', amount: 10, note: 'used' }],
+      validUntil: future,
+    }),
+    'partial',
+  )
+  assert.equal(
+    v.issuedVoucherState({
+      status: 'active',
+      capability: 'onlineOffers',
+      balance: 40,
+      redemptions: [{ id: 'r1', at: '2026-01-01', note: 'used' }],
+      validUntil: future,
+    }),
+    'ready',
+  )
+  assert.equal(
+    v.issuedVoucherState({
+      status: 'redeemed',
+      capability: 'storeValueVouchers',
+      balance: 0,
+      redemptions: [{ id: 'r1', at: '2026-01-01', amount: 50, note: 'used' }],
+      validUntil: future,
+    }),
+    'used',
+  )
+})

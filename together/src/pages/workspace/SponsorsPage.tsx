@@ -11,7 +11,8 @@ import type { CurrencyCode } from '../../lib/types.ts'
 export function SponsorsPage() {
   const { org } = useOrg()
   const store = useDemoStore()
-  const campaigns = store.campaigns.filter((item) => item.organizationId === org.id && item.participation.game)
+  const campaigns = store.campaigns.filter((item) => item.organizationId === org.id && item.participation.game && item.gameType === 'memory')
+  const otherGames = store.campaigns.filter((item) => item.organizationId === org.id && item.participation.game && item.gameType !== 'memory')
   const [campaignId, setCampaignId] = useState(campaigns[0]?.id ?? '')
   const [name, setName] = useState('Northwind Stationery (fictional)')
   const [pledge, setPledge] = useState('5000')
@@ -75,7 +76,10 @@ export function SponsorsPage() {
     <div className="workspace-grid">
       <section className="panel ws-card wide">
         <h1>Sponsor-funded play</h1>
-        <p className="muted small">A fictional sponsor budget. Pending rewards stay out of the campaign total until you confirm them. Confirming the same reward again does nothing.</p>
+        <p className="muted small">A fictional sponsor budget for Memory Match only. Pending rewards stay out of the campaign total until you confirm them. Confirming the same reward again does nothing.</p>
+        {otherGames.length > 0 ? (
+          <p className="muted small">Garden, puzzle, and jacket campaigns are not listed. Those games do not unlock sponsor rewards.</p>
+        ) : null}
         {notice ? <div className="notice success" role="status">{notice}</div> : null}
         {error ? <p className="error-text" role="alert">{error}</p> : null}
         {commitments.some((item) => item.campaignId === campaignId) ? null : (

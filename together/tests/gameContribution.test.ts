@@ -12,6 +12,7 @@ import {
   normalizeGameSettings,
   parseLedger,
   parseRupeesToPaise,
+  raiseGivingLimit,
   recordAction,
   returnToPending,
   selectedPaise,
@@ -168,6 +169,35 @@ describe('suggestion cap', () => {
     assert.deepEqual(outcomes, ['added:5000', 'added:5000', 'capped:2000', 'capped:0'])
     assert.equal(ledger.session?.suggestedPaise, 12000)
     assert.equal(ledger.session?.capReached, true)
+  })
+
+  test('the limit rises only after an explicit agreement and survives a refresh', () => {
+    const settings = { ...defaultGameSettings('garden'), capPaise: 12000 }
+    let ledger = emptyLedger('cmp', 'garden')
+    for (const id of ['a', 'b', 'c', 'd']) {
+      ledger = recordAction(ledger, { actionId: id, roundId: 'r', label: id }, settings, now).ledger
+    }
+    const blocked = recordAction(ledger, { actionId: 'e', roundId: 'r', label: 'e' }, settings, now)
+    assert.equal(blocked.outcome, 'capped')
+    assert.equal(blocked.addedPaise, 0)
+    assert.equal(blocked.ledger.session?.suggestedPaise, 12000)
+    const raised = raiseGivingLimit(blocked.ledger, now)
+    assert.equal(raised.session?.capPaise, 17000)
+    assert.equal(raised.session?.suggestedPaise, 12000)
+    assert.equal(raised.session?.capReached, false)
+    assert.equal(settings.capPaise, 12000)
+    const again = raiseGivingLimit(raised, now)
+    assert.equal(again, raised)
+    const restored = parseLedger(JSON.parse(JSON.stringify(raised)), 'cmp', 'garden')
+    assert.equal(restored.session?.capPaise, 17000)
+    assert.equal(restored.session?.suggestedPaise, 12000)
+    const next = recordAction(restored, { actionId: 'f', roundId: 'r', label: 'f' }, settings, now)
+    assert.equal(next.outcome, 'added')
+    assert.equal(next.addedPaise, 5000)
+    assert.equal(next.ledger.session?.suggestedPaise, 17000)
+    const held = recordAction(next.ledger, { actionId: 'g', roundId: 'r', label: 'g' }, settings, now)
+    assert.equal(held.addedPaise, 0)
+    assert.equal(held.ledger.session?.suggestedPaise, 17000)
   })
 })
 

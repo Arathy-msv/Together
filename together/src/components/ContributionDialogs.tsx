@@ -226,9 +226,16 @@ function CheckpointDialog({ contribution, onNextRound }: { contribution: GameCon
           ) : null}
         </dl>
         {session.capReached && session.capPaise != null ? (
-          <p className="gc-note">
-            The suggestion is capped at {formatPaise(session.capPaise)}. More actions will not increase it.
-          </p>
+          <div className="gc-limit">
+            <p className="gc-note">
+              The suggestion is at the previous limit of {formatPaise(session.capPaise)}. Playing more will not increase it.
+              You can raise this session’s limit to {formatPaise(session.capPaise + session.ratePaise)}. The organizer’s campaign setting stays{' '}
+              {contribution.settings.capPaise != null ? formatPaise(contribution.settings.capPaise) : 'unset'}.
+            </p>
+            <button type="button" className="gc-btn gc-btn-outline" onClick={() => contribution.raiseLimit()}>
+              Raise the limit to {formatPaise(session.capPaise + session.ratePaise)}
+            </button>
+          </div>
         ) : null}
         {custom ? <p className="gc-note">Your custom amount stays fixed unless you edit it.</p> : null}
 

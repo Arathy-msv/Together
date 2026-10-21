@@ -30,8 +30,8 @@ export const FUNDRAISING_LABEL: Record<FundraisingState, string> = {
 }
 
 export const DELIVERY_LABEL: Record<DeliveryState, string> = {
-  not_started: 'Not started',
-  in_progress: 'In progress',
+  not_started: 'Delivery not started',
+  in_progress: 'Delivery in progress',
   reported_complete: 'Organizer-reported complete',
 }
 

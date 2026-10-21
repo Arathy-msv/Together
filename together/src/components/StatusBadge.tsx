@@ -27,7 +27,6 @@ export function DeliveryBadge({ state }: { state: DeliveryState }) {
   return (
     <span className={`status-badge delivery-${state}`}>
       <i aria-hidden="true" />
-      <span className="sr-only">Delivery: </span>
       {DELIVERY_LABEL[state]}
     </span>
   )

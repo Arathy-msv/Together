@@ -19,11 +19,13 @@ Code that was only read is not marked Complete.
 | Status | Count |
 | --- | ---: |
 | Requirements checked | 82 |
-| Complete | 26 |
+| Complete | 29 |
 | Partial | 47 |
-| Missing | 7 |
+| Missing | 4 |
 | Blocked | 0 |
 | Not applicable | 2 |
+
+These counts replace the original audit totals after the first repair pass. Complete means a test or an isolated browser exercised the behaviour in this pass or the original audit. The four remaining Missing rows are 43 (palette swatches), 52 (in-game illustration), 61 (sharing pages in My activity), and 69 (timezone on date-times). Demo videos are still stale.
 
 Checks run: `npm test` (177 passed, 0 failed) and `npm run build` (succeeded; the bundle-size note is a Vite warning, not a test failure). Isolated browser: Open Harbour blankets story and fund tabs, How it works, 390px width, and 200% zoom.
 
@@ -54,7 +56,7 @@ Checks run: `npm test` (177 passed, 0 failed) and `npm run build` (succeeded; th
 | 21 | Those two evidence phrases, and not “independently verified” | Partial | Both required phrases were on the fund tab. The absence of “independently verified” was not searched. | Browser text search for the two phrases. | Search the public page for verification claims. |
 | 22 | Evidence image opens and is readable; missing files fall back | Partial | Public receipt path is `/docs/sample-receipt-redacted.svg`. | Image was not opened. | Open the receipt and a missing-file case. |
 | 23 | Sponsor pledge, pending allocation, one confirmation | Complete | `tests/sponsors.test.ts`: “a sponsor reward stays pending, confirms once, and is not a personal supporter.” Second unlock is null. Second confirm adds ₹50 once. | Test passed. | None for the model. |
-| 24 | Sponsor journey in the UI, Memory Match only | Partial | `SponsorsPage.tsx`, `SponsorPlayChoice` in `Campaign.tsx`, unlock in `MemoryGame.tsx`. Other games do not call `unlockSponsorMilestone`. | API test only. Screens not clicked. The Open Harbour page had no sponsor offer. | Walk org feature → commitment → play → confirm in the browser. Wire or explicitly limit other games. |
+| 24 | Sponsor journey in the UI, Memory Match only | Partial | Non-memory campaigns are rejected. The sponsor screen lists Memory Match only and says the other games are not listed. | `tests/sponsors.test.ts`: garden throws `/Memory Match/`; the memory campaign still confirms ₹50 once. Screens not clicked. | Walk the Memory Match sponsor screens. Do not show sponsor mode on garden, puzzle, or jacket. |
 | 25 | Reward amount shown before a limited sponsor action | Partial | `SponsorPlayChoice` and `MemoryGame.tsx` render `formatMinor` for the next reward. | Code inspection. Game not played. | Play until the cap and read the amount first. |
 | 26 | Campaign and sponsorship dates block unlocks | Partial | `unlockSponsorMilestone` checks campaign open/close and `sponsorOffer` checks commitment dates. | Test used an open window only. | Try a date outside the window. |
 | 27 | Sponsor amount is not added to personal checkout | Partial | Confirmed sponsor gifts use `source: 'sponsor'` and are skipped by `supporterCount`. Memory Match sponsor mode does not call `contribution.record`. | Model test. Checkout screen not used in sponsor mode. | Choose sponsor play and confirm the personal review does not include that amount. |
@@ -68,16 +70,16 @@ Checks run: `npm test` (177 passed, 0 failed) and `npm run build` (succeeded; th
 | 35 | Public page states cause, organizer, beneficiaries, fund use, progress, and how to take part | Complete | Story questions and give/play choices were on the Open Harbour page. Fund tab showed “Accepting contributions”. | Isolated browser. | None for this campaign. |
 | 36 | Give directly and Play to support stay primary, with the game sentence beside play | Complete | Browser text included “Give directly”, “Play to support”, and “Play to build a suggested contribution”. | Isolated browser. | None. |
 | 37 | Sponsor-funded play is a primary choice only when configured | Partial | Radios render when `sponsorOffer` returns an offer. This campaign had no offer, so the control was absent. | Browser absence matches the seed. Configured state not shown. | Enable a commitment and reload. |
-| 38 | Share, partner offers, follow, and ask are secondary | Partial | Share, offers, and follow are inside `<details class="more-ways">`. “Ask about this campaign” is still in the main column (`Campaign.tsx`). | Browser found both “More ways to take part” and “Ask about this campaign” on the fund view. | Move Ask into the same group. |
+| 38 | Share, partner offers, follow, and ask are secondary | Complete | Ask is inside `details.more-ways`. Isolated Chrome: Enter opened the summary and Tab reached share, follow, and the suggested questions. | Isolated browser, fund tab, 390px. | Demo video still shows the old placement. |
 | 39 | Funded or closed campaigns replace giving and keep receipts and vouchers | Partial | `Funding goal reached` and “See what happens next” are in `Campaign.tsx`. | No funded campaign was opened. | Open a goal-reached campaign and a receipt. |
-| 40 | Public fundraising and delivery labels match the prompt | Partial | `FUNDRAISING_LABEL` matches Opens soon, Accepting contributions, Funding goal reached, Fundraising closed. Visible delivery badge is “In progress”, with a visually hidden “Delivery:” prefix (`StatusBadge.tsx`). Prompt asks for “Delivery in progress”. | `tests/lifecycle.test.ts`. Badge wording read in code. Browser showed “Accepting contributions” only. | Decide the visible delivery wording and check a funded page. |
+| 40 | Public fundraising and delivery labels match the prompt | Complete | Visible badge text is “Delivery in progress”. `tests/lifecycle.test.ts` asserts “Delivery not started”, “Delivery in progress”, and “Organizer-reported complete”. | Isolated browser on Open Harbour blankets, plus the label test. | A funded page was not opened in this pass. Milestone status options stay “In progress”. |
 | 41 | Reaching the goal does not complete delivery | Complete | `tests/lifecycle.test.ts`: “fundraising labels come from the stored status and the goal, never from delivery” and “delivery is complete only when the organizer reports every activity complete”. | Tests passed. | None for the state functions. |
 | 42 | Colour picker, hex entry, live preview, readable text | Partial | `Onboarding.tsx` `input type="color"` and hex field. `contrastChecks` and `readableOn` in `src/lib/theme.ts`. | Code inspection. Settings not opened. | Change a colour and read the preview and contrast note. |
 | 43 | Suggested palette swatches | Missing | No palette swatch control in onboarding or organization settings. | Search of `src` for swatch palettes. | Add swatches or record a product decision to drop them. |
 | 44 | Branding on website, campaigns, games, sharing, vouchers, and workspace; QR stays readable | Partial | Theme is applied from organization branding. QR quiet zone is tested. Surfaces were not compared. | `tests/sharing.test.ts` quiet-zone case. | Spot-check each surface after a colour change. |
 | 45 | Before play: amount per action, no payment while playing, whether the total can change | Partial | `gameAmountRules()` and `GameIntro.tsx`. | Game intro not opened. | Start Memory Match and read the intro. |
 | 46 | Optional giving limit stops the suggestion and leaves play available | Complete | `tests/gameContribution.test.ts`: “stops increasing at the cap without touching a chosen amount” (`capped:0`, suggestion stays 12000). | Test passed. | None for the ledger. |
-| 47 | Raising the giving limit needs an explicit agreement | Missing | Cap UI says the suggestion will not increase. No agreement step raises `capPaise`. | Search of game dialogs. | Add the agreement, or record that the organizer cap cannot be raised by a player. |
+| 47 | Raising the giving limit needs an explicit agreement | Partial | `raiseGivingLimit` and buttons that name the previous and proposed limits. | `tests/gameContribution.test.ts` passed. The button was not clicked. | Open the cap dialog with mouse and keyboard, refresh, and press the button twice. |
 | 48 | One editable game review and one simulated confirmation | Partial | An in-game amount dialog (`ContributionDialogs.tsx`) and a separate confirm page (`Confirm.tsx`) both summarize the amount. | Both files read. Flow not clicked. | Remove the repeated summary if one screen is enough. |
 | 49 | Only a confirmed gift changes the campaign total; cancel and failure do not | Complete | `tests/checkout.test.ts`: “a failed payment leaves totals unchanged and keeps the pending amount.” `tests/gameContribution.test.ts` cancel discards the suggestion. | Tests passed. | None for those cases. |
 | 50 | New board keeps the suggestion; a separate action starts a new session | Partial | `requestRestart` vs `requestNewSession` in `src/hooks/useGameContribution.ts`. | Code inspection. Buttons not clicked. | Play, deal a new board, then start a new session. |
@@ -85,11 +87,11 @@ Checks run: `npm test` (177 passed, 0 failed) and `npm run build` (succeeded; th
 | 52 | Category play reveals a symbolic illustration and does not look like a purchase | Missing | `CategoryMotif.tsx` is a static coloured mark on the campaign title. It is not in the game and does not reveal an illustration. | Component read. | Add the in-game treatment or narrow the requirement. |
 | 53 | No new games in this work | Complete | Game modules remain garden, puzzle, memory, and jacket. | File list under `src/pages/play`. | None. |
 | 54 | Store-ready voucher: merchant, branch, headline, status, expiry, restrictions, QR, backup code, “Present this to store staff” | Partial | `VoucherCard.tsx` dialog includes those fields. | Dialog not opened; the fresh profile had no issued voucher. | Claim a reward and open Show voucher. |
-| 55 | Statuses include partially used and cancelled | Missing | `voucherState` is only ready, used, or expired. A remaining balance stays “Ready to use”. There is no cancelled status. | `src/components/vouchers/VoucherCard.tsx` and `applyRedemption`. | Show partially used when balance remains. Define cancelled only if a voucher can be cancelled. |
+| 55 | Statuses include partially used and cancelled | Partial | Store-value remainder is `partial` / “Partially used”. Cancelled is not stored yet. | `tests/vouchers.test.ts` passed. The card was not opened. | Add a cancelled voucher with a recorded reason and open the staff view. |
 | 56 | Turning the feature off stops new vouchers and keeps issued ones | Complete | `tests/vouchers.test.ts`: “deactivation stops issuance but keeps vouchers, redemption and benefit settlement”. | Test passed. | None. |
 | 57 | Honest closure: four outcomes, required explanations, no automatic milestone completion, partial-delivery label, refund is a statement | Partial | `CLOSURE_LABEL.partial` is “Campaign closed — partial delivery reported”. `FinalReportEditor.tsx` requires explanations. `tests/sponsors.test.ts` only normalizes a partial report. | Normalize test passed. Publish was not clicked, and milestones were not re-read after a report. | Publish a partial report and confirm milestones and fundraising stay unchanged. |
 | 58 | Thank-you page: amount, receipt, next update only if dated, local follow, reward, at most three prominent actions | Partial | `Success.tsx` shows the receipt card, a dated or undated next-update sentence, a local-follow note, and up to three `btn-lg` links. | Source read. No gift was confirmed in the browser. | Confirm a gift and count the actions. |
-| 59 | Optional personalized sharing action on the thank-you page | Missing | `Success.tsx` has no sharing-page action. | File read. | Add one secondary share action without exceeding three prominent buttons. |
+| 59 | Optional personalized sharing action on the thank-you page | Partial | `ThankYouShare` links an existing page or offers to create one. It does not create a page by itself. | Source and the three `btn-lg` actions were counted in code. No gift was confirmed in the browser. | Confirm a gift and follow both the existing-page and create-page paths. |
 | 60 | My activity groups contributions, vouchers, and followed updates, and respects the feature flag | Partial | `/o/:slug/my-activity` in `App.tsx`. `SupporterHistory.tsx` hides the contribution list when history is off and still renders vouchers. | Code inspection. Page not opened. | Open My activity as two identities. |
 | 61 | My activity includes personalized sharing pages | Missing | `SupporterHistory.tsx` has contributions, following, and vouchers only. | File read. | List this device’s sharing pages, or document why they stay in the share workspace. |
 | 62 | Launch checklist from real draft state, with required, recommended, and optional, and a preview tick that is not a payment test | Partial | `LaunchChecklist.tsx` and the checkbox copy in `CreateCampaign.tsx`. | Source read. Last create step not opened. | Open the last step and compare each row with an empty draft. |
@@ -103,7 +105,7 @@ Checks run: `npm test` (177 passed, 0 failed) and `npm run build` (succeeded; th
 | 70 | Team or class participation is a documented gap, not a pupil system | Complete | How it works answer: “Not in this prototype…” and “future gap.” No class roster in `src`. | Browser opened the question. | None unless the product later asks for it. |
 | 71 | Management screens: one Add action, readable lists, empty states, inline errors, save feedback, no permanent long form | Partial | Editors exist for expenses, updates, members, and offers. | Not walked. | Open members, offers, milestones, and expenses at desktop and mobile. |
 | 72 | Supporter page has no horizontal overflow at 390px | Complete | At 390×844, `scrollWidth` equalled `clientWidth` (390). | Isolated browser, device metrics only. | Recheck after layout edits. |
-| 73 | Increased zoom does not overflow | Partial | At 390px and `zoom: 2`, `documentElement.scrollWidth` exceeded the viewport. At 1280px and `zoom: 2`, the page did not overflow; tab row scrolls inside itself. | Isolated browser. | Find the overflowing element and fix the 390px zoom case. |
+| 73 | Increased zoom does not overflow | Complete | At CSS width 195 (a 390px device at 200% zoom) and device scale 1, `scrollWidth` equalled 195 on the Open Harbour fund page. | Isolated browser after the layout fix. | Other screens were not measured at this width. |
 | 74 | Keyboard, focus, dialogs, names, and non-drag play | Partial | “More ways to take part” accepted focus. Other dialogs, labels, and games were not tabbed. | One focus check. | Tab the give panel, confirm dialog, and a game. |
 | 75 | Low-data mode skips optional media; reduced motion is respected; direct giving does not need a game | Partial | Low-data CSS hides `.hero-stack`. `CategoryMotif` returns null in low data. Give directly was on the page. | Give directly seen. Low-data toggle not used. | Turn low-data on and reload the campaign. |
 | 76 | Failed simulated payment does not show success or move the total | Complete | `tests/checkout.test.ts`: “a failed payment leaves totals unchanged and keeps the pending amount.” Confirm page still has “Simulate failed payment”. | Test passed. Button not clicked. | None for the ledger. |
@@ -161,9 +163,25 @@ Narration was not re-timed. No encode was started.
 
 Not clicked, even where code exists: campaign assistant, review and publish screens, brand settings, game intro and restart, sponsor screens, voucher presentation, thank-you page after a new gift, My activity, launch checklist, sharing-kit downloads, low-data toggle, storage-full failure, and a funded campaign. Poster and social PNGs were not rasterized, so clipping was not judged. Videos were not played; durations come from `assembly-report.json`, not from a new playback.
 
+## Repair progress
+
+Statuses below are updated only where a new test or an isolated browser check ran after the audit. Demo coverage stays incomplete until the walkthrough videos are re-recorded. “Not exercised” is not a pass.
+
+| # | Implementation | Behaviour verified | Demo coverage | Evidence |
+| --- | --- | --- | --- | --- |
+| 38 | Ask sits inside “More ways to take part” | Yes, isolated Chrome | No | Fund page: `#ask-title` is inside `details.more-ways` and not in `.campaign-main`. Enter opened the summary. Tab reached Share, Create my sharing page, the sharing kit, Follow, and the suggested questions. |
+| 40 | Visible delivery labels include the word Delivery | Yes, isolated Chrome | No | Badges read “Delivery in progress”. `tests/lifecycle.test.ts` asserts the three strings. Milestone status text stays “In progress”. |
+| 47 | `raiseGivingLimit` plus a button that names the previous and proposed limits | Ledger test passed. Button not clicked | No | `tests/gameContribution.test.ts`: play stays at ₹120 until `raiseGivingLimit`; a second call does nothing; refresh keeps ₹170; the organizer setting stays ₹120. |
+| 55 | Partial store-value state exists. Cancelled is not implemented yet | State function tested. Card not opened | No | `tests/vouchers.test.ts`: remaining store-value balance is `partial`; an online offer with a balance stays `ready`. |
+| 59 | Thank-you page links an existing sharing page or offers to create one | Not exercised in the browser | No | `Success.tsx` `ThankYouShare`. No automatic create. |
+| 72 | Narrow layout rules kept | Yes, rechecked after the CSS change | No | 390×844: `scrollWidth` 390. |
+| 73 | Tabs, fund grid, footer, and the support column can shrink | Yes at 195 CSS px | No | Device width 195 (390px at 200% zoom), `deviceScaleFactor` 1: `scrollWidth` 195. No `overflow: hidden` on the page. |
+| 74 | Summary and the actions inside it are in the tab order | Yes for this group. Other dialogs not tabbed | No | See row 38. |
+| 24 | Sponsor commitments are refused unless the game is Memory Match | Model test passed. Sponsor screen not opened | No | `tests/sponsors.test.ts` still confirms one ₹50 gift on a Memory Match campaign, and a garden campaign throws `/Memory Match/` and stores no commitment. |
+
 ## Repair order
 
-Do not treat this list as started.
+Stage 1 of this list has been started. Rows above are the evidence. The rest of this order is not done.
 
 1. Player-facing gaps: giving-limit agreement, thank-you share action, Ask grouped with other secondary tools, voucher partial-use label, 390px at 200% zoom.
 2. Sponsor UI walkthrough and a decision on non-memory games.
