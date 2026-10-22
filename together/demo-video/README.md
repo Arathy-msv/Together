@@ -16,6 +16,7 @@ All media goes to ignored folders (`work/` and `output/`); only scripts and docs
 | `output/together-demo.mp4` | Main walkthrough, 1920×1080, 30 fps, H.264 + AAC, soft English subtitles, chapter markers |
 | `output/together-demo.en.srt` | English subtitles |
 | `output/together-presales.mp4` (+ `.en.srt`) | Short presales cut: the scenes listed in `scripts/presales.mjs`, same recording and narration |
+| `output/together-presales-first-time.mp4` (+ `.en.srt` and `.en.vtt`) | Four-and-a-half-minute first-time customer journey with burned and soft English captions |
 | `output/chapters/NN-<chapter>.mp4` (+ `.en.srt`) | One clip per chapter: opening preview, Platform Admin, Organization Admin, Campaign Organizer, Supporter, Merchant, Delivery and reporting |
 | `output/scene-timings.md` | The narration script with the final start and end time of every scene |
 | `output/assembly-report.json` | Durations, any scenes played faster, and console errors found during recording |
@@ -123,7 +124,8 @@ run instead of recording a wrong result.
 
 - Last verified application commit: `db4c8a4`. Assembly finished 22 Oct 2026, 10:33am IST. The walkthrough scripts and narration in this working tree were updated with that recording and are not a separate commit.
 - Detailed walkthrough: **current**. `output/together-demo.mp4` probes at 1985.867 seconds (33:05). 1920×1080 H.264, AAC, English `mov_text`. Every scene check in the isolated recording passed, including the fictional Memory Match sponsor budget, the pending reward, and the one confirmation. `output/assembly-report.json` lists no console errors and no sped-up scenes.
-- Presales cut: **current**. `output/together-presales.mp4` probes at 169.533 seconds (2:49). Scenes, in order: `oa-sponsor`, `op-game`, `sp-sponsor`, `oa-sponsor-confirm`, `op-home`, `card-end`.
+- Previous presales cut: **preserved**. `output/together-presales.mp4` probes at 169.533 seconds (2:49). It remains available for comparison but is superseded for first-time customers because sponsor material occupies more than half of it.
+- First-time presales cut: **generated; audible review pending**. `output/together-presales-first-time.mp4` probes at exactly 270.000 seconds (04:30), 1920×1080 at 30 fps, with English AAC narration, burned captions, English `mov_text`, and chapters. It opens on the public branded website, then covers organization setup, campaign launch, sharing, supporter contribution, sponsor play, partner reward, referral, transparency, and the CTA. Full visual review and technical audio/caption checks completed 22 Oct 2026, 11:53 AM IST. The available reviewer cannot hear audio, so a person must still check pronunciation, cadence, and joins before this export is marked Complete; see `PRESALES-FIRST-TIME.md` and the output verification report.
 - Subtitles: `together-demo.en.srt`, `together-demo.en.vtt`, `together-presales.en.srt`, `together-presales.en.vtt`, plus the chapter files. `narration/scene-timings.md` matches this assembly. The homepage line names Home, Campaigns, About, and My activity.
 - Spot check: frames at the sponsor save, the pending Memory Match reward, the ₹50 confirmation, the funded public page, and the closing card match those subtitle windows. Every presales cue, and sampled cues in `oa-sponsor`, `sp-sponsor`, `oa-sponsor-confirm`, and `fn-public`, had speech inside the cue (peak about −2 dB).
 - Voice-over is local Piper only. Nothing was uploaded or published.

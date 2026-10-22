@@ -49,3 +49,24 @@ with the app's own modules, acting as the person who would do it, so permission 
 * The milestone status change and published update are in the organizer chapter.
 * The opening preview is assembled first but parts of it are recorded later in the run; it shows
   the same browser data as the rest of the video.
+
+## First-time customer presales coverage
+
+The reviewed 04:30 presales export is `output/together-presales-first-time.mp4`. Its source map,
+storyboard, and verification evidence are in `PRESALES-FIRST-TIME.md`.
+
+| Presales section | Working product coverage |
+| --- | --- |
+| Product and audience | Branded Greenwood public website, real campaign purpose and beneficiary, prototype notice |
+| Organization website | Name/address, feature selection, logo/colour/content, desktop/mobile preview, publication |
+| Campaign launch | Simulated guided assistant and full draft, beneficiary, target, participation, update commitment, review, approval, explicit publication |
+| Community sharing | One campaign URL, generated QR, poster, WhatsApp/email drafts, social image, browser-local limitation |
+| Supporter contribution | Purpose/progress, direct-giving alternative, Memory Match suggestion, edited amount, simulated confirmation, thank-you/receipt |
+| Sponsor-funded play | Fictional Northwind Memory Match commitment, pending reward outside checkout, separate simulated-funds confirmation |
+| Partner reward | Eligibility, Corner Stationery voucher, expiry, QR/backup code, assigned-store simulated redemption |
+| Personal sharing | Mia’s personalized page/link and one-time attribution to the original campaign |
+| Transparency | Next expected update, published update, delivery milestone, planned spending, organizer-reported expense/evidence state, goal reached with delivery in progress |
+| Close | Branded website, four-part value statement, “Explore a pilot for your organization” |
+
+This presales edit does not claim that every contribution earns a voucher, every game supports a
+sponsor, uploaded evidence is independently verified, or browser-local data works across devices.
