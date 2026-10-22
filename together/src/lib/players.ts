@@ -1,3 +1,4 @@
+import { absoluteAppUrl, appPath } from './publicUrl.ts'
 import type { Contribution } from './types.ts'
 
 const PLAYERS_KEY = 'together.players.v1'
@@ -240,5 +241,5 @@ export function ensureSampleRoster(campaignIds: string[]): void {
 
 export function referralLink(campaignId: string, code: string, base = ''): string {
   const path = `${base}/campaigns/${campaignId}?ref=${encodeURIComponent(code)}`
-  return typeof window === 'undefined' ? path : `${window.location.origin}${path}`
+  return typeof window === 'undefined' ? appPath(path) : absoluteAppUrl(path)
 }

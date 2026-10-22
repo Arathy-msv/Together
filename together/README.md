@@ -17,6 +17,23 @@ npm run dev
 
 The dev server runs at [http://127.0.0.1:4321](http://127.0.0.1:4321).
 
+## Published site
+
+Pushes to `main` on [github.com/Arathy-msv/Together](https://github.com/Arathy-msv/Together) publish this demo with GitHub Actions. The public address is [https://arathy-msv.github.io/Together/](https://arathy-msv.github.io/Together/).
+
+The published site is still this browser-only demo. Organizations, campaigns, and simulated contributions stay in that browser’s localStorage. They are not shared with other visitors or devices. Payments, plans, and voucher redemption stay simulated.
+
+To run a copy on your computer:
+
+```bash
+git clone https://github.com/Arathy-msv/Together.git
+cd Together/together
+npm install
+npm run dev
+```
+
+If the address does not load after the “Publish website” workflow succeeds, open the repository’s Settings → Pages and set Source to GitHub Actions.
+
 ```bash
 npm run build
 npm run lint

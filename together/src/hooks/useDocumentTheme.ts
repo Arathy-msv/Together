@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useMemo } from 'react'
+import { appPath } from '../lib/publicUrl.ts'
 import { themeVars } from '../lib/theme.ts'
 import type { OrgBranding } from '../lib/types.ts'
 
@@ -19,7 +20,7 @@ export function useDocumentTheme(branding: OrgBranding, icon = '/favicon.svg') {
     const link = document.querySelector<HTMLLinkElement>('link[rel="icon"]')
     if (!link) return
     const previous = link.href
-    link.href = icon
+    link.href = appPath(icon)
     return () => {
       link.href = previous
     }

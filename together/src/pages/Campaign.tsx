@@ -17,6 +17,7 @@ import { ShareKit } from '../components/sharing/ShareKit.tsx'
 import { CampaignQuestions } from '../components/ai/CampaignQuestions.tsx'
 import { useCampaignView, useDemoStore } from '../hooks/useDemoStore.ts'
 import { campaignDetailsPath, campaignPlayPath, campaignSharePath } from '../lib/campaigns.ts'
+import { absoluteAppUrl } from '../lib/publicUrl.ts'
 import { followedAt, setFollowing } from '../lib/follows.ts'
 import { setShareContext } from '../lib/attribution.ts'
 import { canHaveSharingPages, shareWorkspacePath } from '../lib/referrals.ts'
@@ -114,7 +115,7 @@ function CampaignDetails({ view, referral }: { view: CampaignView; referral?: Re
   }
 
   const purpose = shortPurpose(campaign.description)
-  const campaignUrl = `${window.location.origin}${campaignSharePath(campaign.id, base)}`
+  const campaignUrl = absoluteAppUrl(campaignSharePath(campaign.id, base))
 
   const followButton = <FollowButton campaignId={campaign.id} />
   const closedFunded = isFunded(view) && !view.canGive

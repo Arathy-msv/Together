@@ -9,6 +9,7 @@ import { campaignCoverSrc } from '../data/covers.ts'
 import { useCampaignView, useDemoStore } from '../hooks/useDemoStore.ts'
 import { useImagePicker } from '../hooks/useImagePicker.tsx'
 import { campaignDetailsPath } from '../lib/campaigns.ts'
+import { absoluteAppUrl } from '../lib/publicUrl.ts'
 import { currencySymbol, formatMoney } from '../lib/format.ts'
 import { IMAGE_GALLERY } from '../lib/organizations.ts'
 import {
@@ -142,7 +143,7 @@ function ShareEditor({ existing, mine }: { existing?: Referral; mine: Referral[]
     }
   }
 
-  const shareUrl = existing ? `${window.location.origin}${referralPath(base, campaign.id, existing.code)}` : ''
+  const shareUrl = existing ? absoluteAppUrl(referralPath(base, campaign.id, existing.code)) : ''
 
   return (
     <div className="container page-pad share-workspace">
