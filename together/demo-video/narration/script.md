@@ -85,6 +85,7 @@ A Demo button, Fill demo values, enters the Greenwood sales values into the empt
 Organization name becomes Greenwood School, and Type is School.
 Short description is the sentence supporters read about the school. Public contact email and Public location are shown on the website, so they are not private fields.
 The website address is built from the name: greenwood-school. The app checks it and says This address is available.
+If that address is already saved in this browser, Fill demo values uses the next free name, such as Greenwood School 2.
 Continue moves to Step 2. Nothing is public until the last step.
 
 ## oa-features

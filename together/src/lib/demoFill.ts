@@ -1,7 +1,10 @@
 /**
  * Greenwood sales-demo values for the on-page "Fill demo values" control.
  * Fills empty fields and a few scripted choices. It never submits a form.
+ * Each new organization gets the first Greenwood name whose website address is free.
  */
+import { slugify } from './organizations.ts'
+import { loadOrganizations } from './orgStorage.ts'
 
 export type DemoContext = {
   id: string
@@ -15,6 +18,9 @@ export type DemoContext = {
   inStoreForm: boolean
   memberNames: string[]
   identityNames: string[]
+  /** Slugs already saved by other organizations. */
+  takenSlugs: string[]
+  fieldValue: string
 }
 
 export const DEMO_GREEN = '#1F5A3D'
@@ -40,10 +46,8 @@ const REMAINING = 'The remaining funds will pay for the art materials and readin
 const APPROVAL = 'Approved. Thank you, Olivia — please post the first update next week.'
 
 const SIMPLE: Record<string, string> = {
-  'organization name': 'Greenwood School',
   'public contact email': 'office@greenwood.example',
   'public location': 'Greenwood, Riverside District',
-  'homepage headline': 'Help Greenwood School stock every classroom',
   introduction: 'Notebooks, pencils, art supplies and reading books for 420 pupils. Give directly or play a short game.',
   'store name': 'Corner Stationery',
   area: 'Greenwood High Street',
@@ -133,6 +137,18 @@ function resolveToken(value: string, now: Date): string {
   return value
 }
 
+/** First Greenwood School name whose address is not already saved. */
+export function availableDemoOrg(takenSlugs: Iterable<string>): { name: string; slug: string } {
+  const taken = new Set([...takenSlugs].map((slug) => slug.toLowerCase()))
+  for (let number = 1; number < 200; number += 1) {
+    const name = number === 1 ? 'Greenwood School' : `Greenwood School ${number}`
+    const slug = slugify(name)
+    if (slug && !taken.has(slug)) return { name, slug }
+  }
+  const name = `Greenwood School ${Date.now().toString(36)}`
+  return { name: name.slice(0, 80), slug: slugify(name) }
+}
+
 function nextIdentity(existing: string[]): string | null {
   return SALES_IDENTITIES.find((name) => !existing.includes(name)) ?? null
 }
@@ -181,6 +197,24 @@ export function demoTextFor(ctx: DemoContext, now = new Date()): { value: string
   if (label === 'name' && (ctx.section.toLowerCase().includes('add a member') || ctx.pathname.includes('/members'))) {
     const name = nextMember(ctx.memberNames)
     return name ? { value: name, overwrite: false } : null
+  }
+  if (label === 'organization name' || label === 'website address') {
+    const demoOrg = availableDemoOrg(ctx.takenSlugs)
+    if (label === 'organization name') {
+      const currentSlug = slugify(ctx.fieldValue)
+      const collided = Boolean(currentSlug) && ctx.takenSlugs.some((slug) => slug.toLowerCase() === currentSlug)
+      if (!ctx.fieldValue.trim()) return { value: demoOrg.name, overwrite: false }
+      if (collided) return { value: demoOrg.name, overwrite: true }
+      return null
+    }
+    const address = ctx.fieldValue.trim().toLowerCase()
+    const addressTaken = Boolean(address) && ctx.takenSlugs.some((slug) => slug.toLowerCase() === address)
+    if (!address || address.startsWith('new-') || addressTaken) return { value: demoOrg.slug, overwrite: true }
+    return null
+  }
+  if (label === 'homepage headline') {
+    const demoOrg = availableDemoOrg(ctx.takenSlugs)
+    return { value: `Help ${demoOrg.name} stock every classroom`, overwrite: false }
   }
   if (label === 'short description') {
     return { value: ctx.inStoreForm || ctx.pathname.includes('/offers') ? STORE_ABOUT : ORG_ABOUT, overwrite: false }
@@ -339,7 +373,19 @@ function setValue(el: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
   el.dispatchEvent(new Event('change', { bubbles: true }))
 }
 
-function contextFor(el: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement, doc: Document, memberNames: string[], identityNames: string[]): DemoContext {
+function currentOrgId(pathname: string): string | undefined {
+  const match = pathname.match(/^\/(?:start|workspace)\/([^/]+)/)
+  return match?.[1]
+}
+
+function takenSlugsFor(pathname: string): string[] {
+  const id = currentOrgId(pathname)
+  return loadOrganizations()
+    .filter((org) => org.id !== id)
+    .map((org) => org.slug)
+}
+
+function contextFor(el: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement, doc: Document, memberNames: string[], identityNames: string[], takenSlugs: string[]): DemoContext {
   return {
     id: el.id,
     label: labelText(el, doc),
@@ -352,6 +398,8 @@ function contextFor(el: HTMLInputElement | HTMLTextAreaElement | HTMLSelectEleme
     inStoreForm: inStoreForm(el),
     memberNames,
     identityNames,
+    takenSlugs,
+    fieldValue: 'value' in el ? el.value : '',
   }
 }
 
@@ -408,12 +456,13 @@ function canFill(el: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement)
 export function fillDemoPage(doc: Document = document, now = new Date()): number {
   const memberNames = listedNames(doc, '.member-list strong')
   const identityNames = listedNames(doc, '.identity-list strong')
+  const takenSlugs = takenSlugsFor(doc.location?.pathname || '')
   const controls = [...doc.querySelectorAll<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>('input, textarea, select')].filter(canFill)
   let changed = 0
 
   for (const el of controls) {
     if (el instanceof HTMLSelectElement || (el instanceof HTMLInputElement && (el.type === 'checkbox' || el.type === 'radio'))) continue
-    const text = demoTextFor(contextFor(el, doc, memberNames, identityNames), now)
+    const text = demoTextFor(contextFor(el, doc, memberNames, identityNames, takenSlugs), now)
     if (!text) continue
     if (!text.overwrite && el.value.trim()) continue
     if (el.value.trim().toLowerCase() === text.value.trim().toLowerCase()) continue
@@ -423,7 +472,7 @@ export function fillDemoPage(doc: Document = document, now = new Date()): number
 
   for (const el of controls) {
     if (!(el instanceof HTMLSelectElement)) continue
-    const choice = demoSelectFor(contextFor(el, doc, memberNames, identityNames))
+    const choice = demoSelectFor(contextFor(el, doc, memberNames, identityNames, takenSlugs))
     if (!choice) continue
     if (!choice.overwrite && el.value !== '') continue
     if (!pickOption(el, choice.queries)) continue
@@ -433,7 +482,7 @@ export function fillDemoPage(doc: Document = document, now = new Date()): number
 
   for (const el of controls) {
     if (!(el instanceof HTMLInputElement) || (el.type !== 'checkbox' && el.type !== 'radio')) continue
-    const want = demoShouldCheck(contextFor(el, doc, memberNames, identityNames))
+    const want = demoShouldCheck(contextFor(el, doc, memberNames, identityNames, takenSlugs))
     if (want && !el.checked) {
       el.click()
       changed += 1

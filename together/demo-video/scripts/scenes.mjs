@@ -1,8 +1,9 @@
 // Ordered scenes. `record: false` steps prepare demo data off camera using the app's own modules,
 // acting as the identity that would really perform the action (permission checks still apply).
 // Every page has a "Fill demo values" button that writes these Greenwood sales values into empty
-// fields and does not submit. `oa-details` uses that button. Later scenes still type so each
-// field stays readable on camera.
+// fields and does not submit. If greenwood-school is already saved, the button uses the next free
+// name (Greenwood School 2, 3, …) and the matching address. `oa-details` uses that button on a
+// fresh browser, so the address is greenwood-school. Later scenes still type so each field stays readable.
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'

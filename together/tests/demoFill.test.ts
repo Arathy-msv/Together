@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { daysFromToday, demoSelectFor, demoShouldCheck, demoTextFor, type DemoContext } from '../src/lib/demoFill.ts'
+import { availableDemoOrg, daysFromToday, demoSelectFor, demoShouldCheck, demoTextFor, type DemoContext } from '../src/lib/demoFill.ts'
 
 function ctx(patch: Partial<DemoContext> = {}): DemoContext {
   return {
@@ -15,6 +15,8 @@ function ctx(patch: Partial<DemoContext> = {}): DemoContext {
     inStoreForm: false,
     memberNames: [],
     identityNames: [],
+    takenSlugs: [],
+    fieldValue: '',
     ...patch,
   }
 }
@@ -22,6 +24,22 @@ function ctx(patch: Partial<DemoContext> = {}): DemoContext {
 test('sales dates are calendar days from today', () => {
   assert.equal(daysFromToday(7, new Date(2026, 9, 22)), '2026-10-29')
   assert.equal(daysFromToday(0, new Date(2026, 9, 22)), '2026-10-22')
+})
+
+test('a later demo uses the next free Greenwood address', () => {
+  assert.deepEqual(availableDemoOrg([]), { name: 'Greenwood School', slug: 'greenwood-school' })
+  assert.deepEqual(availableDemoOrg(['greenwood-school']), { name: 'Greenwood School 2', slug: 'greenwood-school-2' })
+  assert.deepEqual(availableDemoOrg(['greenwood-school', 'greenwood-school-2']), { name: 'Greenwood School 3', slug: 'greenwood-school-3' })
+  assert.equal(demoTextFor(ctx({ label: 'Organization name', takenSlugs: ['greenwood-school'] }))?.value, 'Greenwood School 2')
+  assert.deepEqual(
+    demoTextFor(ctx({ label: 'Organization name', fieldValue: 'Greenwood School', takenSlugs: ['greenwood-school'] })),
+    { value: 'Greenwood School 2', overwrite: true },
+  )
+  assert.equal(demoTextFor(ctx({ label: 'Organization name', fieldValue: 'Greenwood School 2', takenSlugs: ['greenwood-school'] })), null)
+  assert.equal(demoTextFor(ctx({ label: 'Website address', fieldValue: 'new-abc123', takenSlugs: ['greenwood-school'] }))?.value, 'greenwood-school-2')
+  assert.equal(demoTextFor(ctx({ label: 'Website address', fieldValue: 'greenwood-school', takenSlugs: ['greenwood-school'] }))?.value, 'greenwood-school-2')
+  assert.equal(demoTextFor(ctx({ label: 'Website address', fieldValue: 'greenwood-school-2', takenSlugs: ['greenwood-school'] })), null)
+  assert.equal(demoTextFor(ctx({ label: 'Homepage headline', takenSlugs: ['greenwood-school'] }))?.value, 'Help Greenwood School 2 stock every classroom')
 })
 
 test('organization setup fields use the Greenwood sales values', () => {

@@ -123,7 +123,7 @@ run instead of recording a wrong result.
 ## Video freshness
 
 - Last verified application commit: `db4c8a4`. Assembly finished 22 Oct 2026, 10:33am IST. Money in the application now displays in dollars. The narration in `narration/script.md` and `narration/presales-first-time.md` matches that change. The exported videos have not been re-recorded.
-- Fill demo values is now on every page, and `oa-details` in `scripts/scenes.mjs` clicks it. Narration for that scene mentions the button. No scene was re-recorded, so the exports do not show the button.
+- Fill demo values is now on every page, and `oa-details` in `scripts/scenes.mjs` clicks it. Narration for that scene mentions the button. A repeat demo uses the next free Greenwood name when `greenwood-school` is already saved. No scene was re-recorded, so the exports do not show the button.
 - Detailed walkthrough: **stale**. `output/together-demo.mp4` still shows Indian rupees. It probes at 1985.867 seconds (33:05). Re-record after the currency change before treating it as current.
 - Previous presales cut: **stale**. `output/together-presales.mp4` probes at 169.533 seconds (2:49) and still shows Indian rupees.
 - First-time presales cut: **stale**. `output/together-presales-first-time.mp4` probes at exactly 270.000 seconds (04:30) and still shows Indian rupees. Its earlier visual review does not cover the dollar displays.
