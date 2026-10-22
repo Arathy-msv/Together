@@ -375,6 +375,12 @@ a.gt-back:hover { color: var(--gt-ink); text-decoration: underline; text-underli
   font-family: var(--gt-serif);
   filter: drop-shadow(0 4px 6px rgba(40, 25, 10, 0.25));
 }
+html.low-data .gt-sign {
+  background: #f4efe2;
+  border: 1px solid #e2ddcf;
+  border-radius: 12px;
+  filter: none;
+}
 .gt-sign-title { font-size: clamp(9px, 1.05cqw, 16px); font-weight: 700; line-height: 1.1; }
 .gt-sign-sub { font-family: var(--gt-sans); font-size: clamp(8px, 0.78cqw, 12px); font-weight: 600; opacity: 0.85; }
 .gt-sign-tree {
@@ -970,6 +976,9 @@ a.gt-back:hover { color: var(--gt-ink); text-decoration: underline; text-underli
     linear-gradient(180deg, rgba(255, 252, 244, 0.9) 0%, rgba(255, 252, 244, 0.35) 55%, rgba(255, 252, 244, 0) 100%),
     url('/giving-tree/garden-bg.webp') 50% 80% / cover;
 }
+.gt-milestones.is-low-data li { background: #f7f4ec; }
+.gt-low { min-height: 220px; display: grid; place-items: center; align-content: center; gap: 6px; margin: 12px; border-radius: 16px; background: linear-gradient(180deg, #e7f0e4, #f6f1e4); text-align: center; color: #183a2f; }
+.gt-low span { color: #3f5a4f; font-size: 0.95rem; }
 .gt-milestones li.is-current { border-color: #1e4b3b; box-shadow: 0 0 0 2px #1e4b3b; }
 .gt-milestones li.is-reached::after {
   content: "Reached";

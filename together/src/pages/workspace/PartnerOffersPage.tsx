@@ -39,6 +39,7 @@ export function PartnerOffersPage() {
   const { org, workspace } = useOrg()
   const vouchers = useVoucherStore()
   const [notice, setNotice] = useState<Notice>(null)
+  const [creatingOffer, setCreatingOffer] = useState(false)
   const usable = canUseFeature(org, 'partnerVouchers')
   const issued = orgVouchers(vouchers, org.id)
 
@@ -99,8 +100,19 @@ export function PartnerOffersPage() {
 
       {usable ? <SetupChecklist org={org} store={vouchers} /> : null}
       {usable ? <MerchantsSection org={org} store={vouchers} run={run} /> : null}
-      {usable && merchants.length > 0 ? <CreateOfferSection org={org} store={vouchers} run={run} /> : null}
-      {offers.length > 0 ? <OffersSection org={org} store={vouchers} run={run} /> : null}
+      {usable && merchants.length > 0 && !creatingOffer && offers.length === 0 ? (
+        <section className="panel ws-card" aria-labelledby="add-offer-title">
+          <div className="section-head-row">
+            <h2 id="add-offer-title">Offers</h2>
+            <button type="button" className="btn btn-primary btn-sm" onClick={() => setCreatingOffer(true)}>
+              Add an offer
+            </button>
+          </div>
+          <p className="awaiting">No offers yet. Add an offer when a partner store is ready.</p>
+        </section>
+      ) : null}
+      {usable && merchants.length > 0 && creatingOffer ? <CreateOfferSection org={org} store={vouchers} run={run} onDone={() => setCreatingOffer(false)} /> : null}
+      {offers.length > 0 ? <OffersSection org={org} store={vouchers} run={run} onAdd={usable && !creatingOffer ? () => setCreatingOffer(true) : undefined} /> : null}
       {issued.length > 0 ? <IssuedSection org={org} store={vouchers} run={run} /> : null}
     </div>
   )
@@ -296,7 +308,7 @@ function MerchantsSection({ org, store, run }: { org: Organization; store: Vouch
 const inDays = (days: number) => new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10)
 const whole = (value: string) => (value.trim() ? Number(value) : undefined)
 
-function CreateOfferSection({ org, store, run }: { org: Organization; store: VoucherStore; run: Run }) {
+function CreateOfferSection({ org, store, run, onDone }: { org: Organization; store: VoucherStore; run: Run; onDone: () => void }) {
   const merchants = orgMerchants(store, org.id)
   const capabilities = VOUCHER_CAPABILITIES.filter((item) => canUseVoucherCapability(org, item.key))
   const [capability, setCapability] = useState<VoucherCapability>(capabilities[0]?.key ?? 'contributionRewards')
@@ -349,6 +361,7 @@ function CreateOfferSection({ org, store, run }: { org: Organization; store: Vou
             setTitle('')
             setTerms('')
             setAttempted(false)
+            onDone()
           }, 'Offer saved as a draft. Review its terms, assign it to a campaign, then activate it.')
         }}
       >
@@ -410,21 +423,33 @@ function CreateOfferSection({ org, store, run }: { org: Organization; store: Vou
           <TextInput label="Valid until" type="date" value={validUntil} error={errors.validUntil} onChange={setValidUntil} />
           <TextInput label="Number available" optional inputMode="numeric" value={stock} error={errors.stock} onChange={(value) => setStock(value.replace(/[^\d]/g, ''))} help="Leave empty for no limit." />
         </div>
-        <button type="submit" className="btn btn-primary">
-          Save offer as draft
-        </button>
+        <div className="inline-actions">
+          <button type="submit" className="btn btn-primary">
+            Save offer as draft
+          </button>
+          <button type="button" className="btn btn-outline" onClick={onDone}>
+            Cancel
+          </button>
+        </div>
       </form>
     </section>
   )
 }
 
-function OffersSection({ org, store, run }: { org: Organization; store: VoucherStore; run: Run }) {
+function OffersSection({ org, store, run, onAdd }: { org: Organization; store: VoucherStore; run: Run; onAdd?: () => void }) {
   const demo = useDemoStore()
   const offers = orgOffers(store, org.id)
   const campaigns = demo.campaigns.filter((campaign) => campaign.organizationId === org.id)
   return (
     <section className="panel ws-card" aria-labelledby="offers-title">
-      <h2 id="offers-title">Offers</h2>
+      <div className="section-head-row">
+        <h2 id="offers-title">Offers</h2>
+        {onAdd ? (
+          <button type="button" className="btn btn-primary btn-sm" onClick={onAdd}>
+            Add an offer
+          </button>
+        ) : null}
+      </div>
       <ul className="offer-admin-list">
         {offers.map((offer) => {
           const usable = canUseVoucherCapability(org, offer.capability)

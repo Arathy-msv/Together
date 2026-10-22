@@ -1,7 +1,5 @@
 # Together — narrated demo script
 
-The spoken lines below match the last assembly (30:57). They are stale against the current screens: evidence wording, closure reports, sponsor confirmation, English-only pages, the launch checklist, and the grouped “More ways to take part” panel. Do not re-time them until the next narrate → record → assemble. The presales list in `scripts/presales.mjs` is the 2–3 minute subset; the file `output/together-presales.mp4` is still the older 10:43 cut.
-
 <!--
 Editable narration. Format:
   "# chapter <id> | <title>"  starts a chapter (its title card uses the line after it).
@@ -91,7 +89,7 @@ Continue moves to Step 2. Nothing is public until the last step.
 ## oa-features
 Step 2 starts on Use recommended settings. The panel Included with the recommended settings lists what a school on this plan gets, and why.
 Choose individually opens every optional feature as its own card, with an on-off switch and a live preview of the website.
-Sponsor-funded play lets a sponsor fund game actions. This demo has no sponsor budget, so the campaign will leave it unused.
+Sponsor-funded play lets a fictional sponsor fund Memory Match rewards. Grace turns it on here. After the campaign is published, she adds the pledge, the per-person cap, and the reward for each matched pair.
 Campaign update commitments ask the organizer to name the date of the next progress update.
 Campaign sharing kit prepares a QR code, a poster and ready-to-copy messages. It is already on, and Grace leaves it on.
 Reuse past campaigns lets a finished drive become the starting draft of the next one.
@@ -194,7 +192,8 @@ Fine-tune in the full form opens the same draft as a form, with the same four se
 Goal and dates includes the commitment date, Next update. She sets it to a week from today. Supporters will see that date on the campaign.
 Ways to contribute shows the games. Memory Match stays selected.
 Offer partner rewards or vouchers asks whether to attach an offer that already exists. She selects the eligible offer, 10% off school supplies.
-Sponsor-funded play is visible because the organization turned the feature on, but only an organization admin can confirm it. Olivia leaves it off.
+Sponsor-funded play is visible because the organization turned the feature on. An organization admin adds the fictional budget after publishing. Olivia does not invent a pledge on this form.
+The review step includes Before you publish. It says a ticked preview means she looked, not that a payment was tested.
 The Review box shows the same grouped summary as the assistant, with an Edit button on each group.
 
 ## og-submit
@@ -211,6 +210,13 @@ Approve this revision records Daniel’s decision and keeps the campaign as a dr
 The page says the campaign is not public yet, and that publishing makes exactly this approved version visible.
 Only then does Daniel press Publish approved campaign.
 The status lines underneath split into Publication, Fundraising, Delivery and Final report, each with its own state.
+
+## oa-sponsor
+Grace opens Sponsors. The page calls the budget fictional, and it says pending rewards stay out of the campaign total until she confirms them.
+Only Memory Match is offered a sponsor budget. This school has no garden, puzzle, or jacket campaign on the list.
+She names Northwind Stationery, a fictional sponsor. The pledge is {₹5,000|five thousand rupees}, the cap is {₹500|five hundred rupees} per person, and each of three matched pairs is worth {₹50|fifty rupees}.
+Add sponsor commitment saves it. The notice says no sponsor has been invoiced.
+The card shows the pledge and says there are no play rewards yet.
 
 ## og-copy-link
 Olivia returns to her campaign list. The row now has Copy link and View, because the campaign is public.
@@ -300,6 +306,13 @@ The dialog shows the suggestion and a field, Your final amount. She changes it f
 Review and contribute then shows the final chosen amount again, and says that no payment will be collected.
 Confirm simulated contribution adds {₹200|two hundred rupees}. The campaign total becomes {₹700|seven hundred rupees} of {₹60,000|sixty thousand rupees}. The earlier {₹500|five hundred rupees} is still part of that total.
 
+## sp-sponsor
+Mia returns to the campaign, chooses Play to support, and then chooses Sponsor-funded play.
+The choice names the next reward, {₹50|fifty rupees}, and says nothing is added to her checkout.
+Before she matches a pair, the game states the next sponsor reward and the budget still available.
+One match says the sponsor reward is pending and is not added to her personal amount.
+The campaign total does not move. The reward waits for an organization admin.
+
 ## sp-share
 Help spread the word offers Create my sharing page. This is a personal page, not a second campaign.
 She enters a display name, Mia Patel, a short headline, why she supports it, and a personal goal of {₹5,000|five thousand rupees}.
@@ -315,7 +328,7 @@ The campaign total becomes {₹800|eight hundred rupees}. It increases once. Mia
 
 ## sp-vouchers
 My vouchers lists the reward as a card: the store, the offer, Ready to use, and the end date.
-Show voucher opens a full-screen view for a shop counter: a QR code and the code in large type. Done closes it.
+Show voucher opens a full-screen view for a shop counter. It says Present this to store staff, and it shows a QR code and the code in large type. Done closes it.
 The code is what Leo will type. There is no camera scan in this prototype.
 My activity, in the public navigation, brings three lists together.
 Contributions shows her two gifts, with the amount, the time and Open receipt.
@@ -369,7 +382,7 @@ Publish expense marks it as organizer-reported spending. The app does not check 
 
 ## fn-milestone
 On Milestones she edits Purchase materials, sets the status to In progress, and writes a progress note about what has arrived and what is still on order.
-Save milestone stores that status. The public timeline will show In progress, not Complete.
+Save milestone stores that status. The milestone row can say In progress. The public delivery badge says Delivery in progress, not Complete.
 One earlier milestone, Confirm needs with the school, stays Reported complete. Two remain Planned.
 
 ## fn-report
@@ -385,10 +398,16 @@ Campaigns includes Export campaign records, for an organization admin.
 The download is a JSON file. The recording checks that the file says supporter profiles are not included, and that it contains no supporter identifier.
 It is a copy of this browser’s demo records. It is not an accounting export.
 
+## oa-sponsor-confirm
+Grace returns to Sponsors. Mia’s matched pair is listed as pending, still outside the campaign total.
+Confirm simulated funds adds {₹50|fifty rupees} once. The row then says it was counted once in the campaign total.
+The confirm button is gone, so the same reward cannot be added again.
+This is a simulated sponsor gift. It was never part of Mia’s personal checkout.
+
 ## fn-public
 On the public page the total is {₹61,200|sixty one thousand two hundred rupees} of {₹60,000|sixty thousand rupees}.
 Fundraising has closed, so the contribution panel is replaced by Funding goal reached, with See what happens next.
-Delivery is reported beside it, not inside the percentage: In progress, one of four planned activities reported complete.
+Delivery is reported beside the total, not inside the percentage. The badge says Delivery in progress, and one of four planned activities is reported complete.
 The sentence on the panel says reaching the goal does not mean the work is done.
 See what happens next opens Updates. Each milestone lists Expenses, Evidence and Updates.
 Purchase materials shows the {₹18,400|eighteen thousand four hundred rupee} expense. Choosing that amount opens How funds are used, already filtered to that milestone.

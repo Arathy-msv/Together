@@ -1,12 +1,23 @@
-// Presales cut, target 2–3 minutes. Reuses the full recording and narration, so the length is the
-// sum of these scenes from the last assembly (about 2:43): public site, the give-or-play choice,
-// a simulated gift, delivery kept separate from the funding total, and the closing line.
-// output/together-presales.mp4 is still the previous 10:43 file until narrate → record → assemble
-// runs again. Do not describe that file as this cut.
+// Presales cut. Reuses the full recording and narration. The scene list is the five-role story
+// in about ten minutes: the public site, a fictional sponsor budget, one simulated gift,
+// sponsor-funded play, a store-counter voucher, and delivery kept separate from the funding total.
 export const PRESALES_SCENES = [
+  'card-intro',
   'op-home',
   'op-game',
+  'op-offer',
+  'card-orgadmin',
+  'oa-features',
+  'oa-sponsor',
+  'card-organizer',
+  'og-approve',
+  'card-supporter',
   'sp-direct',
+  'sp-sponsor',
+  'sp-vouchers',
+  'card-merchant',
+  'mc-redeem',
+  'oa-sponsor-confirm',
   'fn-public',
   'card-end',
 ]

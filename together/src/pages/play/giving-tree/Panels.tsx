@@ -10,6 +10,7 @@ import {
   type GivingTreeState,
 } from '../../../lib/givingTree.ts'
 import { currencySymbol, formatINR } from '../../../lib/format.ts'
+import { useLowData } from '../../../lib/lowData.ts'
 import { ART } from './GardenScene.tsx'
 import { ArrowRight, CareIcon, CheckIcon, InfoIcon, LeafPoints, SproutMark } from './icons.tsx'
 
@@ -299,6 +300,7 @@ export function SuccessBanner({
 }
 
 export function GrowthReference({ campaign, stage }: { campaign: CampaignSummary; stage: number }) {
+  const lowData = useLowData()
   return (
     <div className="gt-growth">
       <h2 id="gt-growth-title" tabIndex={-1}>
@@ -307,7 +309,7 @@ export function GrowthReference({ campaign, stage }: { campaign: CampaignSummary
       <p className="gt-growth-target">
         Target: <strong>{formatINR(campaign.goal)}</strong> · Now {formatINR(campaign.raised)} ({formatPercent(campaign.percent)})
       </p>
-      <ol className="gt-milestones">
+      <ol className={lowData ? 'gt-milestones is-low-data' : 'gt-milestones'}>
         {TREE_MILESTONES.map((milestone, index) => (
           <li key={milestone.name} className={index === stage ? 'is-current' : index < stage ? 'is-reached' : ''}>
             <div className="gt-milestone-copy">
@@ -316,7 +318,7 @@ export function GrowthReference({ campaign, stage }: { campaign: CampaignSummary
               <span className="gt-milestone-amount">{formatINR(Math.round((campaign.goal * milestone.percent) / 100))}</span>
               {index === stage ? <em>Current stage</em> : null}
             </div>
-            <img src={`${ART}/tree-${index}.webp`} alt="" loading="lazy" />
+            {lowData ? null : <img src={`${ART}/tree-${index}.webp`} alt="" loading="lazy" />}
           </li>
         ))}
       </ol>

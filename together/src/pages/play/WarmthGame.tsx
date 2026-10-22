@@ -18,6 +18,7 @@ import {
 } from '../../lib/gameContribution.ts'
 import { newRoundId, readLedger, readProgress, writeProgress } from '../../lib/gameLedger.ts'
 import { currencySymbol, formatINR } from '../../lib/format.ts'
+import { useLowData } from '../../lib/lowData.ts'
 import { loadStore } from '../../lib/storage.ts'
 import type { CampaignView } from '../../lib/types.ts'
 import {
@@ -53,6 +54,7 @@ function useReducedMotion(): boolean {
 export function WarmthGame({ view, preview = false }: { view: CampaignView; preview?: boolean }) {
   const contribution = useGameContribution({ view, game: 'jacket', preview })
   const reduced = useReducedMotion()
+  const lowData = useLowData()
   const campaign = view.campaign
   const campaignId = campaign.id
   const base = useOrgBase()
@@ -227,7 +229,7 @@ export function WarmthGame({ view, preview = false }: { view: CampaignView; prev
       <div className="wm-shell">
         <WarmthHeader backTo={preview ? undefined : backPath} preview={preview} />
         <section className="wm-goal">
-          <img src="/games/warmth/clothing-rail.jpg" alt="A rail of navy and forest jackets above folded sweaters" />
+          {lowData ? <p className="wm-low">Jacket artwork hidden in low-data mode.</p> : <img src="/games/warmth/clothing-rail.jpg" alt="A rail of navy and forest jackets above folded sweaters" />}
           <div>
             <p className="wm-kicker">Wrap someone in warmth</p>
             <h1>Together, we shared more than clothes.</h1>
@@ -288,6 +290,12 @@ export function WarmthGame({ view, preview = false }: { view: CampaignView; prev
             <p className="wm-lead">{copy.body}</p>
           </div>
           <div className="wm-jacket" ref={jacketRef}>
+            {lowData ? (
+              <p className="wm-low">
+                {progress.color} jacket · {wrapped ? 'folded' : zipped ? 'zipped' : lined ? 'lined' : 'open'}. Artwork hidden in low-data mode.
+              </p>
+            ) : (
+              <>
             <img
               src={jacketImage(progress.color, 'open')}
               alt=""
@@ -312,6 +320,8 @@ export function WarmthGame({ view, preview = false }: { view: CampaignView; prev
               style={{ opacity: wrapped ? 1 : 0 }}
               draggable={false}
             />
+              </>
+            )}
             {tagged ? (
               <span className={`wm-kindness${wrapped ? ' is-folded' : ''}`}>
                 With care

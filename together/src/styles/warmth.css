@@ -51,6 +51,7 @@
 .wm-play h1 { margin: 0 0 6px; font-family: Fraunces, Georgia, serif; font-size: clamp(1.45rem, 2vw, 2rem); letter-spacing: -0.03em; line-height: 1.08; max-width: 16ch; }
 .wm-lead { margin: 0; max-width: 28rem; color: #3f5a50; font-size: 0.95rem; }
 .wm-jacket { position: relative; width: 100%; height: 100%; min-height: 0; margin: 0; }
+.wm-low { margin: 24px; padding: 18px; border: 1px dashed #d9d4c7; border-radius: 12px; background: #f7f4ec; color: #183a2f; }
 .wm-jacket img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
 .wm-zip { position: absolute; left: 50%; top: 16%; bottom: 14%; width: 54px; transform: translateX(-50%); }
 .wm-zip-pull {

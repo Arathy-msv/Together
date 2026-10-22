@@ -3,6 +3,7 @@ import { useGameContribution } from '../../hooks/useGameContribution.ts'
 import { newRoundId, readProgress, writeProgress } from '../../lib/gameLedger.ts'
 import type { CampaignView } from '../../lib/types.ts'
 import { animationDelay } from '../../lib/motion.ts'
+import { useLowData } from '../../lib/lowData.ts'
 import { GameFrame, GameTitle } from './GameFrame.tsx'
 
 const COLS = 3
@@ -133,7 +134,11 @@ function PieceArt({
 }) {
   return (
     <g clipPath={`url(#${clipId})`} opacity={preview ? 0.42 : 1}>
-      <image href={art} x="0" y="0" width={BOARD_W} height={BOARD_H} preserveAspectRatio="xMidYMid slice" />
+      {art ? (
+        <image href={art} x="0" y="0" width={BOARD_W} height={BOARD_H} preserveAspectRatio="xMidYMid slice" />
+      ) : (
+        <rect x="0" y="0" width={BOARD_W} height={BOARD_H} fill="#d7e3d4" />
+      )}
     </g>
   )
 }
@@ -146,7 +151,8 @@ export function PuzzleGame({
   preview?: boolean
 }) {
   const campaignId = view.campaign.id
-  const art = view.campaign.puzzleImageData || DEFAULT_ART
+  const lowData = useLowData()
+  const art = lowData ? '' : view.campaign.puzzleImageData || DEFAULT_ART
   const uid = useId().replace(/:/g, '')
   const contribution = useGameContribution({ view, game: 'puzzle', preview })
   const openCount = contribution.settings.actionsPerRound
@@ -268,7 +274,7 @@ export function PuzzleGame({
         </aside>
       }
     >
-      <div className="scene scene-puzzle" style={{ ['--puzzle-art' as string]: `url("${art}")` }}>
+      <div className={lowData ? 'scene scene-puzzle is-low-data' : 'scene scene-puzzle'} style={lowData ? undefined : { ['--puzzle-art' as string]: `url("${art}")` }}>
         <GameTitle game="puzzle" organizer={view.campaign.organizerName} />
         <div className="jigsaw-plate">
           <svg className="jigsaw-board" viewBox="-32 -32 364 289" role="group" aria-label="Community puzzle board">

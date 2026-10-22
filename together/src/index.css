@@ -434,6 +434,7 @@ legend { font-weight: 800; }
     linear-gradient(rgba(255, 248, 236, 0.28), rgba(255, 248, 236, 0.42)),
     var(--puzzle-art, url('/games/puzzle-art.jpg'));
 }
+.scene-puzzle.is-low-data { background-image: none; background-color: #f4efe2; }
 .play-puzzle .play-stage {
   flex: none;
   min-height: 0;

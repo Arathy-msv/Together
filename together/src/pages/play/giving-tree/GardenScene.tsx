@@ -1,19 +1,21 @@
 import { forwardRef, useEffect, type ReactNode } from 'react'
 import { TREE_MILESTONES, type CareKind } from '../../../lib/givingTree.ts'
+import { useLowData } from '../../../lib/lowData.ts'
 
 export const ART = '/giving-tree'
 
 const PRELOAD = ['watering-can.webp', 'fertilizer-scoop.webp', 'coin.webp']
 
 /** Decode the care props before the first animation, so a late image cannot finish invisible. */
-function usePreloadArt() {
+function usePreloadArt(enabled: boolean) {
   useEffect(() => {
+    if (!enabled) return
     for (const file of PRELOAD) {
       const image = new Image()
       image.src = `${ART}/${file}`
       image.decode?.().catch(() => undefined)
     }
-  }, [])
+  }, [enabled])
 }
 
 export interface SceneEffect {
@@ -40,7 +42,8 @@ export const GardenScene = forwardRef<HTMLDivElement, GardenSceneProps>(function
   { treeStage, effect, treeCaption, onTreeSign, celebrating = false, overlay, toast },
   treeRef,
 ) {
-  usePreloadArt()
+  const lowData = useLowData()
+  usePreloadArt(!lowData)
   const milestone = TREE_MILESTONES[treeStage]
 
   return (
@@ -49,25 +52,36 @@ export const GardenScene = forwardRef<HTMLDivElement, GardenSceneProps>(function
         The shared campaign tree is at the {milestone.name.toLowerCase()} stage.
         {celebrating ? ' Tags reading Hope, Care, Kindness, Together and Thank you hang from its branches.' : ''}
       </p>
-      <img className="gt-bg" src={`${ART}/garden-bg.webp`} alt="" draggable={false} />
-      <div className="gt-visually-hidden" aria-hidden="true">
-        {PRELOAD.map((file) => (
-          <img key={file} src={`${ART}/${file}`} alt="" />
-        ))}
-      </div>
+      {lowData ? (
+        <div className="gt-low">
+          <strong>{milestone.name}</strong>
+          <span>Artwork hidden in low-data mode</span>
+        </div>
+      ) : (
+        <>
+          <img className="gt-bg" src={`${ART}/garden-bg.webp`} alt="" draggable={false} />
+          <div className="gt-visually-hidden" aria-hidden="true">
+            {PRELOAD.map((file) => (
+              <img key={file} src={`${ART}/${file}`} alt="" />
+            ))}
+          </div>
+        </>
+      )}
       <div className="gt-sun-glow" aria-hidden="true" />
 
       <div className="gt-tree-anchor" ref={treeRef}>
-        {TREE_MILESTONES.map((item, index) => (
-          <img
-            key={item.name}
-            className={index === treeStage ? 'gt-tree is-current' : 'gt-tree'}
-            src={`${ART}/tree-${index}.webp`}
-            alt=""
-            draggable={false}
-          />
-        ))}
-        {effect?.kind === 'seed' ? (
+        {lowData
+          ? null
+          : TREE_MILESTONES.map((item, index) => (
+              <img
+                key={item.name}
+                className={index === treeStage ? 'gt-tree is-current' : 'gt-tree'}
+                src={`${ART}/tree-${index}.webp`}
+                alt=""
+                draggable={false}
+              />
+            ))}
+        {!lowData && effect?.kind === 'seed' ? (
           <img key={`seed-${effect.key}`} className="gt-seed-drop" src={`${ART}/plant-0.webp`} alt="" aria-hidden="true" />
         ) : null}
         {effect?.kind === 'sun' ? <Sparkles key={`spark-${effect.key}`} /> : null}
@@ -81,8 +95,8 @@ export const GardenScene = forwardRef<HTMLDivElement, GardenSceneProps>(function
       {effect?.kind === 'water' ? <span key={`wet-${effect.key}`} className="gt-wet" aria-hidden="true" /> : null}
       {effect?.kind === 'fertilizer' ? <Roots key={`roots-${effect.key}`} /> : null}
 
-      {effect?.kind === 'water' ? <Watering key={`water-${effect.key}`} /> : null}
-      {effect?.kind === 'fertilizer' ? <Fertilizing key={`fert-${effect.key}`} /> : null}
+      {!lowData && effect?.kind === 'water' ? <Watering key={`water-${effect.key}`} /> : null}
+      {!lowData && effect?.kind === 'fertilizer' ? <Fertilizing key={`fert-${effect.key}`} /> : null}
       {effect?.kind === 'sun' ? <Sunbeams key={`sun-${effect.key}`} /> : null}
 
       {toast}

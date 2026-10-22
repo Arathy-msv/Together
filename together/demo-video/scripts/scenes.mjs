@@ -59,6 +59,15 @@ async function openShareKit(r) {
   await r.waitFor('Link & QR')
 }
 
+/** Ask, sharing, and partner offers sit inside a closed disclosure. */
+async function openMoreWays(r) {
+  const open = await r.ev(`!!document.querySelector('details.more-ways[open]')`)
+  if (!open) {
+    await r.press('More ways to take part', { selector: 'summary' })
+    await r.sleep(500)
+  }
+}
+
 async function waitEnabled(r, label) {
   const start = Date.now()
   while (Date.now() - start < 10000) {
@@ -330,8 +339,10 @@ export const SCENES = [
       await r.fillLabel('Area', 'Greenwood High Street')
       await r.fillLabel('Short description', 'Family-run stationery and art supplies shop near the school gates.', { delay: 10 })
       await r.press('Add partner store', { selector: 'button[type=submit]' })
-      await r.waitFor('Create an offer')
-      await r.sleep(1000)
+      await r.waitFor('Add an offer')
+      await r.press('Add an offer', { selector: 'button' })
+      await r.waitFor('#create-offer-title')
+      await r.sleep(600)
       const offerForm = 'section[aria-labelledby="create-offer-title"]'
       await r.scrollToSel('#create-offer-title')
       await r.fillLabel('Offer title', '10% off school supplies', { within: offerForm })
@@ -553,6 +564,8 @@ export const SCENES = [
       await r.sleep(1500)
       await r.press('Continue', { selector: '.btn.btn-primary', exact: true })
       await r.waitFor('Submit for review')
+      await r.expectText('Before you publish')
+      await r.expectText('not proof that a payment was tested')
       await r.sleep(1200)
     },
   },
@@ -605,6 +618,25 @@ export const SCENES = [
       const live = await r.app(`const c = await import('/src/lib/campaigns.ts'); const x = c.getCampaign(${JSON.stringify(state.campaignId)}); return !x.isDraft && !x.pendingRevision`)
       if (!live) throw new Error('Campaign was not published after approval')
       await r.sleep(2500)
+    },
+  },
+  {
+    id: 'oa-sponsor',
+    chapter: 'organizer',
+    async run(r, state) {
+      await switchOnCamera(r, PEOPLE.grace)
+      await r.nav(`/workspace/${state.orgId}/sponsors`)
+      await r.waitFor('A fictional sponsor budget for Memory Match only')
+      await r.expectText('Pending rewards stay out of the campaign total')
+      await r.fillLabel('Sponsor name', 'Northwind Stationery (fictional)')
+      await r.fillLabel('Pledged budget', '5000')
+      await r.fillLabel('Cap per person', '500')
+      await r.fillLabel('Reward for each of 3 matched pairs', '50')
+      await r.press('Add sponsor commitment', { selector: 'button' })
+      await r.waitFor('Sponsor commitment saved. It is simulated — no sponsor has been invoiced.')
+      await r.expectText('No play rewards yet.')
+      await r.expectText('₹5,000')
+      await r.sleep(1800)
     },
   },
   {
@@ -788,6 +820,8 @@ export const SCENES = [
       if (!turnedOff) throw new Error('Sharing kit did not turn off')
       await r.sleep(600)
       await r.go(`/o/greenwood-school/campaigns/${state.campaignId}`)
+      await r.waitFor('Support this campaign')
+      await openMoreWays(r)
       await r.waitFor('Share campaign link')
       await r.scrollToSel('h2', { text: 'Help spread the word' })
       await r.rejectText('Open the full sharing kit')
@@ -919,6 +953,8 @@ export const SCENES = [
       await r.sleep(1800)
       await r.press('How funds are used', { selector: '[role=tab], button', exact: true })
       await r.sleep(2500)
+      await openMoreWays(r)
+      await r.expectText('More ways to take part')
       await r.scrollToSel('h2', { text: 'Partner offers' })
       await r.sleep(2500)
     },
@@ -1016,10 +1052,45 @@ export const SCENES = [
     },
   },
   {
+    id: 'sp-sponsor',
+    chapter: 'supporter',
+    async run(r, state) {
+      await r.nav(`/o/greenwood-school/campaigns/${state.campaignId}`)
+      await r.waitFor('Support this campaign')
+      await r.scrollToSel('h2', { text: 'Support this campaign' })
+      await r.click('label.give-option', { text: 'Play to support' })
+      await r.sleep(600)
+      await r.click('label.give-option', { text: 'Sponsor-funded play' })
+      await r.expectText('Next reward ₹50')
+      await r.expectText('Nothing is added to your checkout.')
+      const before = await r.app(`const s = await import('/src/lib/storage.ts'); const id = ${JSON.stringify(state.campaignId)}; return { raised: s.loadStore().contributions.filter(c => c.campaignId === id).reduce((n, c) => n + c.amount, 0), pending: s.loadStore().sponsorAllocations.filter(a => a.status === 'pending').length }`)
+      await r.press('Start playing', { selector: 'a, button' })
+      await r.waitFor('.mem-card, .game-intro')
+      if (await r.ev(`!!document.querySelector('.game-intro .btn-primary')`)) { await r.click('.game-intro .btn-primary'); await r.sleep(700) }
+      await r.waitFor('.mem-card')
+      await r.expectText('Next sponsor reward: ₹50')
+      const faces = await r.ev(`[...document.querySelectorAll('.mem-card')].map(c => c.querySelector('.mem-face').style.backgroundImage)`)
+      const first = faces.findIndex((face) => face)
+      const second = faces.indexOf(faces[first], first + 1)
+      if (second < 0) throw new Error('No matching memory pair')
+      await r.click('.mem-card', { index: first })
+      await r.sleep(400)
+      await r.click('.mem-card', { index: second })
+      await r.waitFor('sponsor reward is pending', 8000)
+      await r.expectText('It is not added to your personal amount.')
+      const after = await r.app(`const s = await import('/src/lib/storage.ts'); const id = ${JSON.stringify(state.campaignId)}; return { raised: s.loadStore().contributions.filter(c => c.campaignId === id).reduce((n, c) => n + c.amount, 0), pending: s.loadStore().sponsorAllocations.filter(a => a.status === 'pending').length }`)
+      if (after.raised !== before.raised) throw new Error('Sponsor play changed the campaign total: ' + JSON.stringify({ before, after }))
+      if (after.pending !== before.pending + 1) throw new Error('Sponsor reward was not left pending: ' + JSON.stringify({ before, after }))
+      await r.sleep(1600)
+    },
+  },
+  {
     id: 'sp-share',
     chapter: 'supporter',
     async run(r, state) {
       await r.nav(`/o/greenwood-school/campaigns/${state.campaignId}`)
+      await r.waitFor('Support this campaign')
+      await openMoreWays(r)
       await r.waitFor('Help spread the word')
       await r.expectText('₹700')
       await r.scrollToSel('h2', { text: 'Help spread the word' })
@@ -1108,6 +1179,7 @@ export const SCENES = [
       await r.sleep(1500)
       await r.press('Show voucher', { selector: 'button' })
       await r.waitFor('.voucher-present[open]')
+      await r.expectText('PRESENT THIS TO STORE STAFF')
       await r.mark(0.45)
       await r.press('Done', { selector: '.voucher-present button', exact: true })
       await r.sleep(800)
@@ -1197,6 +1269,23 @@ export const SCENES = [
       if (blocked === 'allowed') throw new Error('A second redemption was allowed')
       state.repeatMessage = blocked
       await r.sleep(3000)
+    },
+  },
+  {
+    id: 'oa-sponsor-confirm',
+    chapter: 'merchant',
+    async run(r, state) {
+      await switchOnCamera(r, PEOPLE.grace)
+      await r.nav(`/workspace/${state.orgId}/sponsors`)
+      await r.waitFor('Pending')
+      const before = await r.app(`const s = await import('/src/lib/storage.ts'); const id = ${JSON.stringify(state.campaignId)}; return s.loadStore().contributions.filter(c => c.campaignId === id).reduce((n, c) => n + c.amount, 0)`)
+      await r.press('Confirm simulated funds', { selector: 'button' })
+      await r.waitFor('Simulated sponsor funds confirmed once.')
+      await r.expectText('Counted once in the campaign total')
+      await r.rejectText('Confirm simulated funds')
+      const after = await r.app(`const s = await import('/src/lib/storage.ts'); const id = ${JSON.stringify(state.campaignId)}; const store = s.loadStore(); return { raised: store.contributions.filter(c => c.campaignId === id).reduce((n, c) => n + c.amount, 0), confirmed: store.sponsorAllocations.filter(a => a.status === 'confirmed').length }`)
+      if (after.raised !== before + 50 || after.confirmed !== 1) throw new Error('Sponsor confirm did not add ₹50 once: ' + JSON.stringify({ before, after }))
+      await r.sleep(1800)
     },
   },
   {
@@ -1376,6 +1465,8 @@ export const SCENES = [
     chapter: 'opening',
     async before(r, state) {
       await r.go(`/o/greenwood-school/campaigns/${state.campaignId}`)
+      await r.waitFor('Support this campaign')
+      await openMoreWays(r)
       await r.waitFor('Partner offers')
     },
     async run(r) {
