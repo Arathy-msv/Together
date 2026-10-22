@@ -118,7 +118,7 @@ export function stepQuestion(step: AssistantStepId, _org: Pick<Organization, 'na
 export function stepHint(step: AssistantStepId, org: Pick<Organization, 'content' | 'defaults'>): string {
   switch (step) {
     case 'purpose':
-      return `For example: “Our company wants to raise ₹50,000 for school supplies.” I’ll note any amount you mention and ask about everything else — I won’t guess details for ${org.content.supporterNoun || 'supporters'}.`
+      return `For example: “Our company wants to raise $50,000 for school supplies.” I’ll note any amount you mention and ask about everything else — I won’t guess details for ${org.content.supporterNoun || 'supporters'}.`
     case 'category':
       return 'Optional. The type shapes the suggestions you can accept at review. It never changes what you have written.'
     case 'story':

@@ -1,7 +1,7 @@
 import { formatMoney } from './format.ts'
 import type { Campaign, GameContributionSettings, GameType } from './types.ts'
 
-/** Integer paise per rupee. All game money is stored in paise and only formatted as rupees. */
+/** Integer minor units per whole amount. Game money is stored in minor units and formatted in the campaign currency. */
 export const PAISE_PER_RUPEE = 100
 export const MAX_CONTRIBUTION_PAISE = 10_000_000 * PAISE_PER_RUPEE
 

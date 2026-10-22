@@ -41,9 +41,9 @@ const lumen = orgs.find((org) => org.id === 'org_lumen')!
 const harbour = orgs.find((org) => org.id === 'org_harbour')!
 
 test('extracts an explicit amount and currency, and only suggests a category', () => {
-  const parsed = parseCampaignMessage('Our company wants to raise ₹50,000 for school supplies.')
+  const parsed = parseCampaignMessage('Our company wants to raise $50,000 for school supplies.')
   assert.equal(parsed.amount, 50000)
-  assert.equal(parsed.currency, 'INR')
+  assert.equal(parsed.currency, 'USD')
   assert.equal(parsed.category, 'education')
   assert.deepEqual(parseCampaignMessage('We want 2 lakh rupees for blankets').amount, 200000)
   assert.equal(parseCampaignMessage('We have 200 students who need help').amount, undefined)
@@ -84,15 +84,15 @@ test('editorial advice is never required', () => {
 })
 
 test('campaign draft suggestions use only supplied facts and mark what is missing', () => {
-  const form = { ...blankForm(lumen), description: 'Our company wants to raise ₹50,000 for school supplies.', goalAmount: '50000', currency: 'INR' as const, category: 'education' as const }
+  const form = { ...blankForm(lumen), description: 'Our company wants to raise $50,000 for school supplies.', goalAmount: '50000', currency: 'USD' as const, category: 'education' as const }
   const result = suggestCampaignDraft(form, lumen, ['memory', 'jacket', 'garden'])
   assert.equal(result.label, SIMULATION_LABEL)
   assert.match(result.content.story.whoItHelps, /^\[/)
-  assert.equal(result.content.summary, 'Our company wants to raise ₹50,000 for school supplies.')
+  assert.equal(result.content.summary, 'Our company wants to raise $50,000 for school supplies.')
   assert.equal(result.content.game.gameType, 'memory')
   assert.ok(result.missing.some((item) => /Who the campaign helps/.test(item)))
   const mismatch = suggestCampaignDraft({ ...form, goalAmount: '45000' }, lumen, ['memory'])
-  assert.ok(mismatch.missing.some((item) => /mentions ₹50,000 but the target is ₹45,000/.test(item)))
+  assert.ok(mismatch.missing.some((item) => /mentions \$50,000 but the target is \$45,000/.test(item)))
 })
 
 test('update drafts never turn a planned milestone into a completed one', () => {
@@ -113,7 +113,7 @@ test('update drafts summarise only published expenses and cite their sources', (
   const expenses = store.expenses.filter((item) => item.campaignId === campaign.id)
   const draft = draftCampaignUpdate({ campaign, whatHappened: '', date: '', expenses, challenges: 'Supplier delay', next: 'Collect batch two', evidence: [] })
   assert.match(draft.content.body, /\[Describe what happened — required\]/)
-  assert.match(draft.content.spending, /Total ₹19,250/)
+  assert.match(draft.content.spending, /Total \$19,250/)
   assert.doesNotMatch(draft.content.spending, /awaiting invoice/)
   assert.ok(draft.sources.every((source) => source.kind !== 'expense' || expenses.find((item) => item.id === source.id)?.status === 'published'))
   assert.match(composeUpdateBody(draft.content), /What happens next: Collect batch two\./)
@@ -153,7 +153,7 @@ test('donor answers use public information only and unknown stays unknown', () =
   assert.ok(!JSON.stringify(snapshot).includes('verification placeholder'))
   assert.ok(!JSON.stringify(snapshot).includes('draft'))
   const spending = answerPublicQuestion('How much spending has been reported?', snapshot).content
-  assert.match(spending.text, /₹19,250/)
+  assert.match(spending.text, /\$19,250/)
   assert.equal(spending.tab, 'fund')
   const distribution = answerPublicQuestion('Has distribution been completed?', snapshot).content
   assert.match(distribution.text, /planned \(organizer-reported\)/)
@@ -167,7 +167,7 @@ test('donor answers use public information only and unknown stays unknown', () =
 test('sample receipts map to fixed values; uploads are not "read"', () => {
   const result = extractSampleReceipt('sample-van')
   assert.equal(result.content.amountMinor, 125050)
-  assert.equal(result.content.currency, 'INR')
+  assert.equal(result.content.currency, 'USD')
   assert.throws(() => extractSampleReceipt('my-upload.jpg'), AiError)
 })
 

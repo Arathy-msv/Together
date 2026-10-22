@@ -83,7 +83,7 @@ function normalizeCampaign(input: Campaign): Campaign {
     ...campaign,
     organizationId:
       typeof campaign.organizationId === 'string' && campaign.organizationId ? campaign.organizationId : LEGACY_ORG_ID,
-    currency: isCurrencyCode(campaign.currency) ? campaign.currency : 'INR',
+    currency: isCurrencyCode(campaign.currency) ? campaign.currency : 'USD',
     gameType,
     gameSettings: campaign.gameSettings ? normalizeGameSettings(gameType, campaign.gameSettings) : undefined,
     coverImageData:

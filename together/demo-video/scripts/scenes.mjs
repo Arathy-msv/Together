@@ -425,9 +425,9 @@ export const SCENES = [
         actions.reviewRevision(campaign.id, pending.pendingRevision.id, 'approve', 'Approved for Reading Week.')
         actions.publishApprovedRevision(campaign.id, pending.pendingRevision.id)
         let n = 0
-        for (const [who, rupees] of [[${JSON.stringify(u.ben)}, 6000], [null, 8500], [${JSON.stringify(u.ben)}, 5500]]) {
+        for (const [who, dollars] of [[${JSON.stringify(u.ben)}, 6000], [null, 8500], [${JSON.stringify(u.ben)}, 5500]]) {
           identity.switchIdentity(who)
-          campaigns.addContribution({ id: 'fixture-past-' + (++n), campaignId: campaign.id, amount: rupees, method: 'direct', detail: 'Direct contribution' })
+          campaigns.addContribution({ id: 'fixture-past-' + (++n), campaignId: campaign.id, amount: dollars, method: 'direct', detail: 'Direct contribution' })
         }
         identity.switchIdentity(${JSON.stringify(u.grace)})
         campaigns.closeCampaign(campaign.id)
@@ -462,7 +462,7 @@ export const SCENES = [
     chapter: 'organizer',
     async run(r) {
       await r.sleep(1200)
-      await r.fill('#a-purpose', 'We want to raise ₹60,000 for school supplies for our 420 pupils: notebooks, pencils, art materials and reading books for every classroom.', { delay: 14 })
+      await r.fill('#a-purpose', 'We want to raise $60,000 for school supplies for our 420 pupils: notebooks, pencils, art materials and reading books for every classroom.', { delay: 14 })
       await r.press('Continue', { selector: '.btn.btn-primary', exact: true })
       await r.waitFor('I noted a target of')
       await r.sleep(1500)
@@ -635,7 +635,7 @@ export const SCENES = [
       await r.press('Add sponsor commitment', { selector: 'button' })
       await r.waitFor('Sponsor commitment saved. It is simulated — no sponsor has been invoiced.')
       await r.expectText('No play rewards yet.')
-      await r.expectText('₹5,000')
+      await r.expectText('$5,000')
       await r.sleep(1800)
     },
   },
@@ -863,7 +863,7 @@ export const SCENES = [
       const copy = await r.app(`const c = await import('/src/lib/campaigns.ts'); const s = await import('/src/lib/storage.ts'); const store = s.loadStore(); const copies = store.campaigns.filter(x => x.id !== ${JSON.stringify(state.pastCampaignId)} && x.title.includes('Reading Week')); return copies.map(x => ({ id: x.id, isDraft: x.isDraft, contributions: store.contributions.filter(k => k.campaignId === x.id).length }))`)
       if (copy.length !== 1 || !copy[0].isDraft || copy[0].contributions !== 0) throw new Error('Duplicate is not a clean draft: ' + JSON.stringify(copy))
       state.duplicateId = copy[0].id
-      await r.expectText('₹0 raised')
+      await r.expectText('$0 raised')
       await r.sleep(2500)
       await r.scrollBy(400)
       await r.sleep(1500)
@@ -966,9 +966,9 @@ export const SCENES = [
       await r.scrollToSel('h2', { text: 'Support this campaign' })
       await r.click('label.give-option', { text: 'Give directly' }).catch(() => {})
       await r.sleep(800)
-      await r.press('₹250', { selector: 'button.amount-choice' })
+      await r.press('$250', { selector: 'button.amount-choice' })
       await r.sleep(900)
-      await r.press('₹500', { selector: 'button.amount-choice' })
+      await r.press('$500', { selector: 'button.amount-choice' })
       await r.sleep(900)
       await r.press('Continue to review', { selector: 'button, a' })
       await r.waitFor('Confirm your contribution')
@@ -1017,7 +1017,7 @@ export const SCENES = [
         await r.click('.mem-card', { index: i })
         await r.sleep(350)
         await r.click('.mem-card', { index: j })
-        await r.waitFor(`suggestion now ₹${(pairs + 1) * 50}`, 8000)
+        await r.waitFor(`suggestion now $${(pairs + 1) * 50}`, 8000)
         await r.sleep(1600)
         pairs += 1
       }
@@ -1025,7 +1025,7 @@ export const SCENES = [
       await r.sleep(1500)
       await r.press('↻ New board', { selector: 'button' })
       await r.sleep(900)
-      await r.expectText('₹150')
+      await r.expectText('$150')
       await r.sleep(1500)
     },
   },
@@ -1037,7 +1037,7 @@ export const SCENES = [
       await r.waitFor('Your final amount')
       await r.fillLabel('Your final amount', '200', { within: '.gc-modal, [role=dialog], body' })
       await r.sleep(1200)
-      await r.press('Review & contribute — ₹200', { selector: 'button' })
+      await r.press('Review & contribute — $200', { selector: 'button' })
       await r.waitFor('Review your contribution')
       await r.expectText('Final chosen amount')
       await r.sleep(1500)
@@ -1047,7 +1047,7 @@ export const SCENES = [
       await r.waitFor('Thank you for supporting')
       await r.sleep(1500)
       await r.scrollToSel('.progress, [class*=progress]').catch(() => {})
-      await r.expectText('₹700 of ₹60,000')
+      await r.expectText('$700 of $60,000')
       await r.sleep(2500)
     },
   },
@@ -1061,14 +1061,14 @@ export const SCENES = [
       await r.click('label.give-option', { text: 'Play to support' })
       await r.sleep(600)
       await r.click('label.give-option', { text: 'Sponsor-funded play' })
-      await r.expectText('Next reward ₹50')
+      await r.expectText('Next reward $50')
       await r.expectText('Nothing is added to your checkout.')
       const before = await r.app(`const s = await import('/src/lib/storage.ts'); const id = ${JSON.stringify(state.campaignId)}; return { raised: s.loadStore().contributions.filter(c => c.campaignId === id).reduce((n, c) => n + c.amount, 0), pending: s.loadStore().sponsorAllocations.filter(a => a.status === 'pending').length }`)
       await r.press('Start playing', { selector: 'a, button' })
       await r.waitFor('.mem-card, .game-intro')
       if (await r.ev(`!!document.querySelector('.game-intro .btn-primary')`)) { await r.click('.game-intro .btn-primary'); await r.sleep(700) }
       await r.waitFor('.mem-card')
-      await r.expectText('Next sponsor reward: ₹50')
+      await r.expectText('Next sponsor reward: $50')
       const faces = await r.ev(`[...document.querySelectorAll('.mem-card')].map(c => c.querySelector('.mem-face').style.backgroundImage)`)
       const first = faces.findIndex((face) => face)
       const second = faces.indexOf(faces[first], first + 1)
@@ -1092,7 +1092,7 @@ export const SCENES = [
       await r.waitFor('Support this campaign')
       await openMoreWays(r)
       await r.waitFor('Help spread the word')
-      await r.expectText('₹700')
+      await r.expectText('$700')
       await r.scrollToSel('h2', { text: 'Help spread the word' })
       await r.sleep(1200)
       await r.press('Create my sharing page', { selector: 'a, button' })
@@ -1145,7 +1145,7 @@ export const SCENES = [
       await r.expectText('personal introduction')
       await r.sleep(1200)
       await r.scrollToSel('h2', { text: 'Support this campaign' })
-      await r.press('₹100', { selector: 'button.amount-choice' })
+      await r.press('$100', { selector: 'button.amount-choice' })
       await r.sleep(700)
       await r.press('Continue to review', { selector: 'button, a' })
       await r.waitFor('Confirm your contribution')
@@ -1153,7 +1153,7 @@ export const SCENES = [
       await r.sleep(1000)
       await r.press('Confirm simulated contribution', { selector: 'button' })
       await r.waitFor('Thank you for supporting')
-      await r.expectText('₹800 of ₹60,000')
+      await r.expectText('$800 of $60,000')
       const credit = await r.app(`
         const s = await import('/src/lib/storage.ts')
         const referrals = await import('/src/lib/referrals.ts')
@@ -1284,7 +1284,7 @@ export const SCENES = [
       await r.expectText('Counted once in the campaign total')
       await r.rejectText('Confirm simulated funds')
       const after = await r.app(`const s = await import('/src/lib/storage.ts'); const id = ${JSON.stringify(state.campaignId)}; const store = s.loadStore(); return { raised: store.contributions.filter(c => c.campaignId === id).reduce((n, c) => n + c.amount, 0), confirmed: store.sponsorAllocations.filter(a => a.status === 'confirmed').length }`)
-      if (after.raised !== before + 50 || after.confirmed !== 1) throw new Error('Sponsor confirm did not add ₹50 once: ' + JSON.stringify({ before, after }))
+      if (after.raised !== before + 50 || after.confirmed !== 1) throw new Error('Sponsor confirm did not add $50 once: ' + JSON.stringify({ before, after }))
       await r.sleep(1800)
     },
   },
@@ -1303,11 +1303,11 @@ export const SCENES = [
         let total = s.loadStore().contributions.filter(c => c.campaignId === id).reduce((n, c) => n + c.amount, 0)
         const want = 61200
         let n = 0
-        for (const rupees of amounts) {
-          if (total + rupees > want) break
+        for (const dollars of amounts) {
+          if (total + dollars > want) break
           identity.switchIdentity(supporters[n % supporters.length])
-          campaigns.addContribution({ id: 'fixture-more-' + (++n), campaignId: id, amount: rupees, method: 'direct', detail: 'Direct contribution' })
-          total += rupees
+          campaigns.addContribution({ id: 'fixture-more-' + (++n), campaignId: id, amount: dollars, method: 'direct', detail: 'Direct contribution' })
+          total += dollars
         }
         if (want > total) { identity.switchIdentity(null); campaigns.addContribution({ id: 'fixture-more-' + (++n), campaignId: id, amount: want - total, method: 'direct', detail: 'Direct contribution' }); total = want }
         identity.switchIdentity(null)
@@ -1426,7 +1426,7 @@ export const SCENES = [
       await r.waitFor('Funding goal reached')
     },
     async run(r) {
-      await r.expectText('₹61,200 of ₹60,000')
+      await r.expectText('$61,200 of $60,000')
       await r.waitFor('.funded-panel')
       await r.expectText('Reaching the goal does not mean the work is done.')
       await r.mark(0.4)
@@ -1437,7 +1437,7 @@ export const SCENES = [
       await r.expectText('1 of 4 milestones reported complete')
       await r.scrollToSel('ol.linked-records[aria-label="Records linked to Purchase materials"]')
       await r.sleep(3500)
-      await r.click('ol.linked-records[aria-label="Records linked to Purchase materials"] button', { text: '₹18,400' })
+      await r.click('ol.linked-records[aria-label="Records linked to Purchase materials"] button', { text: '$18,400' })
       await r.waitFor('Organizer-reported expenses')
       await r.sleep(2500)
       await r.scrollToSel('h3', { text: 'Organizer-reported expenses' })

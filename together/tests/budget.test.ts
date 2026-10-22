@@ -120,7 +120,7 @@ test('a v4 store migrates to v5 and copies beneficiaries only from the beneficia
       {
         id: 'cmp_old',
         organizationId: 'org_together',
-        currency: 'INR',
+        currency: 'USD',
         title: 'Old campaign',
         description: 'Saved before beneficiaries were unified.',
         coverImageId: 'garden',

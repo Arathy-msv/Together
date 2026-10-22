@@ -84,7 +84,7 @@ The new export will be `output/together-presales-first-time.mp4`. It will not re
 - Reframe only when a field, QR, amount, or status is too small at normal playback size.
 - Reserve a caption band below the product picture so captions do not cover buttons, totals, or
   game controls.
-- Keep Greenwood School, “School supplies for every Greenwood pupil”, the ₹60,000 target,
+- Keep Greenwood School, “School supplies for every Greenwood pupil”, the $60,000 target,
   Northwind Stationery, Corner Stationery, Mia’s referral, and the same voucher journey.
 - Preserve the demo-control labels when they identify a simulated role, but do not dwell on the
   identity switcher.
@@ -148,7 +148,5 @@ blocked.
 - The final value statement and “Explore a pilot for your organization” CTA are readable.
 
 The concise verification record is
-`output/together-presales-first-time.verification.md`. The available video-review tool cannot
-hear audio, and no local speech-recognition tool is installed. A person must still listen to the
-full export to check pronunciation, cadence, and abrupt joins. Until then, this export is
-generated and visually reviewed, but not marked Complete.
+`output/together-presales-first-time.verification.md`. That review predates the change from
+Indian rupees to dollars. The export still shows rupees, so it is stale and is not marked Complete.

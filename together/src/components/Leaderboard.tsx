@@ -142,7 +142,7 @@ export function Leaderboard({ campaignId, compact = false }: { campaignId: strin
         </p>
       </div>
       <p className="leaderboard-rule">
-        1 point for every rupee you contribute, and the same points when someone contributes through your referral.
+        1 point for every dollar you contribute, and the same points when someone contributes through your referral.
       </p>
       {mine ? (
         <div className="referral-card">

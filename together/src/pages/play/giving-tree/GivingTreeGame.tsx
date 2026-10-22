@@ -248,7 +248,7 @@ export function GivingTreeGame({ view, preview = false }: { view: CampaignView; 
     if (blockedReason) return blockedReason
     const current = stateRef.current
     if (current.cart.length === 0) return 'Care for the shared tree to start a suggestion first.'
-    if (amountPaise % PAISE_PER_RUPEE !== 0 || amountPaise <= 0) return 'Enter a whole rupee amount, like 100.'
+    if (amountPaise % PAISE_PER_RUPEE !== 0 || amountPaise <= 0) return 'Enter a whole dollar amount, like 100.'
     confirming.current = true
     try {
       const giver = currentPlayer(campaignId)

@@ -145,7 +145,7 @@ export function StoryEditor({ campaign, view, store }: WorkspaceProps) {
         <h2>Cost examples</h2>
         <p className="muted small">
           Only add an example when you can point to a real cost, such as a supplier quotation. Each example must say where the figure comes from — avoid claims
-          like “₹100 clothes one child” without a basis.
+          like “$100 clothes one child” without a basis.
         </p>
         {impact.map((item, index) => (
           <div key={item.id} className="impact-row">

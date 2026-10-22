@@ -58,7 +58,7 @@ export function createSeed(): DemoStore {
       gameType: 'garden',
       createdAt: shiftLocal(-20, 9),
       organizationId: 'org_together',
-      currency: 'INR',
+      currency: 'USD',
     },
     {
       id: 'cmp_garden',
@@ -78,7 +78,7 @@ export function createSeed(): DemoStore {
       gameType: 'puzzle',
       createdAt: shiftLocal(-14, 11),
       organizationId: 'org_together',
-      currency: 'INR',
+      currency: 'USD',
     },
     {
       id: 'cmp_winter',
@@ -98,7 +98,7 @@ export function createSeed(): DemoStore {
       gameType: 'memory',
       createdAt: shiftLocal(-2, 15),
       organizationId: 'org_together',
-      currency: 'INR',
+      currency: 'USD',
     },
     {
       id: 'cmp_jacket',
@@ -118,7 +118,7 @@ export function createSeed(): DemoStore {
       gameType: 'jacket',
       createdAt: shiftLocal(-5, 14),
       organizationId: 'org_together',
-      currency: 'INR',
+      currency: 'USD',
     },
     {
       id: 'cmp_circle',
@@ -139,7 +139,7 @@ export function createSeed(): DemoStore {
       gameType: 'garden',
       createdAt: shiftLocal(-7, 11),
       organizationId: 'org_together',
-      currency: 'INR',
+      currency: 'USD',
     },
     ...organizationCampaigns(),
   ]
@@ -268,7 +268,7 @@ function organizationCampaigns(): Campaign[] {
     sample({
       id: 'cmp_maple_lab',
       organizationId: ORG_MAPLE,
-      currency: 'INR',
+      currency: 'USD',
       title: 'Science Lab Starter Kits',
       description:
         'Microscopes, circuit kits and safe chemistry sets for Grades 6–8. Piece the puzzle together and help our young scientists run real experiments.',
@@ -284,7 +284,7 @@ function organizationCampaigns(): Campaign[] {
     sample({
       id: 'cmp_maple_sports',
       organizationId: ORG_MAPLE,
-      currency: 'INR',
+      currency: 'USD',
       title: 'Sports Day Kits for Every House',
       description:
         'New bibs, relay batons and first-aid kits for all four school houses before Sports Day. Families can give directly or play a round of memory match.',
@@ -300,7 +300,7 @@ function organizationCampaigns(): Campaign[] {
     sample({
       id: 'cmp_maple_garden',
       organizationId: ORG_MAPLE,
-      currency: 'INR',
+      currency: 'USD',
       title: 'Our Kitchen Garden',
       description:
         'Raised beds, child-sized tools and a rain barrel so every class can grow vegetables and learn where food comes from.',
@@ -316,7 +316,7 @@ function organizationCampaigns(): Campaign[] {
     sample({
       id: 'cmp_harbour_blankets',
       organizationId: ORG_HARBOUR,
-      currency: 'INR',
+      currency: 'USD',
       title: 'Winter Blankets for Shelters',
       description:
         'Thick blankets and winter jackets for our three night shelters. Wrap someone in warmth in the game, or give directly to keep beds warm all season.',
@@ -332,7 +332,7 @@ function organizationCampaigns(): Campaign[] {
     sample({
       id: 'cmp_harbour_kitchen',
       organizationId: ORG_HARBOUR,
-      currency: 'INR',
+      currency: 'USD',
       title: 'Community Kitchen Gardens',
       description:
         'Fresh produce for our community kitchens, grown by volunteers and families in two neighbourhood plots. Grow the giving tree to fund seeds, soil and tools.',
@@ -348,7 +348,7 @@ function organizationCampaigns(): Campaign[] {
     sample({
       id: 'cmp_harbour_reading',
       organizationId: ORG_HARBOUR,
-      currency: 'INR',
+      currency: 'USD',
       title: 'Reading Corners in Shelters',
       description:
         'Quiet reading corners with books, lamps and beanbags in every family shelter. Thanks to our supporters this goal has been reached.',

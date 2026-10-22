@@ -56,7 +56,7 @@ describe('example care sequence', () => {
         ['Sunlight', 1, 25],
       ],
     )
-    assert.equal(formatPaise(suggestedPaise(state)), '₹225')
+    assert.equal(formatPaise(suggestedPaise(state)), '$225')
   })
 
   test('a chosen final amount is kept separately from the suggestion', () => {
@@ -143,7 +143,7 @@ describe('shared campaign growth', () => {
 
 describe('amount input and storage', () => {
   test('accepts whole rupees only', () => {
-    assert.equal(parseGiftAmount('₹100').paise, 10000)
+    assert.equal(parseGiftAmount('$100').paise, 10000)
     assert.equal(parseGiftAmount('1,000').paise, 100000)
     assert.ok(parseGiftAmount('0').error)
     assert.ok(parseGiftAmount('10.5').error)

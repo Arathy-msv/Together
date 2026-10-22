@@ -153,7 +153,7 @@ export function loadVoucherStore(): VoucherStore {
       offers: asArray<PartnerOffer>(
         parsed.offers,
         (item) => typeof item.id === 'string' && typeof item.organizationId === 'string' && CAPABILITY_KEYS.includes(item.capability as VoucherCapability),
-      ).map((offer) => ({ ...offer, currency: isCurrencyCode(offer.currency) ? offer.currency : 'INR' })),
+      ).map((offer) => ({ ...offer, currency: isCurrencyCode(offer.currency) ? offer.currency : 'USD' })),
       vouchers: asArray<IssuedVoucher>(
         parsed.vouchers,
         (item) => typeof item.id === 'string' && typeof item.organizationId === 'string' && typeof item.holderId === 'string',

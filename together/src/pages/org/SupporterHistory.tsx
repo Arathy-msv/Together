@@ -92,7 +92,7 @@ export function SupporterHistoryPage() {
                   <div>
                     <strong>{campaign?.title ?? 'Campaign'}</strong>
                     <span className="muted small">
-                      {formatMoney(item.amount, campaign?.currency ?? 'INR')} · {formatDateTime(item.createdAt)} · Simulated
+                      {formatMoney(item.amount, campaign?.currency ?? 'USD')} · {formatDateTime(item.createdAt)} · Simulated
                       {fresh ? ` · ${fresh} new update${fresh === 1 ? '' : 's'} since` : ''}
                     </span>
                   </div>

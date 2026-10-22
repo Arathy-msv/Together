@@ -31,12 +31,12 @@ Below the headline, campaign cards show a fundraising status, such as Accepting 
 ## op-game
 On a campaign, the heading is How would you like to help?
 One choice is Give directly. The other is Play to support, and beside it the page explains: play to build a suggested contribution, then review your final amount before confirming.
-The bar under the game states the rule in words: each matched pair suggests {₹50|fifty rupees}, and the final contribution is the player’s choice.
+The bar under the game states the rule in words: each matched pair suggests {$50|fifty dollars}, and the final contribution is the player’s choice.
 Nothing is charged while they play. Review and contribute stays disabled until there is a suggestion to review.
 
 ## op-offer
 Partner offers stay on the campaign after the funding goal is reached. They sit under More ways to take part, not in the giving panel.
-This one is from Corner Stationery: ten percent off one purchase, for a contribution of {₹200|two hundred rupees} or more.
+This one is from Corner Stationery: ten percent off one purchase, for a contribution of {$200|two hundred dollars} or more.
 The card names the store, the reward, the terms, the end date and how many are left.
 It is labelled as simulated. No real shop is connected.
 
@@ -136,7 +136,7 @@ Both names then appear in the members list with those roles.
 Partner offers is where Give and Get Local is actually set up. The feature switch alone does not create a shop.
 She adds a partner store: the name Corner Stationery, the area Greenwood High Street, and a one-line description.
 Create an offer asks for an offer title, the smallest qualifying contribution, the reward a supporter receives, the terms, and how many are available.
-She sets the qualifying contribution at {₹200|two hundred rupees}, fifty vouchers, and terms that say one use, in store, not cash.
+She sets the qualifying contribution at {$200|two hundred dollars}, fifty vouchers, and terms that say one use, in store, not cash.
 Save offer stores it as a draft. A draft is not shown to supporters.
 She opens Terms, uses the button that marks the terms as reviewed, and only then Activate offer.
 The page confirms Offer activated. From here, a campaign can attach this offer.
@@ -166,7 +166,7 @@ She chooses Guide me through it.
 
 ## og-assistant
 The assistant is a simulated conversation. A short badge says {AI preview · Simulated|A I preview, simulated}. What does this mean? expands the explanation: fixed rules, no {AI|A I} service, nothing invented. Discard draft is tucked into a More menu, away from the task.
-The first box asks what the campaign is for. Olivia types the purpose, including a target of {₹60,000|sixty thousand rupees}, in her own words.
+The first box asks what the campaign is for. Olivia types the purpose, including a target of {$60,000|sixty thousand dollars}, in her own words.
 Continue. The assistant replies that it noted the target, and it asks which type of campaign is closest. It has pre-selected Education, and she can change it.
 Suggest a setup opens a panel marked {AI preview · Simulated|A I preview, simulated}. It suggests a category, a story template, a game and milestone examples. Nothing is added until she accepts it.
 She continues, and answers who the campaign helps, what the money pays for, and what happens next. The assistant does not invent those.
@@ -214,14 +214,14 @@ The status lines underneath split into Publication, Fundraising, Delivery and Fi
 ## oa-sponsor
 Grace opens Sponsors. The page calls the budget fictional, and it says pending rewards stay out of the campaign total until she confirms them.
 Only Memory Match is offered a sponsor budget. This school has no garden, puzzle, or jacket campaign on the list.
-She names Northwind Stationery, a fictional sponsor. The pledge is {₹5,000|five thousand rupees}, the cap is {₹500|five hundred rupees} per person, and each of three matched pairs is worth {₹50|fifty rupees}.
+She names Northwind Stationery, a fictional sponsor. The pledge is {$5,000|five thousand dollars}, the cap is {$500|five hundred dollars} per person, and each of three matched pairs is worth {$50|fifty dollars}.
 Add sponsor commitment saves it. The notice says no sponsor has been invoiced.
 The card shows the pledge and says there are no play rewards yet.
 
 ## og-copy-link
 Olivia returns to her campaign list. The row now has Copy link and View, because the campaign is public.
 Copy link says Link copied. The address is the public campaign in this browser. It does not open on another device, because the records live in local storage.
-View opens the public page. The title, the cover, the goal of {₹60,000|sixty thousand rupees}, and Support this campaign are all visible.
+View opens the public page. The title, the cover, the goal of {$60,000|sixty thousand dollars}, and Support this campaign are all visible.
 Fundraising shows Accepting contributions. Delivery shows Not started, as a separate badge.
 
 ## og-share-qr
@@ -277,45 +277,45 @@ The page shows two badges side by side: the fundraising badge, Accepting contrib
 The story is split into short questions: What is needed?, Who will benefit?, How will funds be used?, and What happens next? Each answer is the organizer’s own words.
 Before giving, she reads Updates. The update Our supply list is ready is there, linked to its milestone.
 How funds are used shows the planned spending. There are no expenses yet, and the page does not pretend there are.
-Partner offers shows Corner Stationery, the reward, the {₹200|two hundred rupee} minimum, and the terms.
+Partner offers shows Corner Stationery, the reward, the {$200|two hundred dollars} minimum, and the terms.
 None of this is a receipt or an audit. It is what the organizer and the partner store entered.
 
 ## sp-direct
 Back at How would you like to help?, Give directly is selected.
-Suggested amounts are buttons, {₹250|two hundred and fifty rupees} and {₹500|five hundred rupees}. She chooses {₹500|five hundred rupees}.
+Suggested amounts are buttons, {$250|two hundred and fifty dollars} and {$500|five hundred dollars}. She chooses {$500|five hundred dollars}.
 Continue to review opens Confirm your contribution. The screen says No payment will be collected.
 Confirm simulated contribution is the only way the total moves. Closing the screen would leave the campaign unchanged.
 The thank-you page repeats that the contribution is simulated, and it shows her receipt on this device.
 
 ## sp-reward
-Because she gave at least {₹200|two hundred rupees}, the thank-you page offers the partner reward.
+Because she gave at least {$200|two hundred dollars}, the thank-you page offers the partner reward.
 Claim reward saves a voucher on this device. It does not email anyone, and it does not tell the shop yet.
 The voucher card names the store, the offer and the state Ready to use.
 
 ## sp-game
 She opens the campaign again and chooses Play to support. The game is Memory Match.
-The rules are on the page before the first card: each matched pair suggests {₹50|fifty rupees}, suggestions stop if a giving limit is set, and the final contribution is her choice.
+The rules are on the page before the first card: each matched pair suggests {$50|fifty dollars}, suggestions stop if a giving limit is set, and the final contribution is her choice.
 Start playing opens the board. A short instructions step explains the game, then the cards are face down.
-Each matched pair adds {₹50|fifty rupees} and shows a one-line message under the board. Play is not interrupted by a dialog.
-She matches three pairs. The suggestion reads {₹150|one hundred and fifty rupees}.
+Each matched pair adds {$50|fifty dollars} and shows a one-line message under the board. Play is not interrupted by a dialog.
+She matches three pairs. The suggestion reads {$150|one hundred and fifty dollars}.
 New board deals new cards and keeps that suggestion. Start a new session is the control that clears it, and it asks first. She does not start a new session.
 
 ## sp-game-confirm
 Review and contribute is on the bar the whole time. She opens it when she is ready, not when the game decides.
-The dialog shows the suggestion and a field, Your final amount. She changes it from {₹150|one hundred and fifty rupees} to {₹200|two hundred rupees}.
+The dialog shows the suggestion and a field, Your final amount. She changes it from {$150|one hundred and fifty dollars} to {$200|two hundred dollars}.
 Review and contribute then shows the final chosen amount again, and says that no payment will be collected.
-Confirm simulated contribution adds {₹200|two hundred rupees}. The campaign total becomes {₹700|seven hundred rupees} of {₹60,000|sixty thousand rupees}. The earlier {₹500|five hundred rupees} is still part of that total.
+Confirm simulated contribution adds {$200|two hundred dollars}. The campaign total becomes {$700|seven hundred dollars} of {$60,000|sixty thousand dollars}. The earlier {$500|five hundred dollars} is still part of that total.
 
 ## sp-sponsor
 Mia returns to the campaign, chooses Play to support, and then chooses Sponsor-funded play.
-The choice names the next reward, {₹50|fifty rupees}, and says nothing is added to her checkout.
+The choice names the next reward, {$50|fifty dollars}, and says nothing is added to her checkout.
 Before she matches a pair, the game states the next sponsor reward and the budget still available.
 One match says the sponsor reward is pending and is not added to her personal amount.
 The campaign total does not move. The reward waits for an organization admin.
 
 ## sp-share
 Help spread the word offers Create my sharing page. This is a personal page, not a second campaign.
-She enters a display name, Mia Patel, a short headline, why she supports it, and a personal goal of {₹5,000|five thousand rupees}.
+She enters a display name, Mia Patel, a short headline, why she supports it, and a personal goal of {$5,000|five thousand dollars}.
 Create my sharing page builds a link that contains a referral code. It is a different address from the campaign link, and it still gives to the same campaign.
 Her sharing kit uses that personal link for the QR code, the poster and the caption.
 The recording checks that the downloaded QR decodes to her link, and that the poster and the caption contain it.
@@ -323,8 +323,8 @@ The recording checks that the downloaded QR decodes to her link, and that the po
 ## sp-referral-gift
 Ben is a different supporter. He opens Mia’s link, not the campaign link.
 The page shows Mia’s name and that this is her personal introduction. The money still goes to the original campaign.
-He gives {₹100|one hundred rupees}, reviews the same no-payment screen, and confirms a simulated contribution.
-The campaign total becomes {₹800|eight hundred rupees}. It increases once. Mia’s page is credited {₹100|one hundred rupees}, and that credit is part of the {₹800|eight hundred rupees}, not extra money.
+He gives {$100|one hundred dollars}, reviews the same no-payment screen, and confirms a simulated contribution.
+The campaign total becomes {$800|eight hundred dollars}. It increases once. Mia’s page is credited {$100|one hundred dollars}, and that credit is part of the {$800|eight hundred dollars}, not extra money.
 
 ## sp-vouchers
 My vouchers lists the reward as a card: the store, the offer, Ready to use, and the end date.
@@ -375,9 +375,9 @@ This is true inside one browser. A second device would not see the voucher at al
 Chapter six: delivery and reporting. The campaign passes its target. The school records spending, and delivery stays unfinished.
 
 ## fn-expense
-Off camera, further simulated contributions arrive, using the same contribution action a supporter would take. The total passes the {₹60,000|sixty thousand rupee} target.
+Off camera, further simulated contributions arrive, using the same contribution action a supporter would take. The total passes the {$60,000|sixty thousand dollars} target.
 Olivia records an expense. Add an expense asks for a description, a category, an amount, a vendor, a related milestone and a public note.
-She enters {₹18,400|eighteen thousand four hundred rupees} at Corner Stationery, linked to the milestone Purchase materials.
+She enters {$18,400|eighteen thousand four hundred dollars} at Corner Stationery, linked to the milestone Purchase materials.
 Publish expense marks it as organizer-reported spending. The app does not check the receipt with the shop, and the expense says so.
 
 ## fn-milestone
@@ -400,18 +400,18 @@ It is a copy of this browser’s demo records. It is not an accounting export.
 
 ## oa-sponsor-confirm
 Grace returns to Sponsors. Mia’s matched pair is listed as pending, still outside the campaign total.
-Confirm simulated funds adds {₹50|fifty rupees} once. The row then says it was counted once in the campaign total.
+Confirm simulated funds adds {$50|fifty dollars} once. The row then says it was counted once in the campaign total.
 The confirm button is gone, so the same reward cannot be added again.
 This is a simulated sponsor gift. It was never part of Mia’s personal checkout.
 
 ## fn-public
-On the public page the total is {₹61,200|sixty one thousand two hundred rupees} of {₹60,000|sixty thousand rupees}.
+On the public page the total is {$61,200|sixty one thousand two hundred dollars} of {$60,000|sixty thousand dollars}.
 Fundraising has closed, so the contribution panel is replaced by Funding goal reached, with See what happens next.
 Delivery is reported beside the total, not inside the percentage. The badge says Delivery in progress, and one of four planned activities is reported complete.
 The sentence on the panel says reaching the goal does not mean the work is done.
 See what happens next opens Updates. Each milestone lists Expenses, Evidence and Updates.
-Purchase materials shows the {₹18,400|eighteen thousand four hundred rupee} expense. Choosing that amount opens How funds are used, already filtered to that milestone.
-The expense row says no supporting evidence has been uploaded. The amount not yet spent, {₹42,800|forty two thousand eight hundred rupees}, stays visible above the list.
+Purchase materials shows the {$18,400|eighteen thousand four hundred dollars} expense. Choosing that amount opens How funds are used, already filtered to that milestone.
+The expense row says no supporting evidence has been uploaded. The amount not yet spent, {$42,800|forty two thousand eight hundred dollars}, stays visible above the list.
 
 # chapter end | Together
 

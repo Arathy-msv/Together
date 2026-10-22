@@ -26,13 +26,13 @@ export const SAMPLE_RECEIPTS: SampleReceipt[] = [
     id: 'sample-blankets',
     label: 'Blanket supplier invoice (fictional)',
     src: '/receipts/sample-blankets.svg',
-    values: { vendor: 'Warmline Textiles (fictional)', date: '2026-10-14', amountMinor: 1_200_000, currency: 'INR', category: 'materials', description: '80 thick blankets, second batch' },
+    values: { vendor: 'Warmline Textiles (fictional)', date: '2026-10-14', amountMinor: 1_200_000, currency: 'USD', category: 'materials', description: '80 thick blankets, second batch' },
   },
   {
     id: 'sample-van',
     label: 'Van hire receipt (fictional)',
     src: '/receipts/sample-van.svg',
-    values: { vendor: 'CityMove Van Hire (fictional)', date: '2026-10-15', amountMinor: 125_050, currency: 'INR', category: 'transport', description: 'Half-day van hire for deliveries' },
+    values: { vendor: 'CityMove Van Hire (fictional)', date: '2026-10-15', amountMinor: 125_050, currency: 'USD', category: 'transport', description: 'Half-day van hire for deliveries' },
   },
   {
     id: 'sample-books',

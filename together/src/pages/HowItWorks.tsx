@@ -133,9 +133,9 @@ export function HowItWorksPage() {
               <div>
                 <span className="mock-label">Suggested amounts</span>
                 <div className="mock-amounts">
-                  <span>₹100</span>
-                  <span className="on">₹250</span>
-                  <span>₹500</span>
+                  <span>$100</span>
+                  <span className="on">$250</span>
+                  <span>$500</span>
                 </div>
                 <span className="mock-toggle">
                   Enable a game <i />
@@ -186,7 +186,7 @@ export function HowItWorksPage() {
             <div className="game-shot">
               <img src={GAME_THUMBS.garden} alt="The Grow a Giving Tree game" />
               <span className="free-pill">
-                <Icon name="game" size={14} /> ₹50 per plant
+                <Icon name="game" size={14} /> $50 per plant
               </span>
             </div>
             <div className="game-shot-foot">

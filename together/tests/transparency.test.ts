@@ -49,7 +49,7 @@ test('migrating a v2 store keeps every campaign and contribution and adds the ne
       {
         id: 'cmp_mine',
         organizationId: 'org_together',
-        currency: 'INR',
+        currency: 'USD',
         title: 'My own campaign',
         description: 'Created before this update existed.',
         coverImageId: 'garden',
@@ -156,7 +156,7 @@ test('a negative balance is shown exactly, not clamped to zero', () => {
   const summary = fundSummary(campaign, store)
   assert.ok(summary.balanceMinor < 0)
   assert.equal(summary.balanceMinor, summary.contributedMinor - summary.spentMinor)
-  assert.equal(formatMinor(-120000, 'INR'), '−₹1,200')
+  assert.equal(formatMinor(-120000, 'USD'), '−$1,200')
 })
 
 test('reaching the funding goal does not mark delivery complete', () => {

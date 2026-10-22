@@ -36,7 +36,7 @@ export function seedStoryFields(): Record<string, Partial<StoryFields>> {
           id: 'hb-i1',
           amountMinor: rupees(150),
           outcome: 'one thick blanket',
-          costBasis: 'Supplier quotation (sample) dated this season: ₹150 per blanket for 300 blankets.',
+          costBasis: 'Supplier quotation (sample) dated this season: $150 per blanket for 300 blankets.',
         },
       ],
       demoVerification: {
@@ -59,7 +59,7 @@ export function seedStoryFields(): Record<string, Partial<StoryFields>> {
         { id: 'hr-b1', label: 'Books', amountMinor: rupees(8000) },
         { id: 'hr-b2', label: 'Shelves, lamps and beanbags', amountMinor: rupees(7000) },
       ],
-      fundingNote: 'The extra ₹1,200 above simulated contributions came from Open Harbour’s general fund, approved by our board.',
+      fundingNote: 'The extra $1,200 above simulated contributions came from Open Harbour’s general fund, approved by our board.',
     },
     cmp_lumen_coats: {
       category: 'clothing',
@@ -221,7 +221,7 @@ export function seedExpenses(): Expense[] {
       milestoneId: 'ms_hb_purchase',
       publicReceipt: '/docs/sample-receipt-redacted.svg',
       receiptRedacted: true,
-      publicNote: 'Invoice total matches the quotation price of ₹150 per blanket.',
+      publicNote: 'Invoice total matches the quotation price of $150 per blanket.',
     }),
     expense('exp_hb_van', 'cmp_harbour_blankets', {
       description: 'Van hire to collect the first batch',
@@ -333,7 +333,7 @@ export function seedDocuments(): SupportingDocument[] {
       visibility: 'public',
       title: 'Supplier quotation (sample)',
       docType: 'Quotation',
-      description: 'Fictional quotation for 300 blankets at ₹150 each, used as the cost basis on this page.',
+      description: 'Fictional quotation for 300 blankets at $150 each, used as the cost basis on this page.',
       caption: 'Redacted sample quotation. Personal details were never included.',
       expenseId: 'exp_hb_blankets1',
       milestoneId: 'ms_hb_purchase',

@@ -46,7 +46,7 @@ describe('default rates', () => {
     ['jacket', 50, 4, 200],
   ]
   for (const [game, rate, actions, total] of cases) {
-    test(`${game}: ${actions} actions × ₹${rate} = ₹${total}`, () => {
+    test(`${game}: ${actions} actions × $${rate} = $${total}`, () => {
       assert.equal(defaultGameSettings(game).ratePaise, rate * 100)
       const ids = Array.from({ length: actions }, (_, index) => `${game}-${index}`)
       const { ledger } = play(emptyLedger('cmp', game), game, ids)
@@ -79,7 +79,7 @@ describe('default rates', () => {
     assert.equal(again.ledger.session?.suggestedPaise, 7500)
   })
 
-  test('jacket stages add ₹50, ₹100, ₹150, ₹200 in turn', () => {
+  test('jacket stages add $50, $100, $150, $200 in turn', () => {
     let ledger = emptyLedger('cmp', 'jacket')
     const totals: number[] = []
     for (const stage of [1, 2, 3, 4]) {
@@ -91,8 +91,8 @@ describe('default rates', () => {
 
   test('breakdown and intro copy use the configured rate', () => {
     const { ledger } = play(emptyLedger('cmp', 'garden'), 'garden', ['a', 'b', 'c'])
-    assert.equal(actionBreakdown(ledger.session!, gameConfig('garden')), '3 plants × ₹50')
-    assert.match(gameIntroSentence('garden', 5000), /^Each completed plant adds ₹50 to your suggested contribution\./)
+    assert.equal(actionBreakdown(ledger.session!, gameConfig('garden')), '3 plants × $50')
+    assert.match(gameIntroSentence('garden', 5000), /^Each completed plant adds \$50 to your suggested contribution\./)
   })
 })
 
@@ -268,28 +268,28 @@ describe('stored data', () => {
 describe('money', () => {
   test('parses rupees into integer paise', () => {
     assert.equal(parseRupeesToPaise('150'), 15000)
-    assert.equal(parseRupeesToPaise('₹1,250.5'), 125050)
+    assert.equal(parseRupeesToPaise('$1,250.5'), 125050)
     assert.equal(parseRupeesToPaise('0'), null)
     assert.equal(parseRupeesToPaise('12.345'), null)
     assert.equal(parseRupeesToPaise('abc'), null)
   })
 
   test('formats paise as INR', () => {
-    assert.equal(formatPaise(15000), '₹150')
-    assert.equal(formatPaise(12050), '₹120.50')
+    assert.equal(formatPaise(15000), '$150')
+    assert.equal(formatPaise(12050), '$120.50')
   })
 })
 
 test('the game explanation and action amounts use plain wording', async () => {
   const { GAME_EXPLANATION, gameActionAmounts, gameAmountRules } = await import('../src/lib/gameContribution.ts')
   assert.match(GAME_EXPLANATION, /No payment is taken while you play\.$/)
-  assert.equal(gameActionAmounts('memory', 5000), 'Each matched pair suggests ₹50.')
-  assert.match(gameActionAmounts('jacket', 5000), /kindness tag suggests ₹25/)
+  assert.equal(gameActionAmounts('memory', 5000), 'Each matched pair suggests $50.')
+  assert.match(gameActionAmounts('jacket', 5000), /kindness tag suggests \$25/)
   assert.deepEqual(gameAmountRules('memory', { ratePaise: 5000, allowCustom: true, capPaise: null }), [
-    'Each matched pair suggests ₹50.',
+    'Each matched pair suggests $50.',
     'Your final contribution is your choice.',
   ])
   const fixed = gameAmountRules('garden', { ratePaise: 5000, allowCustom: false, capPaise: 30000 })
   assert.equal(fixed[1], 'Your contribution is the amount the game suggests.')
-  assert.equal(fixed[2], 'Suggestions stop at a giving limit of ₹300.')
+  assert.equal(fixed[2], 'Suggestions stop at a giving limit of $300.')
 })

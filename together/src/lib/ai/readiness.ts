@@ -173,7 +173,7 @@ export function checkReadiness(input: ReadinessInput): ReadinessItem[] {
       id: 'impact',
       level: 'recommended',
       issue: 'The story includes an impact or cost statement without a stated basis.',
-      why: 'Claims like “₹100 clothes one child” are easier to believe with a source, such as a supplier quotation.',
+      why: 'Claims like “$100 clothes one child” are easier to believe with a source, such as a supplier quotation.',
       field: 'impact',
       suggestion: 'Add a cost example with its source, or describe what contributions will pay for instead.',
     })

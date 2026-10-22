@@ -268,13 +268,13 @@ export function clearCart(state: GivingTreeState, makeId: () => string = randomI
   return settleCart(state, makeId)
 }
 
-/** Final amounts are whole rupees between ₹1 and ₹10,00,000. */
+/** Final amounts are whole dollars between $1 and $1,000,000. */
 export const MAX_GIFT_PAISE = 1_000_000 * PAISE_PER_RUPEE
 
 export function parseGiftAmount(input: string): { paise: number | null; error: string | null } {
   const cleaned = input.replace(/[₹$£€,\s]/g, '')
   if (cleaned === '') return { paise: null, error: 'Enter an amount to contribute.' }
-  if (!/^\d+$/.test(cleaned)) return { paise: null, error: 'Enter a whole rupee amount, like 100.' }
+  if (!/^\d+$/.test(cleaned)) return { paise: null, error: 'Enter a whole dollar amount, like 100.' }
   const paise = Number(cleaned) * PAISE_PER_RUPEE
   if (!Number.isSafeInteger(paise) || paise <= 0) return { paise: null, error: 'Enter an amount greater than zero.' }
   if (paise > MAX_GIFT_PAISE) return { paise: null, error: `For this demo, choose ${formatPaise(MAX_GIFT_PAISE)} or less.` }

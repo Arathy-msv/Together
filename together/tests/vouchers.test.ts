@@ -120,7 +120,7 @@ test('disabled capabilities and plans are rejected by the actions themselves', (
         capability: 'storeValueVouchers',
         title: 'Credit',
         terms: 'Terms that are long enough.',
-        currency: 'INR',
+        currency: 'USD',
         validUntil: inDays(10),
         stock: null,
         price: 100,

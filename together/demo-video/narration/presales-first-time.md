@@ -20,7 +20,7 @@ Publish your organization’s fundraising website, ready for its first campaign.
 ## 00:50–01:30 · Create and publish a campaign
 
 An organizer uses a guided assistant or the full form; both work on the same saved draft.
-They provide the purpose, beneficiary, {₹60,000|sixty thousand rupee} target, dates, participation choices, and next supporter-update commitment.
+They provide the purpose, beneficiary, {$60,000|sixty thousand dollars} target, dates, participation choices, and next supporter-update commitment.
 Memory Match sits alongside direct giving, and an eligible partner offer can be attached.
 The assistant is a simulated, rules-based guide, not a live {AI|A I} service.
 When review is required, an organization reviewer approves the campaign.
@@ -70,7 +70,7 @@ Later in the campaign, supporters can keep following what the organizer reports.
 The timeline shows the next update, published news, and delivery milestones.
 Fund use separates planned spending, confirmed simulated contributions, and organizer-reported expenses.
 Evidence is labelled attached or not uploaded, never independently verified.
-After the {₹60,000|sixty thousand rupee} target is reached, fundraising can close while delivery remains in progress.
+After the {$60,000|sixty thousand dollars} target is reached, fundraising can close while delivery remains in progress.
 Reaching the target is one milestone, not the end of the work.
 
 ## 04:15–04:30 · Close

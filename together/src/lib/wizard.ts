@@ -111,7 +111,7 @@ export function completeForm(form: Partial<CampaignForm> & Pick<CampaignForm, 'o
   if (!Array.isArray(merged.milestonePlan)) merged.milestonePlan = []
   if (!Array.isArray(merged.fixedAmounts)) merged.fixedAmounts = base.fixedAmounts
   if (!isGameType(merged.gameType)) merged.gameType = 'garden'
-  if (!isCurrencyCode(merged.currency)) merged.currency = 'INR'
+  if (!isCurrencyCode(merged.currency)) merged.currency = 'USD'
   if (typeof merged.sponsorEnabled !== 'boolean') merged.sponsorEnabled = false
   if (typeof merged.nextUpdateAt !== 'string') merged.nextUpdateAt = ''
   if (!Array.isArray(merged.partnerOfferIds)) merged.partnerOfferIds = []

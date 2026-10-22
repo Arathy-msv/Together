@@ -1,7 +1,6 @@
 import type { CurrencyCode } from './types.ts'
 
 export const CURRENCIES: { code: CurrencyCode; label: string; locale: string; symbol: string }[] = [
-  { code: 'INR', label: 'Indian rupee (₹)', locale: 'en-IN', symbol: '₹' },
   { code: 'USD', label: 'US dollar ($)', locale: 'en-US', symbol: '$' },
   { code: 'GBP', label: 'British pound (£)', locale: 'en-GB', symbol: '£' },
   { code: 'EUR', label: 'Euro (€)', locale: 'en-IE', symbol: '€' },
@@ -19,10 +18,10 @@ function currencyInfo(code: CurrencyCode) {
  * Currency used when a caller does not pass one. Campaign routes set this to the open campaign's
  * own currency so game screens keep that campaign's label; lists always pass a currency explicitly.
  */
-let displayCurrency: CurrencyCode = 'INR'
+let displayCurrency: CurrencyCode = 'USD'
 
 export function setDisplayCurrency(code: CurrencyCode | undefined): void {
-  displayCurrency = isCurrencyCode(code) ? code : 'INR'
+  displayCurrency = isCurrencyCode(code) ? code : 'USD'
 }
 
 export function currencySymbol(code: CurrencyCode = displayCurrency): string {

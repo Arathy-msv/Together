@@ -97,7 +97,7 @@ test('demo plans have no prices and state their limits', () => {
   for (const plan of DEMO_PLANS) {
     assert.match(plan.name, /demo plan/i)
     assert.ok(plan.limits.length > 0)
-    assert.doesNotMatch(JSON.stringify(plan), /[₹$£€]\s?\d/)
+    assert.doesNotMatch(JSON.stringify(plan), /[$$£€]\s?\d/)
   }
 })
 

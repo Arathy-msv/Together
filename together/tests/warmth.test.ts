@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { nextWarmthAction, warmthTotal, type WarmthActionId } from '../src/lib/warmth.ts'
 
-test('warmth actions add ₹50, ₹50 and ₹25 once each', () => {
+test('warmth actions add $50, $50 and $25 once each', () => {
   const done: WarmthActionId[] = []
   assert.equal(nextWarmthAction(done), 'lining')
   assert.equal(warmthTotal(done), 0)

@@ -75,7 +75,7 @@ export function defaultContent(name: string): OrgContent {
 }
 
 export const DEFAULT_DEFAULTS: OrgDefaults = {
-  currency: 'INR',
+  currency: 'USD',
   suggestedAmounts: [100, 250, 500],
   visibility: 'open',
   durationDays: 30,

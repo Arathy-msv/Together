@@ -2,7 +2,7 @@ import type { CampaignCategory, CurrencyCode } from '../types.ts'
 
 /*
  * Reads only explicit, structured facts from an organizer's opening message: an amount written with
- * a currency marker (₹50,000 · Rs 50000 · $2,500 · 50k rupees · 2 lakh) and a *suggested* category
+ * a currency marker ($2,500 · £500 · €500 · 50k dollars · 2 lakh) and a *suggested* category
  * that the organizer confirms on the next question. Nothing else is inferred — no beneficiaries,
  * dates, costs or impact claims.
  */
@@ -17,13 +17,13 @@ export interface ParsedMessage {
 }
 
 const SYMBOLS: Array<[RegExp, CurrencyCode]> = [
-  [/^(₹|rs\.?|inr)$/i, 'INR'],
+  [/^(₹|rs\.?|inr)$/i, 'USD'],
   [/^(\$|usd)$/i, 'USD'],
   [/^(£|gbp)$/i, 'GBP'],
   [/^(€|eur)$/i, 'EUR'],
 ]
 const WORDS: Array<[RegExp, CurrencyCode]> = [
-  [/^(rupees?|inr)$/i, 'INR'],
+  [/^(rupees?|inr)$/i, 'USD'],
   [/^(dollars?|usd)$/i, 'USD'],
   [/^(pounds?|gbp)$/i, 'GBP'],
   [/^(euros?|eur)$/i, 'EUR'],

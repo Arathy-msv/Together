@@ -41,7 +41,7 @@ function publishedSeeds(): Organization[] {
         impactStory:
           'Riverside School families planted a garden, matched cards and zipped jackets together. Every finished action became a suggestion they could review before giving.',
       },
-      defaults: { currency: 'INR', suggestedAmounts: [100, 250, 500], visibility: 'open', durationDays: 30, games: [...IMPLEMENTED_GAMES] },
+      defaults: { currency: 'USD', suggestedAmounts: [100, 250, 500], visibility: 'open', durationDays: 30, games: [...IMPLEMENTED_GAMES] },
       visibility: { ...DEFAULT_VISIBILITY },
       plan: { id: 'organization', selectedAt: SEEDED_AT },
     features: recommendedFeatures('platform', 'organization'),
@@ -134,7 +134,7 @@ function publishedSeeds(): Organization[] {
         impactStory:
           'In one term, 320 families funded 12 classroom reading corners. Grade 4 students now run a lunchtime book club for younger readers.',
       },
-      defaults: { currency: 'INR', suggestedAmounts: [100, 250, 500], visibility: 'open', durationDays: 30, games: ['garden', 'puzzle', 'memory'] },
+      defaults: { currency: 'USD', suggestedAmounts: [100, 250, 500], visibility: 'open', durationDays: 30, games: ['garden', 'puzzle', 'memory'] },
       visibility: { games: true, direct: true, impactStories: true, assistant: true, poweredBy: true },
       plan: { id: 'community', selectedAt: SEEDED_AT },
     features: recommendedFeatures('school', 'community'),
@@ -179,7 +179,7 @@ function publishedSeeds(): Organization[] {
         impactStory:
           'Volunteers and supporters kept our three community kitchens open seven days a week, serving warm meals and packing take-home boxes for families.',
       },
-      defaults: { currency: 'INR', suggestedAmounts: [250, 500, 1000], visibility: 'open', durationDays: 45, games: ['garden', 'jacket', 'memory', 'puzzle'] },
+      defaults: { currency: 'USD', suggestedAmounts: [250, 500, 1000], visibility: 'open', durationDays: 45, games: ['garden', 'jacket', 'memory', 'puzzle'] },
       visibility: { games: true, direct: true, impactStories: true, assistant: true, poweredBy: false },
       plan: { id: 'community', selectedAt: SEEDED_AT },
     features: recommendedFeatures('nonprofit', 'community'),
@@ -220,7 +220,7 @@ export function unfinishedSetupSeed(): Organization {
     about: 'A volunteer-run club organizing free weekly runs and charity races along the river.',
     branding,
     content,
-    defaults: { currency: 'INR', suggestedAmounts: [100, 200, 500], visibility: 'open', durationDays: 30, games: ['garden', 'memory'] },
+    defaults: { currency: 'USD', suggestedAmounts: [100, 200, 500], visibility: 'open', durationDays: 30, games: ['garden', 'memory'] },
     visibility: { games: true, direct: true, impactStories: false, assistant: true, poweredBy: true },
     plan: { id: 'starter', selectedAt: SEEDED_AT },
     features: recommendedFeatures('club', 'starter'),

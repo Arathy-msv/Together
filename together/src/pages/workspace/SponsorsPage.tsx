@@ -21,7 +21,7 @@ export function SponsorsPage() {
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const enabled = canUseFeature(org, 'sponsorPlay')
-  const currency = (campaigns.find((item) => item.id === campaignId)?.currency ?? 'INR') as CurrencyCode
+  const currency = (campaigns.find((item) => item.id === campaignId)?.currency ?? 'USD') as CurrencyCode
   const commitments = store.sponsorCommitments.filter((item) => item.organizationId === org.id)
 
   function add() {

@@ -52,8 +52,9 @@ with the app's own modules, acting as the person who would do it, so permission 
 
 ## First-time customer presales coverage
 
-The reviewed 04:30 presales export is `output/together-presales-first-time.mp4`. Its source map,
-storyboard, and verification evidence are in `PRESALES-FIRST-TIME.md`.
+The 04:30 presales export is `output/together-presales-first-time.mp4`. Its source map and
+storyboard are in `PRESALES-FIRST-TIME.md`. The application now shows dollars; that export still
+shows Indian rupees and is stale.
 
 | Presales section | Working product coverage |
 | --- | --- |

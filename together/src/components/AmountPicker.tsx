@@ -33,7 +33,7 @@ export function AmountPicker({
             onChange={(event) => onCustom(event.target.value.replace(/[^\d]/g, ''))}
           />
         </div>
-        {error ? <p className="field-error">{error}</p> : <p className="hint">Whole rupees, greater than zero. This stays a simulation.</p>}
+        {error ? <p className="field-error">{error}</p> : <p className="hint">Whole dollars, greater than zero. This stays a simulation.</p>}
       </div>
     )
   }

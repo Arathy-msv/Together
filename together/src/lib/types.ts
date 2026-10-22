@@ -21,7 +21,7 @@ export interface Participation {
   game: boolean
 }
 
-export type CurrencyCode = 'INR' | 'USD' | 'GBP' | 'EUR'
+export type CurrencyCode = 'USD' | 'GBP' | 'EUR'
 export type OrgType = 'platform' | 'company' | 'school' | 'club' | 'nonprofit' | 'other'
 export type FontChoice = 'figtree' | 'nunito' | 'fraunces' | 'georgia' | 'system'
 export type ButtonStyle = 'rounded' | 'soft'

@@ -129,7 +129,7 @@ test('legacy campaigns without an organization are assigned to the default organ
   const store = loadStore()
   const old = store.campaigns.find((campaign) => campaign.id === 'cmp_old')!
   assert.equal(old.organizationId, DEFAULT_ORG_ID)
-  assert.equal(old.currency, 'INR')
+  assert.equal(old.currency, 'USD')
   assert.ok(store.contributions.some((gift) => gift.id === 'g1'))
   assert.ok(store.campaigns.some((campaign) => campaign.organizationId === ORG_LUMEN))
 })

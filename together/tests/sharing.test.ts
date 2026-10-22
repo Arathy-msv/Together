@@ -34,7 +34,7 @@ function baseOrg(overrides: Partial<Organization> = {}): Organization {
       impactTitle: 'Our impact',
       impactStory: '',
     },
-    defaults: { currency: 'INR', suggestedAmounts: [100, 250, 500], visibility: 'open', durationDays: 30, games: ['garden'] },
+    defaults: { currency: 'USD', suggestedAmounts: [100, 250, 500], visibility: 'open', durationDays: 30, games: ['garden'] },
     visibility: { games: true, direct: true, impactStories: true, assistant: true, poweredBy: true },
     plan: { id: 'community', selectedAt: new Date().toISOString() },
     features: {
@@ -61,7 +61,7 @@ function baseCampaign(overrides: Partial<Campaign> = {}): Campaign {
   return {
     id: 'cmp_library',
     organizationId: 'org_together',
-    currency: 'INR',
+    currency: 'USD',
     title: 'Grow Our School Library',
     description: 'Help us fill our school library with more books for every child to enjoy. Every rupee buys a book a child can keep.',
     coverImageId: 'library',

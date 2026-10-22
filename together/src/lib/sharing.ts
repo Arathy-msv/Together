@@ -29,7 +29,7 @@ export interface ShareContent {
   url: string
   /** Short, factual line used under previews and inside posters/social images. */
   purpose: string
-  /** e.g. "Goal ₹60,000". Never a live raised total — static assets would go stale. */
+  /** e.g. "Goal $60,000". Never a live raised total — static assets would go stale. */
   goalLine: string
   attribution?: { name: string; intro?: string }
   posterHeading: string
