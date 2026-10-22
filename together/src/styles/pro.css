@@ -631,6 +631,13 @@ html { scroll-padding-top: 84px; }
 .demo-tools-menu .identity-switcher select { width: 100%; }
 .demo-tools-links { display: grid; gap: 6px; font-size: 0.9rem; }
 .demo-tools-who { max-width: 14ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.demo-fill { position: fixed; left: 16px; bottom: 16px; z-index: 220; display: grid; justify-items: start; gap: 6px; max-width: min(320px, calc(100vw - 32px)); }
+.demo-fill-button { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 4px 14px 4px 6px; border: 1px dashed #d9b55a; border-radius: 999px; background: #fffdf8; color: #16352c; box-shadow: 0 8px 24px rgba(22, 53, 44, 0.16); font-weight: 700; cursor: pointer; }
+.demo-fill-button:disabled { cursor: progress; }
+.demo-fill-status { margin: 0; padding: 8px 10px; background: #fffdf8; border: 1px solid #e4ddd0; border-radius: 12px; font-size: 0.82rem; line-height: 1.35; color: #16352c; }
+@media (max-width: 720px) {
+  .demo-fill { left: 8px; bottom: 8px; }
+}
 .identity-bar .oh-header-inner { display: flex; justify-content: flex-end; }
 
 .linked-records { list-style: none; margin: 8px 0 0; padding: 8px 10px; display: grid; gap: 4px; border-left: 2px solid var(--p-line); background: var(--p-surface-2); border-radius: 0 8px 8px 0; }

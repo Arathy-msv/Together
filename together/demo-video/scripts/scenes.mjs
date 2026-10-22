@@ -1,5 +1,8 @@
 // Ordered scenes. `record: false` steps prepare demo data off camera using the app's own modules,
 // acting as the identity that would really perform the action (permission checks still apply).
+// Every page has a "Fill demo values" button that writes these Greenwood sales values into empty
+// fields and does not submit. `oa-details` uses that button. Later scenes still type so each
+// field stays readable on camera.
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -189,11 +192,9 @@ export const SCENES = [
     id: 'oa-details',
     chapter: 'orgadmin',
     async run(r) {
-      await r.fillLabel('Organization name', 'Greenwood School')
-      await r.chooseLabel('Type', 'school')
-      await r.fillLabel('Short description', 'A primary school of 420 pupils. Parents, staff and neighbours raise funds together for the things our classrooms need.', { delay: 12 })
-      await r.fillLabel('Public contact email', 'office@greenwood.example')
-      await r.fillLabel('Public location', 'Greenwood, Riverside District')
+      await r.press('Fill demo values', { selector: '.demo-fill-button' })
+      await r.waitFor('Nothing was submitted')
+      await r.waitFor('greenwood-school')
       await r.scrollToSel('.url-preview')
       await r.expectText('greenwood-school')
       await r.expectText('This address is available.')

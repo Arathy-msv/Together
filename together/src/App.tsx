@@ -37,12 +37,14 @@ import { MerchantPortalPage } from './pages/platform/MerchantPortal.tsx'
 import { PlatformAdminPage } from './pages/platform/PlatformAdmin.tsx'
 import { useCurrentUser } from './hooks/useIdentity.ts'
 import { UnreadableDataNotice } from './components/UnreadableDataNotice.tsx'
+import { DemoFillButton } from './components/identity/DemoFillButton.tsx'
 
 export default function App() {
   return (
     <BrowserRouter>
       <UnreadableDataNotice />
       <AppRoutes />
+      <DemoFillButton />
     </BrowserRouter>
   )
 }

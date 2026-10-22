@@ -81,7 +81,8 @@ That opens a five-step website setup. The step indicator starts at Step 1 of 5.
 
 ## oa-details
 Step 1 is the organization’s public details.
-Organization name is Greenwood School. Type is a dropdown; she chooses School.
+A Demo button, Fill demo values, enters the Greenwood sales values into the empty fields on this page. It does not submit the form.
+Organization name becomes Greenwood School, and Type is School.
 Short description is the sentence supporters read about the school. Public contact email and Public location are shown on the website, so they are not private fields.
 The website address is built from the name: greenwood-school. The app checks it and says This address is available.
 Continue moves to Step 2. Nothing is public until the last step.
