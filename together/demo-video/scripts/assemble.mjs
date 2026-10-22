@@ -197,6 +197,7 @@ function writeOutputs(selection, name, { title, file } = {}) {
   const base = file ?? (name === 'together-demo' ? path.join(output, 'together-demo') : path.join(output, 'chapters', name))
   const srtFile = `${base}.en.srt`
   fs.writeFileSync(srtFile, srt.join('\n'))
+  fs.writeFileSync(`${base}.en.vtt`, `WEBVTT\n\n${srt.join('\n').replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/g, '$1.$2')}\n`)
   const meta = path.join(build, `${name}.ffmeta`)
   fs.writeFileSync(meta, chaptersMeta.join('\n') + '\n')
   const mp4 = `${base}.mp4`

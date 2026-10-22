@@ -1465,7 +1465,8 @@ export const SCENES = [
     chapter: 'opening',
     async before(r, state) {
       await r.go(`/o/greenwood-school/campaigns/${state.campaignId}`)
-      await r.waitFor('Support this campaign')
+      // Recorded after the goal is met, so the give panel has been replaced.
+      await r.waitFor('Funding goal reached')
       await openMoreWays(r)
       await r.waitFor('Partner offers')
     },

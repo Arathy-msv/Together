@@ -1,23 +1,15 @@
-// Presales cut. Reuses the full recording and narration. The scene list is the five-role story
-// in about ten minutes: the public site, a fictional sponsor budget, one simulated gift,
-// sponsor-funded play, a store-counter voucher, and delivery kept separate from the funding total.
+// Presales cut. Reuses the full recording and narration. Target length is 2–3 minutes.
+// Five steps, in the order a buyer can follow without the long walkthrough:
+// 1. An organization admin records one fictional Memory Match sponsor budget.
+// 2. A supporter can give an amount or play Memory Match for their own suggestion.
+// 3. Sponsor-funded play leaves one reward pending and out of that personal checkout.
+// 4. The admin confirms that reward once.
+// 5. The public website is what a supporter sees, including a campaign that can close.
 export const PRESALES_SCENES = [
-  'card-intro',
-  'op-home',
-  'op-game',
-  'op-offer',
-  'card-orgadmin',
-  'oa-features',
   'oa-sponsor',
-  'card-organizer',
-  'og-approve',
-  'card-supporter',
-  'sp-direct',
+  'op-game',
   'sp-sponsor',
-  'sp-vouchers',
-  'card-merchant',
-  'mc-redeem',
   'oa-sponsor-confirm',
-  'fn-public',
+  'op-home',
   'card-end',
 ]

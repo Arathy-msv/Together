@@ -114,16 +114,18 @@ run instead of recording a wrong result.
 | `og-submit`, `og-approve` | Approval does not publish; the campaign stays a draft until "Publish approved campaign" |
 | `op-game`, `sp-direct`, `sp-game` | A labelled choice between "Give an amount" and "Play Memory Match" |
 | `sp-game`, `sp-game-confirm` | Rules up front, nonblocking per-pair feedback, "New board" keeps the suggestion, review from the bar, final amount chosen by the supporter |
+| `oa-sponsor`, `sp-sponsor`, `oa-sponsor-confirm` | One fictional Memory Match sponsor budget, a pending reward that is not added to the personal checkout, and one confirmation that counts the reward once |
 | `sp-vouchers` | Voucher card, full-screen "Show voucher" view with "Present this to store staff", merchant, branch, status, expiry, restrictions, QR and backup code, then My activity |
 | `sp-lowdata` | Low-data mode turns on and off |
 | `fn-public` | "Funding goal reached" panel with delivery reported separately; a milestone's linked expense opens the filtered expense list |
 
 ## Video freshness
 
-- Last verified application commit for the files on disk: `c7c2eed` (assembly on 2026-10-21)
-- Detailed walkthrough: **stale**. `output/together-demo.mp4` is 30:57. It does not show itemized budgets, the single beneficiary field, “Supporting evidence attached”, closure outcomes, sponsor confirmation, the English-only public page, the launch checklist, or the store-ready voucher line “Present this to store staff”.
-- Presales cut: **stale**. `output/together-presales.mp4` is 10:43. `scripts/presales.mjs` now lists a 2–3 minute subset (`op-home`, `op-game`, `sp-direct`, `fn-public`, `card-end`, about 2:43 of the previous narration). That file was not reassembled.
-- Scenes whose on-screen result has changed since the recording: `og-assistant`, `og-form`, `og-approve`, `og-submit`, `sp-home`, `sp-trust`, `sp-direct`, `sp-game`, `sp-game-confirm`, `sp-vouchers`, `fn-report`, `fn-public`.
-- Blocker: no narrate, record, or assemble process was started for this pass. `scripts/scenes.mjs` still checks the previous screen copy, and the narration in `narration/script.md` still describes that copy. A new capture against those checks would fail or narrate a story the screens no longer match. Voice-over stays local Piper only; no paid voice service was called. These videos were **not** regenerated.
+- Last verified application commit: `db4c8a4`. Assembly finished 22 Oct 2026, 10:33am IST. The walkthrough scripts and narration in this working tree were updated with that recording and are not a separate commit.
+- Detailed walkthrough: **current**. `output/together-demo.mp4` probes at 1985.867 seconds (33:05). 1920×1080 H.264, AAC, English `mov_text`. Every scene check in the isolated recording passed, including the fictional Memory Match sponsor budget, the pending reward, and the one confirmation. `output/assembly-report.json` lists no console errors and no sped-up scenes.
+- Presales cut: **current**. `output/together-presales.mp4` probes at 169.533 seconds (2:49). Scenes, in order: `oa-sponsor`, `op-game`, `sp-sponsor`, `oa-sponsor-confirm`, `op-home`, `card-end`.
+- Subtitles: `together-demo.en.srt`, `together-demo.en.vtt`, `together-presales.en.srt`, `together-presales.en.vtt`, plus the chapter files. `narration/scene-timings.md` matches this assembly. The homepage line names Home, Campaigns, About, and My activity.
+- Spot check: frames at the sponsor save, the pending Memory Match reward, the ₹50 confirmation, the funded public page, and the closing card match those subtitle windows. Every presales cue, and sampled cues in `oa-sponsor`, `sp-sponsor`, `oa-sponsor-confirm`, and `fn-public`, had speech inside the cue (peak about −2 dB).
+- Voice-over is local Piper only. Nothing was uploaded or published.
 
 Update this section whenever a user-facing change touches the walkthrough. If a scene or the final video could not be re-recorded, list the scene ids here and set the final video to stale, with the blocker.

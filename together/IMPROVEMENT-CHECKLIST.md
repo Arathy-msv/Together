@@ -20,7 +20,7 @@ Findings from the detailed demo review, each confirmed against the code before c
 | 14 | 8 | Malayalam preview toggle and translation editor are still in the UI — remove the controls, keep saved text | Done — controls render nothing and the Translate action is gone. Saved `translations` stay in storage |
 | 15 | 8 | No team/class participation model — document as a future gap | Done — README and How it works. Not built |
 | 16 | 8 | Management screens, mobile, keyboard, recovery states | Kept and lightly checked — existing recovery boundary, tab keyboard on the campaign page, focus ring on “More ways to take part”. Not a full audit |
-| 17 | 9 | Walkthrough scenes, narration, presales cut (target 2–3 min), freshness | Docs updated. Videos not regenerated — see `demo-video/README.md` freshness. Presales scene list is now the short cut; the mp4 on disk is still 10:43 |
+| 17 | 9 | Walkthrough scenes, narration, presales cut (target 2–3 min), freshness | Recorded and assembled 22 Oct 2026. Detailed walkthrough 33:05. Presales 2:49, including the sponsor budget. See `demo-video/README.md` freshness. |
 
 ## Storage
 

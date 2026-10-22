@@ -24,7 +24,7 @@ We will follow six roles: platform admin, organization admin, campaign organizer
 
 ## op-home
 This is the public website a supporter sees. The school’s logo, green colour, headline and homepage photo are all set by the organization.
-The navigation is Home, Campaigns, About, and later Partner offers and My activity.
+The navigation is Home, Campaigns, About, and My activity.
 Organizer tools are not on this page. A supporter cannot manage the website from here.
 Below the headline, campaign cards show a fundraising status, such as Accepting contributions or Fundraising closed.
 
@@ -35,7 +35,7 @@ The bar under the game states the rule in words: each matched pair suggests {₹
 Nothing is charged while they play. Review and contribute stays disabled until there is a suggestion to review.
 
 ## op-offer
-Partner offers sit on the same campaign page, under the contribution panel.
+Partner offers stay on the campaign after the funding goal is reached. They sit under More ways to take part, not in the giving panel.
 This one is from Corner Stationery: ten percent off one purchase, for a contribution of {₹200|two hundred rupees} or more.
 The card names the store, the reward, the terms, the end date and how many are left.
 It is labelled as simulated. No real shop is connected.
