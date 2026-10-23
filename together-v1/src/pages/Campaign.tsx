@@ -15,6 +15,7 @@ import { ShareKit } from '../components/sharing/ShareKit.tsx'
 import { useCampaignView, useDemoStore } from '../hooks/useDemoStore.ts'
 import { useVoucherStore } from '../hooks/useVoucherStore.ts'
 import { campaignDetailsPath, campaignPlayPath, campaignSharePath } from '../lib/campaigns.ts'
+import { absoluteAppUrl } from '../lib/publicUrl.ts'
 import { setShareContext } from '../lib/attribution.ts'
 import { canHaveSharingPages, shareWorkspacePath } from '../lib/referrals.ts'
 import { publishedUpdates } from '../lib/transparency.ts'
@@ -159,7 +160,7 @@ function CampaignDetails({ view, referral }: { view: CampaignView; referral?: Re
   }
 
   const purpose = shortPurpose(campaign.description)
-  const campaignUrl = `${window.location.origin}${campaignSharePath(campaign.id, base)}`
+  const campaignUrl = absoluteAppUrl(campaignSharePath(campaign.id, base))
   const closedFunded = isFunded(view) && !view.canGive
   return (
     <div className="container page-pad campaign campaign-compact">

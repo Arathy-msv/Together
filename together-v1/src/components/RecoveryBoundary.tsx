@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
+import { appBase } from '../lib/publicUrl.ts'
 
 interface State {
   error: Error | null
@@ -35,7 +36,7 @@ export class RecoveryBoundary extends Component<{ children: ReactNode }, State> 
             <button type="button" className="btn btn-outline" onClick={() => window.location.reload()}>
               Reload the page
             </button>
-            <a className="btn btn-outline" href="/">
+            <a className="btn btn-outline" href={appBase() || '/'}>
               Go to the home page
             </a>
           </div>

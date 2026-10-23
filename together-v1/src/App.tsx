@@ -39,10 +39,11 @@ import { PlatformAdminPage } from './pages/platform/PlatformAdmin.tsx'
 import { useCurrentUser } from './hooks/useIdentity.ts'
 import { UnreadableDataNotice } from './components/UnreadableDataNotice.tsx'
 import { DemoFillButton } from './components/identity/DemoFillButton.tsx'
+import { appBase } from './lib/publicUrl.ts'
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={appBase()}>
       <UnreadableDataNotice />
       <AppRoutes />
       <DemoFillButton />

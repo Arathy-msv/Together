@@ -10,6 +10,7 @@ import { useOrg } from '../../components/org/OrgContext.tsx'
 import { Select, TextArea, TextInput } from '../../components/workspace/fields.tsx'
 import { useCampaignView, useDemoStore } from '../../hooks/useDemoStore.ts'
 import { campaignDetailsPath, campaignSharePath, closeCampaign } from '../../lib/campaigns.ts'
+import { absoluteAppUrl } from '../../lib/publicUrl.ts'
 import { ShareKit } from '../../components/sharing/ShareKit.tsx'
 import { RevisionReview } from '../../components/campaign/RevisionReview.tsx'
 import { AccessDenied } from '../../components/identity/AccessDenied.tsx'
@@ -288,7 +289,7 @@ function Overview({ campaign, view, store }: WorkspaceProps) {
 function ReferralsPanel({ campaign, store }: WorkspaceProps) {
   const { base, org } = useOrg()
   const referrals = store.referrals.filter((item) => item.campaignId === campaign.id)
-  const campaignUrl = `${window.location.origin}${campaignSharePath(campaign.id, base)}`
+  const campaignUrl = absoluteAppUrl(campaignSharePath(campaign.id, base))
   return (
     <>
       <div id="campaign-share-kit">

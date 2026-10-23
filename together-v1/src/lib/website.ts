@@ -1,3 +1,4 @@
+import { absoluteAppUrl } from './publicUrl.ts'
 import { DEFAULT_BRANDING } from './theme.ts'
 import type { Organization, WebsiteConfig, WebsiteStatus } from './types.ts'
 
@@ -81,7 +82,7 @@ export function websiteStatusLabel(org: Organization): string {
 }
 
 export function publicWebsiteUrl(org: Pick<Organization, 'slug'>, origin = typeof window === 'undefined' ? '' : window.location.origin): string {
-  return `${origin}/o/${org.slug}`
+  return absoluteAppUrl(`/o/${org.slug}`, origin)
 }
 
 export function workspacePath(org: Pick<Organization, 'id'>, section = 'overview'): string {

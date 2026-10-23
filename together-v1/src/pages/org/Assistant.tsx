@@ -1006,7 +1006,7 @@ function ReviewCard({
   org: Organization
   form: CampaignForm
   errors: FormErrors
-  onEdit: (group: 1 | 2 | 3) => void
+  onEdit: (group: 1 | 2) => void
   onChange: (patch: Partial<CampaignForm>) => void
   checklist: RequiredItem[]
 }) {

@@ -18,7 +18,7 @@ export function titleFromPurpose(purpose: string): string {
  */
 export function fillCampaignFromPurpose(
   form: CampaignForm,
-  org: Organization,
+  _org: Organization,
   purpose: string,
   allowedGames: GameType[],
 ): CampaignForm {

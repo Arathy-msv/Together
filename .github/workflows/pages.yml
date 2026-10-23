@@ -25,9 +25,9 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: together/package-lock.json
+          cache-dependency-path: together-v1/package-lock.json
       - name: Install and build
-        working-directory: together
+        working-directory: together-v1
         env:
           PAGES_BASE: /Together/
         run: npm ci && npm run build
@@ -36,7 +36,7 @@ jobs:
       - name: Upload site
         uses: actions/upload-pages-artifact@v3
         with:
-          path: together/dist
+          path: together-v1/dist
 
   deploy:
     needs: build

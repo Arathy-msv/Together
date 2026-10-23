@@ -17,6 +17,12 @@ npm run dev
 
 The dev server runs at [http://127.0.0.1:4321](http://127.0.0.1:4321).
 
+## Published site
+
+Pushes to `main` publish this `together-v1` demo with GitHub Actions. The public address is [https://arathy-msv.github.io/Together/](https://arathy-msv.github.io/Together/).
+
+The published site stays in the browser you are using. Organizations, campaigns, and simulated contributions are saved in that browser’s localStorage. Payments, plans, and voucher redemption stay simulated.
+
 ```bash
 npm run build
 npm run lint

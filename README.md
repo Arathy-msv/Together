@@ -2,12 +2,12 @@
 
 A browser-only demo of an interactive fundraising platform. Schools, clubs, and nonprofits set up a branded website, publish a campaign, and supporters give directly or play a short game. No real money is collected.
 
-The app lives in [`together/`](together/README.md).
+The published app lives in [`together-v1/`](together-v1/README.md).
 
 Published site: [https://arathy-msv.github.io/Together/](https://arathy-msv.github.io/Together/)
 
 ```bash
-cd together
+cd together-v1
 npm install
 npm run dev
 ```

@@ -9,6 +9,7 @@ import { useCampaignViews, useDemoStore } from '../hooks/useDemoStore.ts'
 import { deliveryState, PUBLICATION_LABEL, revisionState } from '../lib/lifecycle.ts'
 import { campaignMilestones } from '../lib/transparency.ts'
 import { closeCampaign, deleteCampaign } from '../lib/campaigns.ts'
+import { absoluteAppUrl } from '../lib/publicUrl.ts'
 import { canUseFeature } from '../lib/features.ts'
 import { duplicateCampaign, exportOrganizationRecords, NO_REVIEWER_MESSAGE } from '../lib/featureActions.ts'
 import { useCurrentUser } from '../hooks/useIdentity.ts'
@@ -65,7 +66,7 @@ export function DashboardPage() {
   const contributions = published.reduce((sum, view) => sum + view.supporters, 0)
 
   async function copyLink(id: string) {
-    const url = `${window.location.origin}${base}/campaigns/${id}`
+    const url = absoluteAppUrl(`${base}/campaigns/${id}`)
     try {
       await navigator.clipboard.writeText(url)
     } catch {

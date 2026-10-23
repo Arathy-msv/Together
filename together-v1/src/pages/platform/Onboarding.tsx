@@ -39,7 +39,7 @@ const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
 /** Fills empty fields with safe defaults so the organizer only needs a name to continue. */
 function withSetupDefaults(org: Organization): Organization {
   const slug = (org.slug.trim() || slugify(org.name) || `org-${org.id.slice(-6)}`).toLowerCase()
-  const sample = sampleWebsiteContent({ ...org, slug })
+  const sample = sampleWebsiteContent(org)
   const contactEmail = EMAIL.test(org.content.contactEmail.trim()) ? org.content.contactEmail.trim() : `hello@${slug}.example`
   return {
     ...org,
