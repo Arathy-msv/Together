@@ -37,7 +37,7 @@ export const TEMPLATES: CategoryTemplate[] = [
     milestones: ['Confirm needs with the school', 'Purchase materials', 'Deliver and set up', 'Share what students did'],
     budgetLabels: ['Books and materials', 'Delivery', 'Setup'],
     expenseCategories: ['materials', 'transport', 'event'],
-    games: ['puzzle', 'memory'],
+    games: ['garden', 'puzzle', 'memory'],
     comingSoonGames: ['Pencil writing'],
     impactFields: ['Students reached', 'Items delivered'],
   },
@@ -56,7 +56,7 @@ export const TEMPLATES: CategoryTemplate[] = [
     milestones: ['Identify recipients', 'Purchase clothing', 'Distribute clothing', 'Publish final report'],
     budgetLabels: ['Clothing and supplies', 'Transport', 'Packaging'],
     expenseCategories: ['materials', 'transport', 'administration'],
-    games: ['jacket'],
+    games: ['jacket', 'garden'],
     impactFields: ['Items distributed', 'Locations reached'],
   },
   {
@@ -92,7 +92,7 @@ export const TEMPLATES: CategoryTemplate[] = [
     milestones: ['Order equipment', 'Hand out to teams', 'Share a season report'],
     budgetLabels: ['Equipment', 'Kit', 'Travel'],
     expenseCategories: ['materials', 'transport', 'event'],
-    games: ['memory', 'puzzle'],
+    games: ['garden', 'memory', 'puzzle'],
     impactFields: ['Players equipped', 'Sessions held'],
   },
   {

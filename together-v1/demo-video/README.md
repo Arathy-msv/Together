@@ -109,7 +109,7 @@ run instead of recording a wrong result.
 
 | Scenes | Must show |
 | --- | --- |
-| `oa-features` | Recommended settings first, then "Choose individually" to switch features one by one |
+| `oa-features` | Advanced accordion: recommended settings first, then "Choose individually" |
 | `oa-publish` | "Your website is ready." with "Create your first campaign" as the next step |
 | `og-start`, `og-assistant`, `og-form` | Create offers Create with AI (one purpose → draft) or Fill the form (two-step essentials → review); Advanced holds dates, games and optional details |
 | `og-submit`, `og-approve` | Approval does not publish; the campaign stays a draft until "Publish approved campaign" |
@@ -126,11 +126,15 @@ run instead of recording a wrong result.
 - Fill demo values is now on every page, and `oa-details` in `scripts/scenes.mjs` clicks it. Narration for that scene mentions the button. No scene was re-recorded, so the exports do not show the button.
 - Public and workspace navigation were simplified (23 Oct 2026): workspace nav is Home / Website / Campaigns / More. Footer is brand/contact only; public Page display / low-data checkbox removed. Campaign create/assistant run on the public site (`/o/.../create`). Clips were not re-recorded.
 - Public website home tightened (23 Oct 2026): About removed from public nav; My activity moved into the Demo identity menu; Partner offers stays in nav when live; hero height reduced so campaigns show above the fold; footer compacted. Scripts/narration for `op-home` and `sp-vouchers` updated; clips not re-recorded.
-- Campaign page simplified (23 Oct 2026): compact main view (purpose + give); Story / Updates / How funds / Partner offers / Share open from sidebar links into popups. Delivery badge and “More ways to take part” removed. Scripts/narration for `op-offer`, `op-update`, `sp-trust`, `sp-share` updated; clips not re-recorded.
+- Campaign page simplified (23 Oct 2026): compact main view (purpose + give); Updates / How funds / Partner offers / Share open from links into popups. Story link removed (purpose already shown). Delivery badge and “More ways to take part” removed. Scripts/narration for `op-offer`, `op-update`, `sp-trust`, `sp-share` updated; clips not re-recorded.
 - Campaign create: Create with AI is one purpose sentence that drafts title/goal/cover/story; Fill the form is the two-step path (23 Oct 2026). Scripts/narration for `og-start` updated; clips not re-recorded.
 - Give directly always offers suggested amounts plus Or enter your own (23 Oct 2026). Narration for `sp-direct` notes it; clips not re-recorded.
 - Thank-you page: share + updates since contribution sit under a More accordion (23 Oct 2026). Clips not re-recorded.
 - Campaign page: removed public “Next update expected…” line; Share control restyled (23 Oct 2026). Clips not re-recorded.
+- Public footer compacted to one line; contact email/location removed from footer (23 Oct 2026). Clips not re-recorded.
+- Platform site: Plans removed from nav/footer/home; Create your website starts setup directly (23 Oct 2026). `oa-plan` script/narration updated; clips not re-recorded.
+- Website setup condensed to two steps with Advanced accordion and auto defaults (23 Oct 2026). `oa-details`–`oa-publish` scripts/narration updated; clips not re-recorded.
+- Campaign create defaults to Grow a Giving Tree when that game is available (23 Oct 2026). Clips not re-recorded.
 - Share this campaign header layout was tightened; Ask about this campaign was removed from the public campaign page (23 Oct 2026). Clips were not re-recorded.
 - Campaign list status filters (All / Accepting / Opens soon / …) were removed from `/campaigns` (23 Oct 2026). Search remains. Clips were not re-recorded.
 - Detailed walkthrough: **stale**. `output/together-demo.mp4` still shows Indian rupees, the previous nav, and the four-step / assistant create flow. It probes at 1985.867 seconds (33:05). Re-record before treating it as current.

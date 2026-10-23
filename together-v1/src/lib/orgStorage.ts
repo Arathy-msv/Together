@@ -112,7 +112,7 @@ export function createOrganization(planId: PlanId): Organization {
     voucherSettings: emptyVoucherSettings(),
     featureHistory: [],
     website: { status: 'setup', updatedAt: now },
-    onboarding: { step: 1, updatedAt: now, flow: 5 },
+    onboarding: { step: 1, updatedAt: now, flow: 2 },
   }
   org.website.draft = websiteConfigOf(org)
   // The creator must be an admin before the organization is visible, or the legacy-admin migration

@@ -181,15 +181,14 @@ export const SCENES = [
     async run(r) {
       await switchOnCamera(r, PEOPLE.grace)
       await r.sleep(600)
-      await r.nav('/plans')
-      await r.waitFor('Choose a demo plan')
-      await r.sleep(1500)
-      await r.press('Choose this demo plan', { selector: 'button', index: 2 })
-      await r.waitFor('Confirm demo subscription')
-      await r.scrollToSel('#confirm-plan-title')
-      await r.sleep(1500)
-      await r.press('Confirm demo plan and start setup', { selector: 'button' })
-      await r.waitFor('Step 1 of 5')
+      await r.nav('/')
+      await r.waitFor('Create your website')
+      await r.expectText('How it works')
+      await r.rejectText('Plans')
+      await r.sleep(1000)
+      await r.press('Create your website', { selector: 'button.btn-primary' })
+      await r.waitFor('Step 1 of 2')
+      await r.expectText('Your organization')
       await r.sleep(800)
     },
   },
@@ -204,27 +203,22 @@ export const SCENES = [
       await r.expectText('greenwood-school')
       await r.expectText('This address is available.')
       await r.mark(0.82)
-      await r.press('Continue', { selector: 'button', exact: true })
-      await r.waitFor('Step 2 of 5')
+      await r.sleep(800)
     },
   },
   {
     id: 'oa-features',
     chapter: 'orgadmin',
     async run(r) {
+      await r.press('Advanced (optional)', { selector: 'summary' })
+      await r.waitFor('Optional website features')
       await r.sleep(800)
       await r.expectText('Included with the recommended settings')
       await r.scrollToSel('.feature-reco')
       await r.mark(0.18)
       await r.click('label.feature-mode-option', { text: 'Choose individually' })
       await r.sleep(700)
-      for (const name of ['Sponsor-funded play', 'Campaign update commitments', 'Campaign sharing kit', 'Reuse past campaigns', 'Campaign review and approval', 'Low-data experience', 'Campaign record exports', 'Supporter impact history', 'Give & Get Local']) {
-        await r.scrollToSel(`#feature-label-${{ 'Sponsor-funded play': 'sponsorPlay', 'Campaign update commitments': 'updateCommitments', 'Campaign sharing kit': 'shareKit', 'Reuse past campaigns': 'campaignDuplication', 'Campaign review and approval': 'reviewApproval', 'Low-data experience': 'lowDataMode', 'Campaign record exports': 'recordExports', 'Supporter impact history': 'supporterHistory', 'Give & Get Local': 'partnerVouchers' }[name]}`)
-        await r.sleep(400)
-      }
-      await r.mark(0.62)
       await r.scrollToSel('label:has(#feature-sponsorPlay)')
-      await r.sleep(800)
       await r.click('label:has(#feature-sponsorPlay)')
       await r.sleep(600)
       await r.scrollToSel('label:has(#feature-reviewApproval)')
@@ -236,17 +230,15 @@ export const SCENES = [
       await r.click('label.voucher-capability', { text: 'Contribution rewards' })
       await r.sleep(800)
       await r.scrollToSel('label:has(#feature-shareKit)')
-      await r.expectText('Create QR codes, posters, and ready-to-copy sharing messages.')
       if (!(await r.ev(`document.querySelector('#feature-shareKit').checked`))) throw new Error('The sharing kit should stay on with the recommended settings')
-      await r.sleep(2200)
-      await r.press('Continue', { selector: 'button', exact: true })
-      await r.waitFor('Step 3 of 5')
+      await r.sleep(1500)
     },
   },
   {
     id: 'oa-look',
     chapter: 'orgadmin',
     async run(r) {
+      await r.scrollToSel('input[aria-label="Main colour hex value"]')
       await r.fill('input[aria-label="Main colour hex value"]', '#1F5A3D')
       await r.sleep(500)
       await r.scrollToSel('.image-gallery')
@@ -258,14 +250,15 @@ export const SCENES = [
       await r.sleep(600)
       await r.upload(`[...document.querySelectorAll('input[type=file]')].find(i => i.closest('.field')?.innerText.includes('Logo'))`, LOGO)
       await r.scrollToSel('.field', { text: 'Logo' })
-      await r.sleep(1500)
+      await r.sleep(1200)
       await r.press('Fundraising preferences', { selector: 'summary' })
       await r.sleep(500)
       await r.hover('label', { text: 'Turn on the campaign creation assistant' })
       if (!(await r.ev(`[...document.querySelectorAll('label')].find(l => l.innerText.includes('Turn on the campaign creation assistant'))?.querySelector('input')?.checked`))) throw new Error('Assistant should be on by default')
-      await r.sleep(1500)
+      await r.sleep(1000)
       await r.press('Continue', { selector: 'button', exact: true })
-      await r.waitFor('Step 4 of 5')
+      await r.waitFor('Step 2 of 2')
+      await r.expectText('Review and publish')
     },
   },
   {
@@ -273,15 +266,12 @@ export const SCENES = [
     chapter: 'orgadmin',
     async run(r) {
       await r.expectText('Partner vouchers: Enabled')
-      await r.sleep(2500)
-      await r.scrollToSel('.voucher-summary')
-      await r.sleep(2000)
-      await r.press('Continue', { selector: 'button', exact: true })
-      await r.waitFor('Step 5 of 5')
       await r.sleep(1500)
+      await r.scrollToSel('.voucher-summary')
+      await r.sleep(1200)
       await r.press('Desktop', { selector: '.preview-toolbar button' })
       await r.press('Mobile', { selector: '.preview-toolbar button' })
-      await r.sleep(2200)
+      await r.sleep(1800)
       await r.press('Desktop', { selector: '.preview-toolbar button' })
       await r.sleep(800)
     },

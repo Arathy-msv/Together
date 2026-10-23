@@ -26,7 +26,7 @@ export function useStartWebsite() {
       const org = createOrganization(plan)
       navigate(`/start/${org.id}`)
     } catch {
-      navigate('/plans')
+      navigate('/start')
     }
   }
 }

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { OrgLogoMark } from '../../components/org/OrgChrome.tsx'
 import { useOrganizations } from '../../hooks/useOrganizations.ts'
 import { useCurrentUser } from '../../hooks/useIdentity.ts'
+import { useStartWebsite } from '../../hooks/useStartWebsite.ts'
 import { membership, ROLE_LABEL } from '../../lib/identity.ts'
 import { orgBase, orgTypeLabel } from '../../lib/organizations.ts'
 import { demoPlan } from '../../lib/plans.ts'
@@ -12,6 +13,7 @@ import { previewOrganization, websiteStatusLabel, workspacePath } from '../../li
 /** /workspace — demo entry point for choosing an organization workspace. Not a sign-in. */
 export function WorkspaceEntryPage() {
   const user = useCurrentUser()
+  const startWebsite = useStartWebsite()
   const organizations = useOrganizations().filter((org) => user && membership(user.id, org.id))
 
   useEffect(() => {
@@ -32,9 +34,9 @@ export function WorkspaceEntryPage() {
               : 'You are browsing as a guest. Choose a demo identity above to manage an organization.'}
           </p>
         </div>
-        <Link to="/plans" className="btn btn-primary">
+        <button type="button" className="btn btn-primary" onClick={() => startWebsite()}>
           Create your organization website
-        </Link>
+        </button>
       </header>
       {organizations.length === 0 ? (
         <div className="panel empty">

@@ -17,7 +17,8 @@ export type SetupRecommendation =
 
 export function recommendCampaignSetup(category: CampaignCategory, allowedGames: GameType[]): AiResult<SetupRecommendation[]> {
   const template = templateFor(category)
-  const game = template.games.find((item) => allowedGames.includes(item)) ?? null
+  const game =
+    (allowedGames.includes('garden') ? 'garden' : template.games.find((item) => allowedGames.includes(item))) ?? null
   const unavailable = template.games.filter((item) => !allowedGames.includes(item))
   const cover = template.covers[0] ?? 'library'
   const items: SetupRecommendation[] = [

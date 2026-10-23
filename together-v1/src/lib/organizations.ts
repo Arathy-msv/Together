@@ -323,7 +323,7 @@ export type OrgErrors = Partial<Record<string, string>>
 
 /** Platform route names that can never be organization addresses. */
 export const RESERVED_SLUGS = [
-  'o', 'workspace', 'start', 'plans', 'features', 'examples', 'how-it-works', 'about', 'pricing', 'admin', 'api', 'app', 'login', 'signup', 'help',
+  'o', 'workspace', 'start', 'plans', 'features', 'examples', 'organizations', 'how-it-works', 'about', 'pricing', 'admin', 'api', 'app', 'login', 'signup', 'help',
   'support', 'settings', 'new', 'create', 'dashboard', 'explore', 'campaigns', 'static', 'assets', 'www',
 ]
 

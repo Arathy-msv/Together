@@ -822,7 +822,10 @@ function StepInput({
       const gamesOn = allowed.length > 0
       const directOn = org.visibility.direct
       const pick = (direct: boolean, game: boolean) => {
-        const gameType = game && !allowed.includes(form.gameType) ? allowed[0] : form.gameType
+        const gameType =
+          game && !allowed.includes(form.gameType)
+            ? (allowed.includes('garden') ? 'garden' : allowed[0])
+            : form.gameType
         onChange({ direct, game, gameType, ...(gameType !== form.gameType ? gameSettingsFields(gameType) : {}) })
       }
       return (

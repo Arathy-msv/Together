@@ -215,9 +215,6 @@ function CampaignDetails({ view, referral }: { view: CampaignView; referral?: Re
           </div>
           {campaign.access === 'closed' && !needsCode ? <Leaderboard campaignId={campaign.id} /> : null}
           <nav className="campaign-detail-links" aria-label="More about this campaign">
-            <button type="button" className={panel === 'story' ? 'active' : ''} onClick={() => openPanel('story')}>
-              Story
-            </button>
             <button type="button" className={panel === 'updates' ? 'active' : ''} onClick={() => openPanel('updates')}>
               Updates
             </button>
@@ -249,11 +246,6 @@ function CampaignDetails({ view, referral }: { view: CampaignView; referral?: Re
               <p className="muted small">
                 {view.supporters === 1 ? '1 confirmed simulated contribution' : `${view.supporters} confirmed simulated contributions`}
               </p>
-              {campaign.story?.whatItSupports?.trim() ? (
-                <p className="small support-purpose">
-                  <strong>Your contribution supports:</strong> {shortPurpose(campaign.story.whatItSupports)}
-                </p>
-              ) : null}
               <div className="divider" />
               {needsCode ? (
                 <AccessGate
