@@ -12,6 +12,8 @@ dist
 assets
 dist-ssr
 *.local
+scripts/__pycache__/
+*.pyc
 
 # Editor directories and files
 .vscode/*
