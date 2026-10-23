@@ -41,7 +41,7 @@ The card names the store, the reward, the terms, the end date and how many are l
 It is labelled as simulated. No real shop is connected.
 
 ## op-update
-The campaign page stays short: title with a Share button, purpose and give. Story, Updates, How funds are used and Partner offers open from links under the purpose into popups.
+The campaign page stays short: title with a Share button, purpose and give. Updates, How funds are used and Partner offers open from links under the purpose into popups.
 Updates shows delivery progress, milestone by milestone, and what the organizer has published.
 Reaching a money target is not the same thing as finishing the work.
 Next, the same website is set up from an empty account, one role at a time.
@@ -75,48 +75,33 @@ Chapter two: the organization admin. Grace creates Greenwood School’s website,
 
 ## oa-plan
 Grace is chosen on the same demo identities page, with Act as Grace.
-Plans are presented as demo plans. Each card has Choose this demo plan. No price is collected.
-She picks one. A confirmation step is titled Confirm demo subscription, and the button is Confirm demo plan and start setup.
-That opens a five-step website setup. The step indicator starts at Step 1 of 5.
+The Together homepage has no Plans link. Create your website starts setup on the default demo plan.
+She presses Create your website. That opens a two-step website setup. The step indicator starts at Step 1 of 2.
 
 ## oa-details
-Step 1 is the organization’s public details.
+Step 1 asks for the essentials: organization name and type. Description is optional.
 A Demo button, Fill demo values, enters the Greenwood sales values into the empty fields on this page. It does not submit the form.
 Organization name becomes Greenwood School, and Type is School.
-Short description is the sentence supporters read about the school. Public contact email and Public location are shown on the website, so they are not private fields.
 The website address is built from the name: greenwood-school. The app checks it and says This address is available.
-Continue moves to Step 2. Nothing is public until the last step.
+Contact email, features, colours and fundraising stay under Advanced until needed.
 
 ## oa-features
-Step 2 starts on Use recommended settings. The panel Included with the recommended settings lists what a school on this plan gets, and why.
-Choose individually opens every optional feature as its own card, with an on-off switch and a live preview of the website.
-Sponsor-funded play lets a fictional sponsor fund Memory Match rewards. Grace turns it on here. After the campaign is published, she adds the pledge, the per-person cap, and the reward for each matched pair.
-Campaign update commitments ask the organizer to name the date of the next progress update.
-Campaign sharing kit prepares a QR code, a poster and ready-to-copy messages. It is already on, and Grace leaves it on.
-Reuse past campaigns lets a finished drive become the starting draft of the next one.
-Campaign review and approval means a second admin must approve a campaign before it can be published.
-Low-data experience adds a switch that holds back photos and video on slow connections.
-Campaign record exports lets an admin download the campaign’s records as a file.
-Supporter impact history lets a supporter reopen their receipts on this device.
-Give and Get Local is the partner-voucher feature. Turning it on asks which kinds of offer to allow.
+Advanced opens optional website features. Recommended settings for a school are already on.
+Choose individually opens every optional feature as its own card.
 Grace turns on sponsor-funded play, review and approval, and Give and Get Local, and she ticks Contribution rewards.
-Contribution rewards means a supporter can receive a partner offer after giving. Store-value vouchers and online offers stay off.
-The preview on the right updates as she chooses. Continue goes to Step 3.
+Contribution rewards means a supporter can receive a partner offer after giving. The sharing kit stays on with the recommended settings.
 
 ## oa-look
-Step 3 is the public look of the website.
-The main colour is a hex field. She sets the school green, {#1F5A3D|one F five A three D}.
+Still under Advanced, the main colour is a hex field. She sets the school green, {#1F5A3D|one F five A three D}.
 The image gallery is the homepage photo. The headline and the introduction are the words under that photo.
 Customize more is optional. Inside it, she uploads the school logo from this computer.
-Fundraising preferences includes Turn on the campaign creation assistant. It is already on, so organizers get the guided conversation.
-Continue goes to the review step. All of these settings can be changed later in the workspace.
+Fundraising preferences includes Turn on the campaign creation assistant. It is already on.
+Continue applies any missing defaults and moves to Step 2, Review and publish.
 
 ## oa-review
-Step 4 is a written summary, not a new form.
-It repeats the plan, the details, and each feature she enabled, including Partner vouchers: Enabled.
-The voucher section names Contribution rewards as the only capability she turned on.
-Continue opens Step 5, a preview. Desktop and Mobile are two buttons in the preview toolbar, and they show the same website at two widths.
-She checks both, then returns to Desktop before publishing.
+Step 2 is a short summary, not a new form.
+It repeats the details and each feature she enabled, including Partner vouchers: Enabled.
+Desktop and Mobile are two buttons in the preview toolbar. She checks both, then returns to Desktop before publishing.
 
 ## oa-publish
 The publish button is explicit: Confirm simulated subscription and publish.

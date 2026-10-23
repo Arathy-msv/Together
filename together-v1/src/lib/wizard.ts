@@ -60,7 +60,7 @@ export function blankForm(org: OrgFormContext = FALLBACK_CONTEXT): CampaignForm 
   closes.setDate(closes.getDate() + org.defaults.durationDays)
   closes.setHours(18, 0, 0, 0)
   const games = contextGames(org)
-  const gameType = games[0] ?? 'garden'
+  const gameType = (games.includes('garden') ? 'garden' : games[0]) ?? 'garden'
   const game = games.length > 0
   return {
     organizationId: org.id,

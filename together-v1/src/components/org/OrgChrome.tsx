@@ -131,23 +131,14 @@ export function OrgFooter({ org, workspace, preview = false }: { org: Organizati
     ...(content.website ? [{ label: 'Website', url: content.website }] : []),
     ...content.socialLinks.filter((link) => link.label.trim() && link.url.trim()),
   ]
+  const blurb = content.footerText || 'Browser-only demo.'
   return (
     <footer className="oh-footer">
       <div className="oh-footer-inner">
         <div className="oh-footer-brand">
-          <OrgLogoMark org={org} size={28} />
-          <div>
-            <strong>{org.name || 'Organization name'}</strong>
-            <p>{content.footerText || 'Browser-only demo. No real money is collected.'}</p>
-            {content.contactEmail ? (
-              <p>
-                {preview ? <span className="oh-link">{content.contactEmail}</span> : <a href={`mailto:${content.contactEmail}`}>{content.contactEmail}</a>}
-                {content.location ? ` · ${content.location}` : null}
-              </p>
-            ) : content.location ? (
-              <p>{content.location}</p>
-            ) : null}
-          </div>
+          <OrgLogoMark org={org} size={22} />
+          <strong>{org.name || 'Organization name'}</strong>
+          <span className="oh-footer-blurb">{blurb}</span>
         </div>
         <div className="oh-footer-side">
           {links.length > 0 ? (

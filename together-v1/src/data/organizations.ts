@@ -86,7 +86,7 @@ function publishedSeeds(): Organization[] {
         impactStory:
           'Last winter, 214 colleagues packed and delivered coat kits to partner shelters. Teams in Pune, Leeds, Austin and Dublin turned lunch breaks into packing lines.',
       },
-      defaults: { currency: 'USD', suggestedAmounts: [10, 25, 50], visibility: 'open', durationDays: 21, games: ['memory', 'jacket', 'garden'] },
+      defaults: { currency: 'USD', suggestedAmounts: [10, 25, 50], visibility: 'open', durationDays: 21, games: ['garden', 'memory', 'jacket'] },
       visibility: { games: true, direct: true, impactStories: true, assistant: true, poweredBy: true },
       plan: { id: 'organization', selectedAt: SEEDED_AT },
     features: recommendedFeatures('company', 'organization'),

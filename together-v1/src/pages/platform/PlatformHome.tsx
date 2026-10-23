@@ -26,7 +26,7 @@ const AUDIENCES = [
 export function PlatformHomePage() {
   const organizations = useOrganizations()
   const startWebsite = useStartWebsite()
-  const examples = organizations.filter((org) => org.website.status === 'published' && org.id !== DEFAULT_ORG_ID)
+  const sampleOrgs = organizations.filter((org) => org.website.status === 'published' && org.id !== DEFAULT_ORG_ID)
 
   useEffect(() => {
     document.title = 'Together — Your organization’s own fundraising website'
@@ -49,7 +49,7 @@ export function PlatformHomePage() {
           <p className="muted small">For schools, companies, clubs and nonprofits. Demo only — no payment is taken.</p>
         </div>
         <div className="hero-stack" aria-hidden="true">
-          {examples.slice(0, 3).map((org, index) => (
+          {sampleOrgs.slice(0, 3).map((org, index) => (
             <div key={org.id} className={`hero-site s${index}`} style={themeVars(org.branding) as CSSProperties}>
               <div className="hero-site-bar">
                 <OrgLogoMark org={org} size={22} />
@@ -90,11 +90,11 @@ export function PlatformHomePage() {
         </div>
       </section>
 
-      <section id="examples" className="container platform-section" aria-labelledby="examples-title">
-        <h2 id="examples-title">Examples</h2>
+      <section id="organizations" className="container platform-section" aria-labelledby="organizations-title">
+        <h2 id="organizations-title">Organizations</h2>
         <p className="muted">Each one is its own website, with its own address, look and campaigns.</p>
         <div className="example-grid">
-          {examples.map((org) => (
+          {sampleOrgs.map((org) => (
             <article key={org.id} className="example-card" style={themeVars(org.branding) as CSSProperties}>
               <img src={org.content.heroImage} alt="" />
               <div className="example-body">
@@ -122,9 +122,6 @@ export function PlatformHomePage() {
           <button type="button" className="btn btn-primary btn-lg" onClick={() => startWebsite()}>
             Create your website
           </button>
-          <Link to="/plans" className="link-button">
-            Compare demo plans
-          </Link>
         </div>
       </section>
     </div>

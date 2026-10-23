@@ -57,7 +57,8 @@ export function suggestCampaignDraft(form: CampaignForm, org: Organization, allo
   // Never restate an amount next to the organizer's own figure; their sentence is kept as written.
   const summaryParts = mentioned.amount ? [sentence(purpose)] : [`${org.name} is raising ${amount}.`, purpose ? sentence(purpose) : placeholder('Describe what the funds are for')]
   const supports = form.storySupports.trim() || (budget.length ? `Contributions will pay for: ${budget.map((line) => line.label).join(', ')}.` : placeholder('What contributions will pay for'))
-  const gameType = template.games.find((game) => allowedGames.includes(game)) ?? null
+  const gameType =
+    (allowedGames.includes('garden') ? 'garden' : template.games.find((game) => allowedGames.includes(game))) ?? null
   const content: CampaignDraftSuggestion = {
     title: form.title.trim() || titleFromPurpose(purpose) || placeholder('Short, specific campaign title'),
     summary: summaryParts.join(' '),

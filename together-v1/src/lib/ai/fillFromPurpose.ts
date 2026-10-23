@@ -26,7 +26,9 @@ export function fillCampaignFromPurpose(
   const parsed = parseCampaignMessage(text)
   const category = parsed.category && parsed.category !== 'other' ? parsed.category : form.category === 'other' ? 'community' : form.category
   const template = templateFor(category)
-  const gameType = template.games.find((game) => allowedGames.includes(game))
+  const gameType =
+    (allowedGames.includes('garden') ? 'garden' : undefined) ??
+    template.games.find((game) => allowedGames.includes(game))
   const title = titleFromPurpose(text)
 
   return {

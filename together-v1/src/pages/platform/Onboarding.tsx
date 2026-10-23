@@ -26,15 +26,35 @@ import {
   selectedCapabilities,
   voucherSelectionError,
 } from '../../lib/features.ts'
-import { demoPlan, optionalFeatureNames } from '../../lib/plans.ts'
+import { demoPlan } from '../../lib/plans.ts'
 import { contrastChecks, FONT_CHOICES, isHexColor } from '../../lib/theme.ts'
 import type { FontChoice, GameType, Organization, OrgFeatures, OrgType, VoucherSettings } from '../../lib/types.ts'
 import { previewOrganization, publicWebsiteUrl, resumeSetupStep, sampleWebsiteContent, SETUP_STEP_COUNT, websiteConfigOf, withPublishedWebsite } from '../../lib/website.ts'
 
-const STEPS = ['Your organization', 'Website features', 'Your look and content', 'Review selections', 'Confirm and publish']
+const STEPS = ['Your organization', 'Review and publish']
 const LAST = SETUP_STEP_COUNT
 const ONBOARDING_TYPES: OrgType[] = ['company', 'school', 'nonprofit', 'club', 'other']
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
+
+/** Fills empty fields with safe defaults so the organizer only needs a name to continue. */
+function withSetupDefaults(org: Organization): Organization {
+  const slug = (org.slug.trim() || slugify(org.name) || `org-${org.id.slice(-6)}`).toLowerCase()
+  const sample = sampleWebsiteContent({ ...org, slug })
+  const contactEmail = EMAIL.test(org.content.contactEmail.trim()) ? org.content.contactEmail.trim() : `hello@${slug}.example`
+  return {
+    ...org,
+    slug,
+    about: org.about.trim().length >= 10 ? org.about : sample.about,
+    content: {
+      ...org.content,
+      contactEmail,
+      headline: org.content.headline.trim() || sample.headline,
+      description: org.content.description.trim() || sample.description,
+      footerText: org.content.footerText.trim() || sample.footerText,
+      heroImage: org.content.heroImage.trim() || IMAGE_GALLERY[0]?.src || org.content.heroImage,
+    },
+  }
+}
 
 /** Errors that block leaving a step. Uses the same rules as organization settings. */
 function stepErrors(step: number, org: Organization, all: Organization[]): Record<string, string> {
@@ -46,12 +66,8 @@ function stepErrors(step: number, org: Organization, all: Organization[]): Recor
     if (!EMAIL.test(org.content.contactEmail.trim())) errors.contactEmail = 'Enter a public contact email like hello@example.org.'
     const slug = validateSlug(org.slug, org.id, all)
     if (slug) errors.slug = slug
-  }
-  if (step === 2) {
     const voucher = voucherSelectionError(org.features, org.voucherSettings)
     if (voucher) errors.vouchers = voucher
-  }
-  if (step === 3) {
     for (const key of ['primary', 'accent', 'background'] as const) if (!isHexColor(org.branding[key])) errors[key] = 'Use a hex colour like #123D36.'
     if (shared['defaults.suggestedAmounts']) errors.amounts = shared['defaults.suggestedAmounts']!
     if (shared['defaults.games']) errors.games = shared['defaults.games']!
@@ -72,7 +88,7 @@ export function OnboardingPage() {
         <div className="panel empty">
           <h1>We couldn’t find that setup</h1>
           <p className="muted">It may have been discarded, or it was started in another browser.</p>
-          <Link to="/plans" className="btn btn-primary">
+          <Link to="/" className="btn btn-primary">
             Start a new website
           </Link>
         </div>
@@ -97,7 +113,7 @@ function Wizard({ stored }: { stored: Organization }) {
   const autosave = useAutosave(snapshot, (value) => {
     if (finished.current) return
     const now = new Date().toISOString()
-    saveOrganizationAs('org.manageWebsite', { ...value.org, website: { status: 'setup', draft: websiteConfigOf(value.org), updatedAt: now }, onboarding: { step: value.step, updatedAt: now, flow: 5 } }, null)
+    saveOrganizationAs('org.manageWebsite', { ...value.org, website: { status: 'setup', draft: websiteConfigOf(value.org), updatedAt: now }, onboarding: { step: value.step, updatedAt: now, flow: 2 } }, null)
   })
 
   useEffect(() => {
@@ -115,7 +131,9 @@ function Wizard({ stored }: { stored: Organization }) {
   }
 
   function goNext() {
-    const next = stepErrors(step, org, all)
+    const filled = step === 1 ? withSetupDefaults(org) : org
+    if (filled !== org) setOrg(filled)
+    const next = stepErrors(step, filled, all)
     setErrors(next)
     if (Object.keys(next).length > 0) return
     setStep((current) => Math.min(LAST, current + 1))
@@ -125,30 +143,34 @@ function Wizard({ stored }: { stored: Organization }) {
   function goTo(target: number) {
     // Earlier steps are always reachable; later ones only after the current step is valid.
     if (target > step) {
+      let current = org
       for (let index = step; index < target; index += 1) {
-        const problems = stepErrors(index, org, all)
+        if (index === 1) current = withSetupDefaults(current)
+        const problems = stepErrors(index, current, all)
         if (Object.keys(problems).length > 0) {
+          setOrg(current)
           setStep(index)
           setErrors(problems)
           return
         }
       }
+      setOrg(current)
     }
     setErrors({})
     setStep(target)
   }
 
   function finish(publish: boolean) {
-    for (let index = 1; index < LAST; index += 1) {
-      const problems = stepErrors(index, org, all)
-      if (Object.keys(problems).length > 0) {
-        setStep(index)
-        setErrors(problems)
-        return
-      }
+    const filled = withSetupDefaults(org)
+    const problems = stepErrors(1, filled, all)
+    if (Object.keys(problems).length > 0) {
+      setOrg(filled)
+      setStep(1)
+      setErrors(problems)
+      return
     }
     const now = new Date().toISOString()
-    const base: Organization = { ...org, website: { status: 'draft', draft: websiteConfigOf(org), updatedAt: now }, onboarding: undefined }
+    const base: Organization = { ...filled, website: { status: 'draft', draft: websiteConfigOf(filled), updatedAt: now }, onboarding: undefined }
     const final = publish ? withPublishedWebsite(base) : { ...base, onboarding: undefined }
     finished.current = true
     try {
@@ -194,118 +216,93 @@ function Wizard({ stored }: { stored: Organization }) {
           </h2>
           {step === 1 ? (
             <>
-              <p className="muted">Tell supporters who you are, and choose the link you’ll share. Fields marked Optional can be skipped.</p>
+              <p className="muted">Add your name and type. Everything else is filled with sensible defaults — open Advanced only if you want to change it.</p>
               <TextInput label="Organization name" value={org.name} maxLength={80} error={errors.name} help="For example: Greenwood School" onChange={(name) => patch({ name, slug: slugFollowsName(org) && slugify(name) ? slugify(name) : org.slug })} />
               <Select label="Type" value={org.type} options={ORG_TYPES.filter((type) => ONBOARDING_TYPES.includes(type.id)).map((type) => ({ value: type.id, label: type.label }))} onChange={(type) => patch({ type: type as OrgType, features: recommendedFeatures(type as OrgType, org.plan.id) })} />
-              <TextArea label="Short description" value={org.about} maxLength={600} error={errors.about} help="One or two sentences about who you are. Shown on your homepage." onChange={(about) => patch({ about })} />
-              <TextInput label="Public contact email" type="email" value={org.content.contactEmail} maxLength={120} error={errors.contactEmail} help="Supporters can write to this address. For example: office@greenwood.example" onChange={(contactEmail) => patchContent({ contactEmail })} />
-              <TextInput label="Public location" optional value={org.content.location} maxLength={120} help="A city or area. Avoid street addresses." onChange={(location) => patchContent({ location })} />
-              <TextInput
-                label="Website address"
-                value={org.slug}
-                maxLength={40}
-                error={errors.slug}
-                help="This is the link you’ll share with your community. Use lowercase letters, numbers and hyphens. It can’t change after you publish."
-                onChange={(slug) => {
-                  patch({ slug: slug.replace(/\s+/g, '-') })
-                  setErrors({})
-                }}
-              />
+              <TextArea label="Short description" optional value={org.about} maxLength={600} error={errors.about} help="Optional. If you leave this blank, we’ll add a short sample you can edit later." onChange={(about) => patch({ about })} />
               <div className="url-preview">
                 <span className="muted small">Your website will be at</span>
                 <code>{url}</code>
                 <span className="muted small">In this demo the link works on this device only.</span>
               </div>
-              {(() => {
-                const live = validateSlug(org.slug, org.id, all)
-                return live ? <p className="error-text">{live}</p> : <p className="success-text">This address is available.</p>
-              })()}
+              {org.slug.trim() ? (
+                (() => {
+                  const live = validateSlug(org.slug, org.id, all)
+                  return live ? <p className="error-text">{live}</p> : <p className="success-text">This address is available.</p>
+                })()
+              ) : (
+                <p className="muted small">The address is created from your name when you continue.</p>
+              )}
+              <details className="customize-more" open={Boolean(errors.slug || errors.contactEmail || errors.vouchers || errors.primary || errors.amounts || errors.games || errors.direct)}>
+                <summary>Advanced (optional)</summary>
+                <div className="customize-body">
+                  <TextInput
+                    label="Website address"
+                    value={org.slug}
+                    maxLength={40}
+                    error={errors.slug}
+                    help="Lowercase letters, numbers and hyphens. It can’t change after you publish."
+                    onChange={(slug) => {
+                      patch({ slug: slug.replace(/\s+/g, '-') })
+                      setErrors({})
+                    }}
+                  />
+                  <TextInput label="Public contact email" type="email" value={org.content.contactEmail} maxLength={120} error={errors.contactEmail} help="Defaults to a demo address from your website link." onChange={(contactEmail) => patchContent({ contactEmail })} />
+                  <TextInput label="Public location" optional value={org.content.location} maxLength={120} help="A city or area. Avoid street addresses." onChange={(location) => patchContent({ location })} />
+                  <h3 className="feature-heading">Optional website features</h3>
+                  <p className="muted small">Recommended settings for your type are already on. Change them only if you need to.</p>
+                  <FeaturePicker
+                    features={org.features}
+                    voucherSettings={org.voucherSettings}
+                    planId={org.plan.id}
+                    orgType={org.type}
+                    onChange={patchFeatures}
+                    onVoucherSettingsChange={patchVoucherSettings}
+                    voucherError={errors.vouchers || undefined}
+                  />
+                  <LookAndContentStep org={org} errors={errors} patch={patch} patchBranding={patchBranding} patchContent={patchContent} />
+                </div>
+              </details>
             </>
           ) : null}
           {step === 2 ? (
             <>
-              <h3 className="feature-heading">Choose what your fundraising website needs.</h3>
-              <p className="muted">Start with the essentials. You can manage optional features later.</p>
-              <FeaturePicker
-                features={org.features}
-                voucherSettings={org.voucherSettings}
-                planId={org.plan.id}
-                orgType={org.type}
-                onChange={patchFeatures}
-                onVoucherSettingsChange={patchVoucherSettings}
-                voucherError={errors.vouchers || undefined}
-              />
+              <dl className="detail-list">
+                <div>
+                  <dt>Organization</dt>
+                  <dd>
+                    {org.name} · {ORG_TYPES.find((type) => type.id === org.type)?.label}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Website address</dt>
+                  <dd>
+                    <code>{url}</code>
+                  </dd>
+                </div>
+                <div>
+                  <dt>Look</dt>
+                  <dd>
+                    {org.content.headline.trim() || org.name || 'Your name'} · main colour {org.branding.primary}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Optional features</dt>
+                  <dd>{enabledFeatureLabels(org).join(' · ') || 'Essentials only'}</dd>
+                </div>
+                <div>
+                  <dt>Always included</dt>
+                  <dd>{ALWAYS_INCLUDED.join(' · ')}</dd>
+                </div>
+              </dl>
+              <div className="confirm-subscribe">
+                <p>
+                  Publish <strong>{org.name}</strong> at <code>{url}</code>. This confirms a <strong>simulated subscription</strong> — no payment is collected.
+                </p>
+                <p className="muted small">Publishing the website does not publish any campaigns. You can change colours, features and wording later in your workspace.</p>
+                {org.features.partnerVouchers ? <VoucherSelectionSummary org={org} onEdit={() => goTo(1)} /> : null}
+              </div>
             </>
-          ) : null}
-          {step === 3 ? (
-            <LookAndContentStep org={org} errors={errors} patch={patch} patchBranding={patchBranding} patchContent={patchContent} />
-          ) : null}
-          {step === 4 ? (
-            <dl className="detail-list">
-              <div>
-                <dt>Organization</dt>
-                <dd>
-                  {org.name} · {ORG_TYPES.find((type) => type.id === org.type)?.label}
-                </dd>
-              </div>
-              <div>
-                <dt>Website address</dt>
-                <dd>
-                  <code>{url}</code>
-                </dd>
-              </div>
-              <div>
-                <dt>Selected demo plan</dt>
-                <dd>{demoPlan(org.plan.id).name} · no payment collected</dd>
-              </div>
-              <div>
-                <dt>Selected optional features</dt>
-                <dd>
-                  {enabledFeatureLabels(org).filter((label) => label !== 'Give & Get Local').join(' · ') || 'None — essentials only'}
-                </dd>
-              </div>
-              <div>
-                <dt>Partner vouchers</dt>
-                <dd>
-                  <VoucherSelectionSummary org={org} onEdit={() => goTo(2)} />
-                </dd>
-              </div>
-              <div>
-                <dt>Always included</dt>
-                <dd>{ALWAYS_INCLUDED.join(' · ')}</dd>
-              </div>
-              <div>
-                <dt>Look</dt>
-                <dd>
-                  {org.content.headline.trim() || org.name || 'Your name'} · main colour {org.branding.primary}
-                </dd>
-              </div>
-              <div>
-                <dt>Configuration still needed</dt>
-                <dd>
-                  {org.features.partnerVouchers
-                    ? 'Add partner stores and offers under Partner offers after setup. '
-                    : ''}
-                  Detailed settings for each feature are collected when you first use them — nothing else is required to publish.
-                </dd>
-              </div>
-            </dl>
-          ) : null}
-          {step === 5 ? (
-            <div className="confirm-subscribe">
-              <p>
-                You are about to confirm a <strong>simulated subscription</strong> to the {demoPlan(org.plan.id).name} and publish <strong>{org.name}</strong> at{' '}
-                <code>{url}</code>.
-              </p>
-              <p className="muted small">
-                No payment is collected. There is no billing, renewal or invoice. Optional features included in this plan: {optionalFeatureNames(org.plan.id).join(', ')}.
-                Publishing the website does not publish any campaign drafts.
-              </p>
-              <p>
-                <strong>Selected:</strong> {enabledFeatureLabels(org).length ? enabledFeatureLabels(org).join(', ') : 'Essentials only'}.
-              </p>
-              <VoucherSelectionSummary org={org} onEdit={() => goTo(2)} />
-            </div>
           ) : null}
           {errors.form ? <p className="error-text">{errors.form}</p> : null}
           <div className="inline-actions onboarding-actions">

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
+import { Link, Outlet, useLocation } from 'react-router-dom'
 import { BrandMark } from '../../components/BrandMark.tsx'
 import { useDocumentTheme, useScrollOnNavigate } from '../../hooks/useDocumentTheme.ts'
 import { DEFAULT_BRANDING } from '../../lib/theme.ts'
@@ -50,8 +50,7 @@ export function PlatformLayout() {
           </button>
           <nav id="platform-nav" className={open ? 'oh-nav open' : 'oh-nav'} aria-label="Together">
             <Link to="/#how-it-works">How it works</Link>
-            <Link to="/#examples">Examples</Link>
-            <NavLink to="/plans">Plans</NavLink>
+            <Link to="/#organizations">Organizations</Link>
             <button type="button" className="btn btn-primary btn-sm" onClick={() => startWebsite()}>
               Create your website
             </button>
@@ -78,8 +77,7 @@ export function PlatformLayout() {
           <div className="oh-footer-side">
             <nav aria-label="Footer">
               <Link to="/#how-it-works">How it works</Link>
-              <Link to="/#examples">Examples</Link>
-              <Link to="/plans">Plans</Link>
+              <Link to="/#organizations">Organizations</Link>
               <Link to="/start">Continue a setup</Link>
               <Link to="/workspace">Manage a demo website</Link>
               <Link to="/demo-identities">Demo identities</Link>
