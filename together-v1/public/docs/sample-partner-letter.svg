@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 780" font-family="Georgia, serif">
+<rect width="600" height="780" fill="#fffdf8"/><rect x="24" y="24" width="552" height="732" fill="none" stroke="#d8d2c4" stroke-width="2"/>
+<text x="60" y="100" font-size="30" fill="#1f2a26">Letter of support (sample)</text>
+<text x="60" y="130" font-size="15" fill="#6b746f">From a shelter manager (fictional)</text>
+<g fill="#c9c3b5"><rect x="60" y="180" width="480" height="12" rx="6"/><rect x="60" y="210" width="420" height="12" rx="6"/><rect x="60" y="240" width="450" height="12" rx="6"/><rect x="60" y="300" width="300" height="12" rx="6"/><rect x="60" y="330" width="360" height="12" rx="6"/><rect x="60" y="360" width="250" height="12" rx="6"/></g>
+<text x="300" y="470" font-size="54" fill="#d9694e" fill-opacity="0.18" text-anchor="middle" transform="rotate(-24 300 470)" font-family="Arial, sans-serif" font-weight="700">SAMPLE · FICTIONAL</text>
+<text x="60" y="720" font-size="13" fill="#6b746f" font-family="Arial, sans-serif">Fictional document created for the Together prototype. Not a real record.</text>
+</svg>

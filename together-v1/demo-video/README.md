@@ -1,0 +1,143 @@
+# Together — narrated demo video
+
+Scripts that record the real running app across all five demo roles, narrate it with a local
+offline voice, and assemble a 1080p walkthrough: "Greenwood School raises funds for school
+supplies."
+
+Everything here runs locally. No video is uploaded or published, and no cloud or paid TTS
+service is called.
+
+## What gets produced
+
+All media goes to ignored folders (`work/` and `output/`); only scripts and docs are committed.
+
+| File | What it is |
+| --- | --- |
+| `output/together-demo.mp4` | Main walkthrough, 1920×1080, 30 fps, H.264 + AAC, soft English subtitles, chapter markers |
+| `output/together-demo.en.srt` | English subtitles |
+| `output/together-presales.mp4` (+ `.en.srt`) | Short presales cut: the scenes listed in `scripts/presales.mjs`, same recording and narration |
+| `output/together-presales-first-time.mp4` (+ `.en.srt` and `.en.vtt`) | Four-and-a-half-minute first-time customer journey with burned and soft English captions |
+| `output/chapters/NN-<chapter>.mp4` (+ `.en.srt`) | One clip per chapter: opening preview, Platform Admin, Organization Admin, Campaign Organizer, Supporter, Merchant, Delivery and reporting |
+| `output/scene-timings.md` | The narration script with the final start and end time of every scene |
+| `output/assembly-report.json` | Durations, any scenes played faster, and console errors found during recording |
+| `narration/script.md` | Editable narration (one line = one subtitle cue) |
+| `narration/scene-timings.md` | Committed copy of the timed script from the last assembly |
+| `FEATURE-STATUS.md` | What works, and what is missing, limited or simulated |
+
+## Requirements
+
+* Node 22 or newer (uses the built-in `WebSocket` and `fetch`)
+* Google Chrome (driven headless through the DevTools protocol)
+* ffmpeg and ffprobe with libx264
+* For narration, either your own recordings or [Piper](https://github.com/OHF-Voice/piper1-gpl):
+
+```bash
+python3 -m venv /tmp/ttsvenv && /tmp/ttsvenv/bin/pip install piper-tts
+mkdir -p /tmp/voices && cd /tmp/voices
+curl -LO https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/ljspeech/high/en_US-ljspeech-high.onnx
+curl -LO https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/ljspeech/high/en_US-ljspeech-high.onnx.json
+```
+
+Override the paths with `PIPER_PYTHON`, `PIPER_VOICE` and `PIPER_LENGTH_SCALE` (default 1.08,
+slightly slower than the voice's natural pace).
+
+## Running it
+
+Start the app first (from the project root): `npm run dev` serves it on http://127.0.0.1:4321.
+Then, from `demo-video/scripts/`:
+
+```bash
+node narrate.mjs     # 1. narration per scene → work/narration (durations, sentence timings)
+node record.mjs      # 2. full recording in a fresh, isolated Chrome profile (about 20 minutes)
+node assemble.mjs    # 3. title cards, clips, subtitles, chapters → output/
+```
+
+Checking flows without capturing video:
+
+```bash
+DRY=1 node record.mjs                     # every scene, fast, one screenshot per scene in work/recording/checks
+DRY=1 FROM=sp-home node record.mjs        # resume from the checkpoint saved before a scene
+DRY=1 UNTIL=oa-publish node record.mjs    # stop after a scene
+```
+
+## How the recording stays isolated and honest
+
+* The recorder starts its own headless Chrome with a throwaway profile in
+  `work/chrome-demo-profile`, wiped before every run. Your normal browser's saved campaigns and
+  contributions are never read or changed.
+* The connected flow (supporter claims a voucher, merchant redeems it) runs in that one browser
+  context, because all data is localStorage-based. The narration says it does not work across
+  devices.
+* Scenes are real clicks and typing in the app (`scripts/scenes.mjs`). The only overlay is a
+  pointer with a click ripple. Steps marked `record: false` prepare demo data off camera with
+  the app's own modules, acting as the person who would do it: the people, last term's campaign,
+  and the later contributions that take the campaign past its target.
+* Every scene checks what the app shows (for example "No payment will be collected.", a second
+  redemption is blocked, the duplicate has no contributions, the final report stays a draft) and
+  the run fails rather than recording a wrong result.
+* Console errors are collected per scene and listed in `output/assembly-report.json`.
+* The video never shows a terminal, developer tools or credentials; the app runs headless.
+
+## Voice and timing
+
+* Voice order: your recording in `narration/recordings/<scene-id>.wav` (or `.mp3`/`.m4a`) wins;
+  otherwise local Piper TTS with one voice for the whole video: `en_US-ljspeech-high`, trained on
+  the public-domain LJ Speech dataset. It does not imitate any specific person.
+* Each scene holds the live screen until its narration has finished (narration length + 1.2 s),
+  so narration is never cut or sped up.
+* The screen is never sped up, so typed text and each click stay readable. A scene holds on the
+  live page until its narration has finished. The audio is never sped up.
+* No background music is used.
+
+## Editing the narration
+
+Edit `narration/script.md`, then rerun all three steps. Scene ids must match
+`scripts/scenes.mjs`; `card-*` scenes are title cards (their text is in `scripts/cards.mjs`).
+Use `{shown|spoken}` when subtitles and speech should differ, e.g. `{$200|two hundred dollars}`.
+
+## Presales cut
+
+`assemble.mjs` also writes `output/together-presales.mp4` from the scene ids in
+`scripts/presales.mjs`. It reuses the full recording and narration, so there is nothing extra to
+record. Pick scenes whose narration stands on its own (the first sentence names who is acting).
+Assembly stops if a listed id is not in `narration/script.md`.
+
+## Scene checklist
+
+What each part of the walkthrough must show. `scenes.mjs` checks these on screen and fails the
+run instead of recording a wrong result.
+
+| Scenes | Must show |
+| --- | --- |
+| `oa-features` | Recommended settings first, then "Choose individually" to switch features one by one |
+| `oa-publish` | "Your website is ready." with "Create your first campaign" as the next step |
+| `og-start`, `og-assistant`, `og-form` | Create offers Create with AI (one purpose → draft) or Fill the form (two-step essentials → review); Advanced holds dates, games and optional details |
+| `og-submit`, `og-approve` | Approval does not publish; the campaign stays a draft until "Publish approved campaign" |
+| `op-game`, `sp-direct`, `sp-game` | A labelled choice between "Give an amount" and "Play Memory Match" |
+| `sp-game`, `sp-game-confirm` | Rules up front, nonblocking per-pair feedback, "New board" keeps the suggestion, review from the bar, final amount chosen by the supporter |
+| `oa-sponsor`, `sp-sponsor`, `oa-sponsor-confirm` | One fictional Memory Match sponsor budget, a pending reward that is not added to the personal checkout, and one confirmation that counts the reward once |
+| `sp-vouchers` | Voucher card, full-screen "Show voucher" view with "Present this to store staff", merchant, branch, status, expiry, restrictions, QR and backup code, then My activity |
+| `sp-lowdata` | Low-data preference holds photos back, then restores them (no public checkbox) |
+| `fn-public` | "Funding goal reached" panel with delivery reported separately; a milestone's linked expense opens the filtered expense list |
+
+## Video freshness
+
+- Last verified application commit: `db4c8a4`. Assembly finished 22 Oct 2026, 10:33am IST. Money in the application now displays in dollars. The narration in `narration/script.md` and `narration/presales-first-time.md` matches that change. The exported videos have not been re-recorded.
+- Fill demo values is now on every page, and `oa-details` in `scripts/scenes.mjs` clicks it. Narration for that scene mentions the button. No scene was re-recorded, so the exports do not show the button.
+- Public and workspace navigation were simplified (23 Oct 2026): workspace nav is Home / Website / Campaigns / More. Footer is brand/contact only; public Page display / low-data checkbox removed. Campaign create/assistant run on the public site (`/o/.../create`). Clips were not re-recorded.
+- Public website home tightened (23 Oct 2026): About removed from public nav; My activity moved into the Demo identity menu; Partner offers stays in nav when live; hero height reduced so campaigns show above the fold; footer compacted. Scripts/narration for `op-home` and `sp-vouchers` updated; clips not re-recorded.
+- Campaign page simplified (23 Oct 2026): compact main view (purpose + give); Story / Updates / How funds / Partner offers / Share open from sidebar links into popups. Delivery badge and “More ways to take part” removed. Scripts/narration for `op-offer`, `op-update`, `sp-trust`, `sp-share` updated; clips not re-recorded.
+- Campaign create: Create with AI is one purpose sentence that drafts title/goal/cover/story; Fill the form is the two-step path (23 Oct 2026). Scripts/narration for `og-start` updated; clips not re-recorded.
+- Give directly always offers suggested amounts plus Or enter your own (23 Oct 2026). Narration for `sp-direct` notes it; clips not re-recorded.
+- Thank-you page: share + updates since contribution sit under a More accordion (23 Oct 2026). Clips not re-recorded.
+- Campaign page: removed public “Next update expected…” line; Share control restyled (23 Oct 2026). Clips not re-recorded.
+- Share this campaign header layout was tightened; Ask about this campaign was removed from the public campaign page (23 Oct 2026). Clips were not re-recorded.
+- Campaign list status filters (All / Accepting / Opens soon / …) were removed from `/campaigns` (23 Oct 2026). Search remains. Clips were not re-recorded.
+- Detailed walkthrough: **stale**. `output/together-demo.mp4` still shows Indian rupees, the previous nav, and the four-step / assistant create flow. It probes at 1985.867 seconds (33:05). Re-record before treating it as current.
+- Previous presales cut: **stale**. `output/together-presales.mp4` probes at 169.533 seconds (2:49) and still shows Indian rupees.
+- First-time presales cut: **stale**. `output/together-presales-first-time.mp4` probes at exactly 270.000 seconds (04:30) and still shows Indian rupees. Its earlier visual review does not cover the dollar displays or the two-step create form.
+- Subtitles: `together-demo.en.srt`, `together-demo.en.vtt`, `together-presales.en.srt`, `together-presales.en.vtt`, plus the chapter files. `narration/scene-timings.md` still matches the previous assembly timings (including old create wording).
+- Blocker: recordings were not regenerated after later UX changes (currency, org/campaign setup, public home, campaign page simplify). Affected scene ids include `op-home`, `op-offer`, `op-update`, `oa-plan`, `oa-details`, `oa-features`, `oa-look`, `oa-review`, `oa-publish`, `oa-members`, `oa-offers`, `sp-home`, `sp-direct`, `sp-trust`, `sp-share`, `sp-vouchers`, `sp-lowdata`, `og-start`, `og-assistant`, `og-ai-suggest`, `og-autosave`, `og-form`, `fn-public`.
+- Voice-over is local Piper only. Nothing was uploaded or published.
+
+Update this section whenever a user-facing change touches the walkthrough. If a scene or the final video could not be re-recorded, list the scene ids here and set the final video to stale, with the blocker.
