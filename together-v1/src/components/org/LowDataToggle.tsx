@@ -1,0 +1,29 @@
+import { useEffect, useState } from 'react'
+import { canUseFeature } from '../../lib/features.ts'
+import { readStoredLowData, setLowDataActive, writeStoredLowData } from '../../lib/lowData.ts'
+import type { Organization } from '../../lib/types.ts'
+
+/** Compact low-data switch for the public footer. Baseline accessibility stays on regardless. */
+export function LowDataToggle({ org }: { org: Organization }) {
+  const [on, setOn] = useState(readStoredLowData)
+
+  useEffect(() => {
+    if (!canUseFeature(org, 'lowDataMode')) {
+      document.documentElement.classList.remove('low-data')
+      setLowDataActive(false)
+      return
+    }
+    document.documentElement.classList.toggle('low-data', on)
+    setLowDataActive(on)
+    writeStoredLowData(on)
+  }, [on, org])
+
+  if (!canUseFeature(org, 'lowDataMode')) return null
+
+  return (
+    <label className="low-data-toggle">
+      <input type="checkbox" checked={on} onChange={(event) => setOn(event.target.checked)} />
+      <span>Low-data mode</span>
+    </label>
+  )
+}

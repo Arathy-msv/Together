@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 520" font-family="'Courier New', monospace">
+<rect width="360" height="520" fill="#fffef9"/><path d="M0 510 l12 10 12-10 12 10 12-10 12 10 12-10 12 10 12-10 12 10 12-10 12 10 12-10 12 10 12-10 12 10 12-10 12 10 12-10 12 10 12-10 12 10 12-10 12 10 12-10 12 10 12-10 12 10 12-10 12 10 12-10 V520 H0Z" fill="#efe9db"/>
+<text x="180" y="50" font-size="17" text-anchor="middle" font-weight="700" fill="#222">Warmline Textiles</text>
+<text x="180" y="72" font-size="11" text-anchor="middle" fill="#666">SAMPLE RECEIPT · FICTIONAL</text>
+<text x="30" y="110" font-size="13" fill="#222">Date: 14 Oct 2026</text>
+<line x1="30" y1="125" x2="330" y2="125" stroke="#bbb" stroke-dasharray="4 3"/>
+<text x="30" y="155" font-size="13" fill="#222">Thick blanket x 80</text><text x="330" y="155" font-size="13" text-anchor="end" fill="#222">$150.00</text><text x="30" y="180" font-size="12" fill="#666">Second batch</text>
+<line x1="30" y1="380" x2="330" y2="380" stroke="#bbb" stroke-dasharray="4 3"/>
+<text x="30" y="410" font-size="16" font-weight="700" fill="#222">TOTAL</text><text x="330" y="410" font-size="16" font-weight="700" text-anchor="end" fill="#222">$12,000.00</text>
+<rect x="30" y="435" width="170" height="16" fill="#222"/><text x="210" y="448" font-size="10" fill="#777">customer details removed</text>
+<text x="180" y="485" font-size="10" text-anchor="middle" fill="#888">Created for the Together prototype. Not a real record.</text>
+</svg>
