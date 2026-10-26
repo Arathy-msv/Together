@@ -62,8 +62,8 @@ Every screen has one primary action, and advanced settings stay folded away unti
 
 | Who | Steps |
 | --- | --- |
-| Organization | **Create your website** (homepage) → Your organization (essentials; Advanced for address, features, look) → Review and publish → Create your first campaign. Empty fields get safe defaults. The first workspace visit shows a four-item checklist; reopen it from **More → Setup checklist**. |
-| Campaign creator | Choose **Create with AI** (one purpose sentence → simulated draft) or **Fill the form** (enter fields) → edit → Review and publish → **Publish campaign** → “Your campaign is ready to share.” with **Copy campaign link**. Both paths save the same draft and use the same validation. |
+| Organization | **Create your website** (homepage) → Your organization (essentials; Advanced for address, features, look) → Review and publish → **Open website** (new tab). Empty fields get safe defaults. The first workspace visit shows a four-item checklist; reopen it from **More → Setup checklist**. |
+| Campaign creator | From the published website, **Create a campaign** → choose **Create with AI** (one purpose sentence → simulated draft) or **Fill the form** (enter fields) → edit → Review and publish → **Publish campaign** → “Your campaign is ready to share.” with **Copy campaign link**. Both paths save the same draft and use the same validation. Campaigns are created on the public site, not from the workspace. |
 | Supporter | Read the cause, organizer and progress at the top → **Give directly** or **Play a game** → review the amount → **Confirm simulated contribution**. A game link opens a short inline explanation with **Start playing** / **Give directly** before the game. |
 
 Organizers keep supporters informed from each campaign’s overview with four tasks: **Post an update**, **Add an expense**, **Update a milestone** and **Prepare final report**. Supporters can **Share campaign link** or **Create my sharing page** (their own message and link).

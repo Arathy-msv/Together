@@ -282,13 +282,16 @@ export const SCENES = [
     async run(r, state) {
       await r.press('Confirm simulated subscription and publish', { selector: 'button' })
       await r.waitFor('Your website is ready.')
-      await r.expectText('Create your first campaign')
+      await r.expectText('Open website')
+      await r.rejectText('Create your first campaign')
       await r.mark(0.55)
       state.orgId = await r.app(`const m = await import('/src/lib/orgStorage.ts'); return m.loadOrganizations().find(o => o.slug === 'greenwood-school')?.id`)
       if (!state.orgId) throw new Error('Greenwood School was not saved')
       await r.sleep(2500)
-      await r.press('Open website', { selector: 'a' })
+      // Open website uses target=_blank; navigate in this tab so the recorder stays on the public site.
+      await r.go('/o/greenwood-school')
       await r.waitFor('Help Greenwood School stock every classroom')
+      await r.expectText('Create a campaign')
       await r.sleep(2500)
       await r.scrollBy(500)
       await r.sleep(1500)
@@ -444,7 +447,11 @@ export const SCENES = [
       await r.sleep(1500)
       await r.press('Campaigns', { selector: '.ws-nav a' })
       await r.waitFor('Reading Week book drive')
+      await r.rejectText('Create a campaign')
       await r.sleep(2000)
+      // Campaigns are created from the public website header, not the workspace.
+      await r.go('/o/greenwood-school')
+      await r.waitFor('Help Greenwood School stock every classroom')
       await r.press('Create a campaign', { selector: 'a.btn, button.btn' })
       await r.waitFor('How would you like to start?')
       await r.expectText('Create with AI')
@@ -452,7 +459,7 @@ export const SCENES = [
       await r.sleep(1000)
       await r.press('Fill the form', { selector: '.create-path-card' })
       await r.waitFor('What and goal')
-      await r.expectText('Step 1 of 2')
+      await r.expectText('Review and publish')
       await r.sleep(800)
       state.olivia = true
     },

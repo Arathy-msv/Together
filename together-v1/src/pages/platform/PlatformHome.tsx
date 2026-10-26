@@ -106,9 +106,10 @@ export function PlatformHomePage() {
                   </div>
                 </div>
                 <p className="small">{org.tagline}</p>
-                <Link to={orgBase(org.slug)} className="btn btn-primary btn-sm">
+                <a href={orgBase(org.slug)} className="btn btn-primary btn-sm" target="_blank" rel="noopener noreferrer">
                   Visit website
-                </Link>
+                  <span className="sr-only"> (opens in a new tab)</span>
+                </a>
               </div>
             </article>
           ))}

@@ -129,7 +129,7 @@ Edit the narration in `narration/script.md`, then rerun narrate → record → a
 - The publish button is explicit: Confirm simulated subscription and publish.
 - The next screen is titled Your website is ready.
 - It shows the address, and it says the site exists in this browser only, because this prototype has no server.
-- The primary button is Create your first campaign. Beside it are Open website, Copy website link, and Go to my workspace.
+- The primary button is Open website (new tab). Beside it are Copy website link and Go to my workspace. Create a campaign is only on the public site.
 - She opens the website. The headline she wrote is the page title. There are no campaigns yet, and the empty state says so.
 
 ### 8:37–9:27 · `oa-members`
@@ -174,7 +174,7 @@ Edit the narration in `narration/script.md`, then rerun narrate → record → a
 
 - Olivia opens the workspace from the demo identities page.
 - Your campaigns shows only the campaigns assigned to her. Last term’s Reading Week book drive is already there, and it is closed.
-- Create a campaign opens a short form on the public site. There is no Guide me through it choice.
+- Workspace Campaigns has no Create button. Create a campaign on the public site opens a short form. There is no Guide me through it choice.
 - The setup indicator shows two steps: What and goal, then Review and publish.
 - *(Timings from the previous assembly; re-record before treating as current.)*
 

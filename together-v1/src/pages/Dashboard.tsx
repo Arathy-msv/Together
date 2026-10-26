@@ -20,6 +20,7 @@ import { clearGameData } from '../lib/gameLedger.ts'
 import { resetOrganizations } from '../lib/orgStorage.ts'
 import { deleteDraft, draftTitle, listDrafts } from '../lib/drafts.ts'
 import { resetStore } from '../lib/storage.ts'
+import { isPubliclyAvailable } from '../lib/website.ts'
 import type { CampaignView, CurrencyCode } from '../lib/types.ts'
 
 /** Whether an admin other than the revision author exists to review it. */
@@ -99,13 +100,16 @@ export function DashboardPage() {
       <div className="page-head">
         <div>
           <h1>Campaigns</h1>
-          <p className="muted">Saved on this device.</p>
+          <p className="muted">Saved on this device. Create new campaigns from your website.</p>
         </div>
-        <div className="page-head-actions">
-          <Link to={`${base}/create`} className={createdId ? 'btn btn-outline' : 'btn btn-primary'}>
-            Create a campaign
-          </Link>
-        </div>
+        {isPubliclyAvailable(org) ? (
+          <div className="page-head-actions">
+            <a href={base} className="btn btn-outline" target="_blank" rel="noopener noreferrer">
+              Open website
+              <span className="sr-only"> (opens in a new tab)</span>
+            </a>
+          </div>
+        ) : null}
       </div>
 
       {createdId && views.some((view) => view.campaign.id === createdId) ? (
@@ -253,10 +257,13 @@ export function DashboardPage() {
       {views.length === 0 ? (
         <div className="panel empty">
           <h2>No campaigns yet</h2>
-          <p className="muted">Create your first fundraiser. It takes four short steps.</p>
-          <Link to={`${base}/create`} className="btn btn-primary">
-            Create a campaign
-          </Link>
+          <p className="muted">Open your website and use Create a campaign there. It takes a few short steps.</p>
+          {isPubliclyAvailable(org) ? (
+            <a href={base} className="btn btn-primary" target="_blank" rel="noopener noreferrer">
+              Open website
+              <span className="sr-only"> (opens in a new tab)</span>
+            </a>
+          ) : null}
         </div>
       ) : (
         <div className="panel table-panel">

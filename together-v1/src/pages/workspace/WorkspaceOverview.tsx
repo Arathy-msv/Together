@@ -64,9 +64,10 @@ export function WorkspaceOverviewPage() {
                   {websiteCta.label}
                 </Link>
                 {isPubliclyAvailable(stored) ? (
-                  <Link to={base} className="btn btn-outline">
+                  <a href={base} className="btn btn-outline" target="_blank" rel="noopener noreferrer">
                     Open website
-                  </Link>
+                    <span className="sr-only"> (opens in a new tab)</span>
+                  </a>
                 ) : null}
               </div>
             </section>
@@ -95,9 +96,16 @@ export function WorkspaceOverviewPage() {
                 ))}
               </ol>
               {next ? (
-                <Link to={next.to} className="btn btn-primary">
-                  {next.action}
-                </Link>
+                next.id === 'campaign' ? (
+                  <a href={next.to} className="btn btn-primary" target="_blank" rel="noopener noreferrer">
+                    {next.action}
+                    <span className="sr-only"> (opens in a new tab)</span>
+                  </a>
+                ) : (
+                  <Link to={next.to} className="btn btn-primary">
+                    {next.action}
+                  </Link>
+                )
               ) : (
                 <div className="inline-actions">
                   <p className="muted small">Everything is set up.</p>
@@ -135,9 +143,6 @@ export function WorkspaceOverviewPage() {
             <section className="panel ws-card" aria-labelledby="campaigns-title">
               <div className="section-head-row">
                 <h2 id="campaigns-title">Your campaigns</h2>
-                <Link to={`${base}/create`} className={showChecklist ? 'btn btn-outline btn-sm' : 'btn btn-primary btn-sm'}>
-                  Create a campaign
-                </Link>
               </div>
               <ul className="ws-list">
                 {views.slice(0, 5).map((view) => (

@@ -40,11 +40,11 @@ import { purposeIdeas, type PurposeIdea } from '../lib/assistant.ts'
 import { useAiRequest } from '../hooks/useAiRequest.ts'
 import { AiCancelledError } from '../lib/ai/types.ts'
 
-const STEP_COPY: Record<number, { title: string; sub: string }> = {
-  1: { title: 'What and goal', sub: 'A few essentials. Optional settings stay under Advanced.' },
-  2: { title: 'Review and publish', sub: 'Check the summary, then publish when you’re ready.' },
-}
 const LAST_STEP = 2
+const STEP_LABEL: Record<number, string> = {
+  1: 'What and goal',
+  2: 'Review and publish',
+}
 
 /** Which form fields each step owns, so validation errors point to the right step. */
 const STEP_KEYS: Record<number, string[]> = {
@@ -461,7 +461,6 @@ function CreateCampaignEditor({ start }: { start: EditorStart }) {
     }
   }
 
-  const copy = STEP_COPY[step]
   setDisplayCurrency(form.currency)
 
   return (
@@ -469,15 +468,7 @@ function CreateCampaignEditor({ start }: { start: EditorStart }) {
       <Link to={`${base}/campaigns`} className="back-link">
         ← Back to campaigns
       </Link>
-      <div className="create-head">
-        <div>
-          <p className="muted small">
-            Step {step} of {LAST_STEP}
-          </p>
-          <h1>{copy.title}</h1>
-          <p className="lead-sm">{copy.sub}</p>
-        </div>
-      </div>
+      <h1 className="sr-only">{STEP_LABEL[step]}</h1>
       <SetupIndicator items={checklist} current={step as 1 | 2} onGroup={goToStep} />
       <div className="draft-bar">
         <SaveIndicator status={autosave.status} savedAt={autosave.savedAt} error={autosave.error} />

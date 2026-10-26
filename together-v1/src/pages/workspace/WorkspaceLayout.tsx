@@ -171,9 +171,16 @@ function WebsiteActions({ stored }: { stored: Parameters<typeof isPubliclyAvaila
   return (
     <div className="inline-actions ws-actions">
       {live ? (
-        <Link to={`/o/${stored.slug}`} className="btn btn-outline btn-sm" onClick={() => setWebsitePreview(null)}>
+        <a
+          href={`/o/${stored.slug}`}
+          className="btn btn-outline btn-sm"
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => setWebsitePreview(null)}
+        >
           Open website
-        </Link>
+          <span className="sr-only"> (opens in a new tab)</span>
+        </a>
       ) : (
         <button
           type="button"

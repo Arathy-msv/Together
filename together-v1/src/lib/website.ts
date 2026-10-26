@@ -160,7 +160,14 @@ export function setupTasks(stored: Organization, publishedCampaigns: number, wor
     { id: 'details', label: 'Add organization details', hint: 'Your name, a short description and a contact email.', done: details && !inSetup, to: inSetup ? `/start/${org.id}` : `${workspace}/website`, action: 'Add details' },
     { id: 'customize', label: 'Customize your website', hint: 'Choose your colours, photo and headline.', done: customized && !inSetup, to: inSetup ? `/start/${org.id}` : `${workspace}/website`, action: 'Customize website' },
     { id: 'publish', label: 'Publish your website', hint: 'Make it visible at your website address on this device.', done: isPubliclyAvailable(stored), to: inSetup ? `/start/${org.id}` : `${workspace}/website`, action: 'Review and publish' },
-    { id: 'campaign', label: 'Create your first campaign', hint: 'Describe your cause, set a goal and choose how people can contribute.', done: publishedCampaigns > 0, to: `/o/${org.slug}/create`, action: 'Create a campaign' },
+    {
+      id: 'campaign',
+      label: 'Create your first campaign',
+      hint: 'Open your website and use Create a campaign there to describe your cause, set a goal and choose how people can contribute.',
+      done: publishedCampaigns > 0,
+      to: `/o/${org.slug}`,
+      action: 'Open website',
+    },
   ]
 }
 

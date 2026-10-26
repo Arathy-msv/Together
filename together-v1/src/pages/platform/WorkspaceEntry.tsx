@@ -72,9 +72,10 @@ export function WorkspaceEntryPage() {
                   {setup ? 'Continue setup' : 'Open workspace'}
                 </Link>
                 {stored.website.status === 'published' ? (
-                  <Link to={orgBase(org.slug)} className="btn btn-outline btn-sm">
+                  <a href={orgBase(org.slug)} className="btn btn-outline btn-sm" target="_blank" rel="noopener noreferrer">
                     Visit website
-                  </Link>
+                    <span className="sr-only"> (opens in a new tab)</span>
+                  </a>
                 ) : null}
               </div>
             </li>
