@@ -110,7 +110,7 @@ run instead of recording a wrong result.
 | Scenes | Must show |
 | --- | --- |
 | `oa-features` | Advanced accordion: recommended settings first, then "Choose individually" |
-| `oa-publish` | "Your website is ready." with "Create your first campaign" as the next step |
+| `oa-publish` | "Your website is ready." with "Open website" (new tab) as the next step; Create a campaign only on the public site header |
 | `og-start`, `og-assistant`, `og-form` | Create offers Create with AI (one purpose → draft) or Fill the form (two-step essentials → review); Advanced holds dates, games and optional details |
 | `og-submit`, `og-approve` | Approval does not publish; the campaign stays a draft until "Publish approved campaign" |
 | `op-game`, `sp-direct`, `sp-game` | A labelled choice between "Give an amount" and "Play Memory Match" |
@@ -123,6 +123,8 @@ run instead of recording a wrong result.
 ## Video freshness
 
 - Last verified application commit: `db4c8a4`. Assembly finished 22 Oct 2026, 10:33am IST. Money in the application now displays in dollars. The narration in `narration/script.md` and `narration/presales-first-time.md` matches that change. The exported videos have not been re-recorded.
+- Campaign create is website-only (26 Oct 2026): after publish, Open website is the primary CTA (new tab); workspace overview/campaigns no longer offer Create a campaign. Scripts/narration for `oa-publish` and `og-start` updated; clips not re-recorded.
+- Create campaign form no longer shows the centered Step N / title / subtitle block above the setup indicator (26 Oct 2026). `og-start` script updated; clips not re-recorded.
 - Fill demo values is now on every page, and `oa-details` in `scripts/scenes.mjs` clicks it. Narration for that scene mentions the button. No scene was re-recorded, so the exports do not show the button.
 - Public and workspace navigation were simplified (23 Oct 2026): workspace nav is Home / Website / Campaigns / More. Footer is brand/contact only; public Page display / low-data checkbox removed. Campaign create/assistant run on the public site (`/o/.../create`). Clips were not re-recorded.
 - Public website home tightened (23 Oct 2026): About removed from public nav; My activity moved into the Demo identity menu; Partner offers stays in nav when live; hero height reduced so campaigns show above the fold; footer compacted. Scripts/narration for `op-home` and `sp-vouchers` updated; clips not re-recorded.
@@ -141,7 +143,7 @@ run instead of recording a wrong result.
 - Previous presales cut: **stale**. `output/together-presales.mp4` probes at 169.533 seconds (2:49) and still shows Indian rupees.
 - First-time presales cut: **stale**. `output/together-presales-first-time.mp4` probes at exactly 270.000 seconds (04:30) and still shows Indian rupees. Its earlier visual review does not cover the dollar displays or the two-step create form.
 - Subtitles: `together-demo.en.srt`, `together-demo.en.vtt`, `together-presales.en.srt`, `together-presales.en.vtt`, plus the chapter files. `narration/scene-timings.md` still matches the previous assembly timings (including old create wording).
-- Blocker: recordings were not regenerated after later UX changes (currency, org/campaign setup, public home, campaign page simplify). Affected scene ids include `op-home`, `op-offer`, `op-update`, `oa-plan`, `oa-details`, `oa-features`, `oa-look`, `oa-review`, `oa-publish`, `oa-members`, `oa-offers`, `sp-home`, `sp-direct`, `sp-trust`, `sp-share`, `sp-vouchers`, `sp-lowdata`, `og-start`, `og-assistant`, `og-ai-suggest`, `og-autosave`, `og-form`, `fn-public`.
+- Blocker: recordings were not regenerated after later UX changes (currency, org/campaign setup, public home, campaign page simplify, website-only campaign create). Affected scene ids include `op-home`, `op-offer`, `op-update`, `oa-plan`, `oa-details`, `oa-features`, `oa-look`, `oa-review`, `oa-publish`, `oa-members`, `oa-offers`, `sp-home`, `sp-direct`, `sp-trust`, `sp-share`, `sp-vouchers`, `sp-lowdata`, `og-start`, `og-assistant`, `og-ai-suggest`, `og-autosave`, `og-form`, `fn-public`.
 - Voice-over is local Piper only. Nothing was uploaded or published.
 
 Update this section whenever a user-facing change touches the walkthrough. If a scene or the final video could not be re-recorded, list the scene ids here and set the final video to stale, with the blocker.

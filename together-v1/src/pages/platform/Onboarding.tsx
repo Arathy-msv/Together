@@ -624,14 +624,12 @@ function PublishedScreen({ org }: { org: Organization }) {
           {org.name} is live at this address in this browser. Because this prototype has no server, other people can’t open it on their devices yet.
         </p>
         <code className="published-url">{url}</code>
-        <p>Next, create a campaign so supporters have something to give to. Your website shows it as soon as it is published.</p>
+        <p>Next, open your website and use Create a campaign there so supporters have something to give to. Your website shows it as soon as it is published.</p>
         <div className="inline-actions">
-          <Link to={`/o/${org.slug}/create?new=1`} className="btn btn-primary btn-lg">
-            Create your first campaign
-          </Link>
-          <Link to={`/o/${org.slug}`} className="btn btn-outline">
+          <a href={`/o/${org.slug}`} className="btn btn-primary btn-lg" target="_blank" rel="noopener noreferrer">
             Open website
-          </Link>
+            <span className="sr-only"> (opens in a new tab)</span>
+          </a>
           <button
             type="button"
             className="btn btn-outline"

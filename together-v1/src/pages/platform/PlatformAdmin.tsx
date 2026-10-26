@@ -78,8 +78,9 @@ export function PlatformAdminPage() {
                     ))}
                   </select>
                   {org.website.status === 'published' ? (
-                    <a href={orgBase(org.slug)} className="btn btn-outline btn-sm">
+                    <a href={orgBase(org.slug)} className="btn btn-outline btn-sm" target="_blank" rel="noopener noreferrer">
                       Public website
+                      <span className="sr-only"> (opens in a new tab)</span>
                     </a>
                   ) : null}
                 </div>

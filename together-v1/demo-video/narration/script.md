@@ -107,8 +107,8 @@ Desktop and Mobile are two buttons in the preview toolbar. She checks both, then
 The publish button is explicit: Confirm simulated subscription and publish.
 The next screen is titled Your website is ready.
 It shows the address, and it says the site exists in this browser only, because this prototype has no server.
-The primary button is Create your first campaign. Beside it are Open website, Copy website link, and Go to my workspace.
-She opens the website. The headline she wrote is the page title. There are no campaigns yet, and the empty state says so.
+The primary button is Open website, which opens in a new tab. Beside it are Copy website link and Go to my workspace. Create a campaign is not offered here.
+She opens the website. The headline she wrote is the page title. Create a campaign is in the site header. There are no campaigns yet, and the empty state says so.
 
 ## oa-members
 Manage this website opens the workspace. The workspace navigation is Home, Website, Campaigns, and More. Members, Partner offers and Settings sit under More.
@@ -145,8 +145,8 @@ Chapter three: the campaign organizer. Olivia drafts a campaign. Daniel, a diffe
 
 ## og-start
 Olivia opens the workspace from the demo identities page.
-Your campaigns shows only the campaigns assigned to her. Last term’s Reading Week book drive is already there, and it is closed.
-Create a campaign asks how to start: Create with AI (one sentence, then a draft), or Fill the form (enter each field).
+Your campaigns shows only the campaigns assigned to her. Last term’s Reading Week book drive is already there, and it is closed. There is no Create a campaign button in the workspace.
+She opens the public website and uses Create a campaign in the site header. It asks how to start: Create with AI (one sentence, then a draft), or Fill the form (enter each field).
 She chooses Fill the form. The setup indicator shows two steps: What and goal, then Review and publish.
 
 ## og-assistant
